@@ -8,14 +8,36 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleManageListEntryOperation } from '../../src/handlers/tools/dispatcher/operations/lists.js';
+import { handleManageListEntryOperation } from '@/handlers/tools/dispatcher/operations/lists.js';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { ToolConfig } from '../../src/handlers/tool-types.js';
-import { listsToolDefinitions } from '../../src/handlers/tool-configs/lists.js';
-import { AttioListEntry } from '../../src/types/attio.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
+import {
+  listsToolConfigs,
+  listsToolDefinitions,
+} from '@/handlers/tool-configs/lists.js';
+import { AttioListEntry } from '@/types/attio.js';
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+
+/** Structured error envelope assertions for the shared result boundary. */
+function expectValidationRejection(result: unknown, detail: string) {
+  const response = result as CallToolResult & {
+    structuredContent?: {
+      error?: { code: string; message: string; retryable: boolean };
+    };
+  };
+  expect(response.isError).toBe(true);
+  expect(response.structuredContent?.error).toMatchObject({
+    code: 'VALIDATION_ERROR',
+    retryable: false,
+  });
+  expect(JSON.parse(response.content[0].text as string)).toEqual(
+    response.structuredContent
+  );
+  expect(response.structuredContent?.error?.message).toContain(detail);
+}
 
 // Mock the entry management functions
-vi.mock('../../src/objects/lists/entries.js', () => ({
+vi.mock('@/objects/lists/entries.js', () => ({
   addRecordToList: vi.fn(),
   removeRecordFromList: vi.fn(),
   updateListEntry: vi.fn(),
@@ -25,18 +47,14 @@ import {
   addRecordToList,
   removeRecordFromList,
   updateListEntry,
-} from '../../src/objects/lists/entries.js';
+} from '@/objects/lists/entries.js';
 
 describe('Consolidated manage-list-entry Tool', () => {
   const mockListId = '550e8400-e29b-41d4-a716-446655440000';
   const mockRecordId = '660e8400-e29b-41d4-a716-446655440001';
   const mockEntryId = '770e8400-e29b-41d4-a716-446655440002';
 
-  const mockToolConfig: ToolConfig = {
-    name: 'manage-list-entry',
-    handler: vi.fn(),
-    formatResult: vi.fn((result) => JSON.stringify(result)),
-  };
+  const mockToolConfig = listsToolConfigs.manageListEntry;
 
   const mockListEntry: AttioListEntry = {
     id: { entry_id: mockEntryId },
@@ -371,8 +389,11 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
 
       expect(result.isError).toBeFalsy();
-      // The formatResult function should be called for remove mode
-      expect(mockToolConfig.formatResult).toHaveBeenCalled();
+      expect(result.structuredContent).toEqual({
+        success: true,
+        list_id: mockListId,
+        entry_id: mockEntryId,
+      });
     });
   });
 
@@ -438,10 +459,7 @@ describe('Consolidated manage-list-entry Tool', () => {
         mockToolConfig
       );
 
-      expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain(
-        'Mode 3 (Update): attributes parameter is required and must be an object'
-      );
+      expectValidationRejection(result, 'Mode 3 requires');
     });
 
     it('should reject array attributes', async () => {
@@ -462,10 +480,7 @@ describe('Consolidated manage-list-entry Tool', () => {
         mockToolConfig
       );
 
-      expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain(
-        'Mode 3 (Update): attributes parameter is required and must be an object'
-      );
+      expectValidationRejection(result, 'Mode 3 requires');
     });
 
     it('should call updateListEntry with correct parameters', async () => {
@@ -669,7 +684,64 @@ describe('Consolidated manage-list-entry Tool', () => {
       );
 
       expect(result.isError).toBeTruthy();
-      expect(result.content[0].text).toContain('listId parameter is required');
+      expectValidationRejection(result, 'Missing required parameter: listId');
+    });
+
+    it('publishes written entry and removal outcomes as envelopes (U4)', async () => {
+      const realConfig = listsToolConfigs.manageListEntry as ToolConfig;
+
+      const write = (await handleManageListEntryOperation(
+        {
+          method: 'tools/call',
+          params: {
+            name: 'manage-list-entry',
+            arguments: {
+              listId: mockListId,
+              entryId: mockEntryId,
+              attributes: { stage: 'Qualified' },
+            },
+          },
+        } as CallToolRequest,
+        realConfig
+      )) as CallToolResult & {
+        structuredContent: {
+          data: { list_id?: string; id?: { entry_id?: string } };
+        };
+      };
+
+      expect(write.isError).toBe(false);
+      // Add/update report the entry with both identifiers retained.
+      expect(write.structuredContent.data).toMatchObject({
+        list_id: mockListId,
+        id: { entry_id: mockEntryId },
+      });
+      expect(JSON.parse(write.content[0].text as string)).toEqual(
+        write.structuredContent
+      );
+
+      const removal = (await handleManageListEntryOperation(
+        {
+          method: 'tools/call',
+          params: {
+            name: 'manage-list-entry',
+            arguments: { listId: mockListId, entryId: mockEntryId },
+          },
+        } as CallToolRequest,
+        realConfig
+      )) as CallToolResult & {
+        structuredContent: {
+          success: boolean;
+          list_id: string;
+          entry_id: string;
+        };
+      };
+
+      expect(removal.isError).toBe(false);
+      expect(removal.structuredContent).toEqual({
+        success: true,
+        list_id: mockListId,
+        entry_id: mockEntryId,
+      });
     });
   });
 });

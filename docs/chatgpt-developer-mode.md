@@ -78,15 +78,22 @@ For accounts without Developer Mode, configure `ATTIO_MCP_TOOL_MODE: 'search'` a
 
 When this mode is active, the server will only advertise:
 
-| Tool                              | Behaviour                                                                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `search`                          | Delegates to the universal search service and returns JSON-encoded results in a single text content item |
-| `fetch`                           | Retrieves the full record payload for a search result ID                                                 |
-| `health-check`/`aaa-health-check` | Simple readiness probes                                                                                  |
+| Tool               | Behaviour                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------- |
+| `search`           | Delegates to the universal search service and returns JSON-encoded results in a single text content item |
+| `fetch`            | Retrieves the full record payload for a search result ID                                                 |
+| `aaa-health-check` | Simple readiness probes                                                                                  |
 
 All other tools are filtered out at registry time and ignored by the dispatcher. This is ideal for accounts without Developer Mode or for a constrained roll-out.
 
 Unset the variable (or set it to any value other than `search`) to restore the full tool catalogue.
+
+### Connector result shapes
+
+See the authoritative [structured surface contract](./universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d)
+for `search`/`fetch` structured outputs, their compatible JSON text channel, and
+failure handling. Existing connector parsers can migrate at their own pace using
+[the client migration checklist](./MIGRATION-GUIDE.md#updating-a-client).
 
 ---
 

@@ -24,20 +24,8 @@ enum UniversalResourceType {
 
 ## formatResult Architecture (Updated PR #483)
 
-**IMPORTANT**: All universal tools now use consistent `formatResult` functions that always return strings. This eliminates dual-mode behavior and improves performance by 89.7%.
-
-### Consistent formatResult Contract
-
-```typescript
-// All formatResult functions follow this pattern
-formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResourceType): string
-
-// Performance optimized with:
-// - No environment-dependent behavior
-// - Type-safe Record<string, unknown> patterns
-// - Memory-efficient string templates
-// - 59% ESLint warning reduction (957→395)
-```
+See the [formatter contract](developer-guide.md#formatresult-architecture-update-pr-483)
+for companion prose formatting.
 
 ## Core Universal Tools (8 tools)
 
@@ -58,8 +46,9 @@ formatResult: (data: AttioRecord | AttioRecord[], resourceType?: UniversalResour
   fields?: string[],                 // Fields to search (content search only)
   match_type?: 'exact' | 'partial' | 'fuzzy', // Match type (default: 'partial')
   sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
-  limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
+  limit?: number,                    // Max results (1-100; record-query defaults vary)
+  offset?: number,                   // Pagination offset (default: 0)
+  cursor?: string                    // See Collection Continuation
 }
 ```
 
@@ -384,8 +373,9 @@ await client.callTool('records.get_info', {
   filters?: object,                  // Advanced filter conditions
   sort_by?: string,                  // Field to sort by
   sort_order?: 'asc' | 'desc',      // Sort direction
-  limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
+  limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
+  offset?: number,                   // Pagination offset (default: 0)
+  cursor?: string                    // See Collection Continuation
 }
 ```
 
@@ -493,8 +483,9 @@ await client.callTool('records.search_by_content', {
   start_date?: string,               // ISO 8601 or relative date (e.g., "last 7 days")
   end_date?: string,                 // ISO 8601 or relative date (e.g., "yesterday")
   preset?: string,                   // Date preset or relative expression (e.g., "this_month", "last 30 days")
-  limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
+  limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
+  offset?: number,                   // Pagination offset (default: 0)
+  cursor?: string                    // See Collection Continuation
 }
 ```
 
@@ -588,6 +579,57 @@ await client.callTool('records.batch', {
   limit: 50,
 });
 ```
+
+## Collection Continuation (U5)
+
+Collection tools return a `{ data, count, next_cursor, pagination? }`
+envelope. `count` measures this response. `next_cursor` is an opaque,
+versioned token sealed with authenticated encryption under an ephemeral server
+key; it is bound to the effective credential scope, the canonical operation,
+the resource, the query shape (filters, sorts, projections), and the page size.
+Tokens expire after 30 minutes, become invalid when the server restarts, and
+grant no permission: verification uses the caller's current credential scope
+before any Attio request, and Attio still authorizes that request. Tokens are
+bounded to 512 characters. A non-null token is the continuation signal. A null
+token means exhaustion only when `pagination.supported` is true and
+`pagination.truncated` is false.
+
+**Supported continuation** (offset-backed query paths): `search_records`,
+`search_records_advanced`, `search_records_by_timeframe`, `list_notes`, and
+`get-list-entries`. Supported record query and list-entry paths fetch one lookahead item ahead of the returned page; notes use bounded offset lookahead and preserve native cursors when provided,
+so a token is only issued on reliable continuation evidence and a returned
+page never drops the sentinel item — the next page refetches it. Relative date
+queries bind their resolved dates; replay is rejected when the relative range
+resolves to different dates.
+
+**Bounded families** (finite or ranked) return `next_cursor: null` plus
+`pagination: { supported: false, truncated: <boolean> }`. `truncated: true`
+means results were withheld or upstream completeness could not be established;
+`truncated: false` affirms no bounded results were withheld. On these families
+null never proves the upstream dataset was complete. Caps are documented per
+tool: `search_records` caps pages at 100 items; companies, deals, and custom
+objects default to 20, people to 100, and generic records and relationship/timeframe
+query routes within `search_records` to 10. `search_records_by_timeframe` and
+`list_notes` default to 20; notes accept up to 100 per returned page.
+`get-list-entries` defaults to 20. `get-lists`
+and `list-workspace-members` return their complete directory inventories;
+ranked text/content searches and task/list/note aggregates do not support continuation;
+attribute metadata inventories are finite per object. Task searches disclose slices
+of the upstream inventory capped at 500 tasks. At the record offset cap of 10000,
+further results return no cursor and `truncated: true`.
+
+Continuation rules:
+
+- Pass the sealed token back as `cursor` on the next call; never combine
+  `cursor` with `offset` (the request is rejected before any API call).
+- Reuse the token only for the same query: same resource, filters, sorts, projections, and
+  page size. A mismatch fails with the stable `INVALID_CURSOR` code before any
+  Attio request. Start again from a fresh first page after this error.
+- Offset pagination is a live view, not a snapshot: concurrent writes can
+  shift or repeat items across pages. Deduplicate by record identifier when
+  your consumer needs stability.
+- Tokens carry no raw credentials or filter values — only keyed fingerprints —
+  and a token issued under one tenant's credentials fails under another's.
 
 ## Parameter Validation Rules
 
@@ -689,14 +731,8 @@ Use correct operators for date filtering:
 
 ### Error Response Format
 
-```typescript
-{
-  error: string,           // Error message
-  code: string,           // Error code
-  resource_type?: string, // Resource type if applicable
-  operation?: string      // Operation that failed
-}
-```
+See the authoritative [structured-results contract](developer-guide.md#structured-results-v2-boundary-a)
+for execution-error envelopes and protocol-error semantics.
 
 ## Testing and Mock Data
 
@@ -755,7 +791,7 @@ Use special mock IDs to test error handling:
 ### Pagination
 
 - Use `limit` and `offset` for large result sets
-- Default limit is 10, maximum is 100
+- See [Collection Continuation](#collection-continuation-u5) for limits and defaults
 - For batch operations, maximum limit is 50
 
 ### Batch Operations
@@ -782,3 +818,9 @@ Use special mock IDs to test error handling:
 - **Need examples?** → Check [User Guide](user-guide.md)
 - **Having issues?** → Visit [Troubleshooting](troubleshooting.md)
 - **Want to extend?** → Review [Developer Guide](developer-guide.md)
+
+## Structured universal read and batch results (v2 U3)
+
+See the authoritative [structured universal reads and batches contract](developer-guide.md#structured-universal-reads-and-batches-v2-boundary-c)
+for output schemas, per-family projections, ordered batch outcomes, and recovery
+semantics.

@@ -2,8 +2,9 @@
  * Split: UniversalUtilityService conversion helpers
  */
 import { describe, it, expect } from 'vitest';
-import { UniversalUtilityService } from '../../src/services/UniversalUtilityService.js';
-import { AttioTask } from '../../src/types/attio.js';
+import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
+import { AttioTask } from '@/types/attio.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 describe('UniversalUtilityService', () => {
   describe('convertTaskToRecord', () => {
@@ -78,16 +79,14 @@ describe('UniversalUtilityService', () => {
         values: {
           content: 'Another task',
           status: 'completed',
-          assignee: undefined,
           due_date: null,
-          linked_records: undefined,
+          linked_records: null,
         },
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         content: 'Another task',
         status: 'completed',
         due_date: null,
-        assignee_id: undefined,
       });
     });
 
@@ -110,7 +109,6 @@ describe('UniversalUtilityService', () => {
           record_id: 'simple_task_id',
           task_id: 'simple_task_id',
           object_id: 'tasks',
-          workspace_id: '',
         },
         values: {
           content: 'Simple task',
@@ -142,7 +140,10 @@ describe('UniversalUtilityService', () => {
       } as any;
 
       const result = UniversalUtilityService.convertTaskToRecord(task);
-      expect(result.id.workspace_id).toBe('');
+      expect(result.id).not.toHaveProperty('workspace_id');
+      expect(result.values).not.toHaveProperty('assignee');
+      expect(result).not.toHaveProperty('assignee');
+      expect(result).not.toHaveProperty('assignee_id');
     });
 
     it('should throw error for unrecognized ID structure', () => {
@@ -159,7 +160,7 @@ describe('UniversalUtilityService', () => {
 
       expect(() => {
         UniversalUtilityService.convertTaskToRecord(task as AttioTask);
-      }).toThrow();
+      }).toThrow(ResultEncodingError);
     });
 
     it('should handle missing id in task', () => {
@@ -175,7 +176,7 @@ describe('UniversalUtilityService', () => {
 
       expect(() => {
         UniversalUtilityService.convertTaskToRecord(task as AttioTask);
-      }).toThrow('Task missing id property');
+      }).toThrow(ResultEncodingError);
     });
   });
 });

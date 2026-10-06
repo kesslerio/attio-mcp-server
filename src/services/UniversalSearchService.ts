@@ -18,7 +18,10 @@ import type { UniversalRecordResult } from '@/types/attio.js';
 import { debug } from '@/utils/logger.js';
 
 // Import services
-import { ValidationService } from '@/services/ValidationService.js';
+import {
+  ValidationService,
+  MAX_PAGINATION_OFFSET,
+} from '@/services/ValidationService.js';
 import { CachingService } from '@/services/CachingService.js';
 
 // Import performance tracking
@@ -29,6 +32,98 @@ import { convertDateParamsToTimeframeQuery } from '@/utils/filters/timeframe-uti
 
 // Issue #935: Search routing delegated to SearchCoordinator
 import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
+import {
+  InvalidCursorError,
+  issueNextCursor,
+  rejectCursorWithOffset,
+  resolveCollectionCursor,
+  splitLookaheadPage,
+  type IssuedCollectionCursor,
+} from '@/handlers/tools/result-cursor.js';
+
+/**
+ * A queried collection page plus its U5 continuation evidence (KTD6).
+ */
+export interface UniversalRecordCollectionPage {
+  data: UniversalRecordResult[];
+  next_cursor: string | null;
+  pagination: IssuedCollectionCursor['pagination'];
+}
+
+/**
+ * A cursor pins its issuing page size; replaying it with a different page
+ * size would silently reshuffle the live view, so it fails before any call.
+ */
+function pageSizeViaCursorCheck(
+  cursorPageSize: number,
+  requested: number
+): void {
+  if (cursorPageSize !== requested) {
+    throw new InvalidCursorError(
+      'Continuation cursor page size does not match this request'
+    );
+  }
+}
+
+/**
+ * Keyed fingerprint inputs for the record-search continuation scope: the
+ * canonical operation, resource, and the effective query shape (filters,
+ * sorts, projections, and the resolved page size). Raw values are never
+ * encoded — the cursor module reduces them to keyed fingerprints.
+ */
+function searchContinuationScope(
+  operation: string,
+  params: {
+    resource_type: string;
+    limit: number;
+    query?: string;
+    filters?: unknown;
+    fields?: string[];
+    match_type?: unknown;
+    sort?: unknown;
+    sort_by?: string;
+    sort_order?: 'asc' | 'desc';
+    search_type?: unknown;
+    relationship_target_type?: unknown;
+    relationship_target_id?: unknown;
+    timeframe_attribute?: unknown;
+    start_date?: unknown;
+    end_date?: unknown;
+    date_operator?: unknown;
+    content_fields?: unknown;
+    use_or_logic?: unknown;
+    date_from?: unknown;
+    date_to?: unknown;
+    created_after?: unknown;
+    created_before?: unknown;
+    updated_after?: unknown;
+    updated_before?: unknown;
+    timeframe?: unknown;
+    date_field?: unknown;
+  }
+): {
+  operation: string;
+  resource: string;
+  query: Record<string, unknown>;
+} {
+  const { resource_type, ...rest } = params;
+  return {
+    operation,
+    resource: resource_type,
+    // The cursor itself and the paging position are not part of the query
+    // identity: continuation must re-verify the exact filters/sorts/page size
+    // while advancing through pages of the same query.
+    query: Object.fromEntries(
+      Object.entries(rest).filter(
+        ([key, value]) =>
+          key !== 'cursor' &&
+          key !== 'offset' &&
+          value !== undefined &&
+          !(key === 'query' && value === '')
+      )
+    ),
+  };
+}
 
 /**
  * UniversalSearchService provides centralized record search functionality
@@ -37,11 +132,152 @@ import { SearchCoordinator } from '@/services/search/SearchCoordinator.js';
  */
 export class UniversalSearchService {
   /**
+   * Continuation-aware page fetch for collection tools (U5/KTD6).
+   *
+   * A client-supplied cursor is verified against the caller's credential scope
+   * and query shape BEFORE any Attio request; tampering, changed filters,
+   * expiry, and cross-tenant replay all fail with INVALID_CURSOR offline.
+   * Offset-backed paths fetch one lookahead item so a next cursor is only
+   * issued on reliable continuation evidence, and the returned page always
+   * contains at most the requested number of items (the sentinel is refetched later,
+   * never dropped).
+   */
+  static async searchRecordsPage(
+    params: UniversalSearchParams,
+    operation:
+      | 'records_search'
+      | 'records_search_advanced'
+      | 'records_search_by_timeframe' = 'records_search'
+  ): Promise<UniversalRecordCollectionPage> {
+    rejectCursorWithOffset({ cursor: params.cursor, offset: params.offset });
+    const dateConversion = convertDateParamsToTimeframeQuery(params);
+    const isQueryRoute =
+      params.search_type === SearchType.RELATIONSHIP ||
+      params.search_type === SearchType.TIMEFRAME ||
+      Boolean(dateConversion) ||
+      Boolean(
+        params.timeframe_attribute && (params.start_date || params.end_date)
+      );
+    const pageSize =
+      params.limit ??
+      (isQueryRoute || params.resource_type === UniversalResourceType.RECORDS
+        ? 10
+        : params.resource_type === UniversalResourceType.PEOPLE
+          ? 100
+          : 20);
+    ValidationService.validatePaginationParameters({
+      limit: pageSize,
+      offset: params.offset,
+    });
+    const scope = searchContinuationScope(operation, {
+      ...params,
+      ...dateConversion,
+      limit: pageSize,
+    });
+    const supported =
+      isQueryRoute ||
+      (![
+        UniversalResourceType.TASKS,
+        UniversalResourceType.LISTS,
+        UniversalResourceType.NOTES,
+      ].includes(params.resource_type) &&
+        params.search_type !== SearchType.CONTENT &&
+        !params.query?.trim());
+    if (!supported) {
+      if (params.cursor)
+        throw new InvalidCursorError(
+          'This search does not support continuation cursors'
+        );
+      const data = await this.searchRecords(params);
+      return {
+        data,
+        next_cursor: null,
+        pagination: {
+          supported: false,
+          truncated:
+            (data as UniversalRecordResult[] & { truncated?: boolean })
+              .truncated ?? true,
+        },
+      };
+    }
+
+    let offset = params.offset ?? 0;
+    let upstreamCursor: string | undefined;
+    if (params.cursor) {
+      const resolved = resolveCollectionCursor(params.cursor, scope);
+      offset = resolved.offset;
+      if (offset > MAX_PAGINATION_OFFSET)
+        throw new InvalidCursorError(
+          'Cursor offset exceeds the supported pagination range'
+        );
+      upstreamCursor = resolved.upstreamCursor;
+      pageSizeViaCursorCheck(resolved.pageSize, pageSize);
+    }
+
+    const fetched = await this.executeSearch(
+      { ...params, limit: Math.min(pageSize + 1, 100), offset },
+      upstreamCursor,
+      dateConversion
+    );
+    const { page, hasMore: lookaheadMore } = splitLookaheadPage(
+      fetched,
+      pageSize
+    );
+    const nextUpstreamCursor =
+      fetched.length <= pageSize
+        ? (fetched as UniversalRecordResult[] & { upstreamCursor?: string })
+            .upstreamCursor
+        : undefined;
+    const hasMore =
+      Boolean(nextUpstreamCursor) ||
+      lookaheadMore ||
+      (pageSize === 100 &&
+        page.length === pageSize &&
+        (
+          await this.executeSearch(
+            { ...params, limit: 1, offset: offset + page.length },
+            undefined,
+            dateConversion
+          )
+        ).length > 0);
+    if (hasMore && offset + page.length > MAX_PAGINATION_OFFSET) {
+      return {
+        data: page,
+        next_cursor: null,
+        pagination: { supported: true, truncated: true },
+      };
+    }
+    const issued = issueNextCursor({
+      scope,
+      pageSize,
+      offset: offset + page.length,
+      hasMore,
+      upstreamCursor: nextUpstreamCursor,
+    });
+    return {
+      data: page,
+      next_cursor: issued.next_cursor,
+      pagination: issued.pagination,
+    };
+  }
+  /**
    * Universal search handler with performance tracking
    * Issue #1068: Lists returned in list-native format (UniversalRecordResult[])
    */
   static async searchRecords(
-    params: UniversalSearchParams
+    params: UniversalSearchParams,
+    upstreamCursor?: string
+  ): Promise<UniversalRecordResult[]> {
+    ValidationService.validatePaginationParameters(params);
+    return this.executeSearch(params, upstreamCursor);
+  }
+
+  private static async executeSearch(
+    params: UniversalSearchParams,
+    upstreamCursor?: string,
+    resolvedDateConversion?: ReturnType<
+      typeof convertDateParamsToTimeframeQuery
+    >
   ): Promise<UniversalRecordResult[]> {
     const {
       resource_type,
@@ -49,6 +285,7 @@ export class UniversalSearchService {
       filters,
       limit,
       offset,
+      cursor: _cursor,
       search_type = SearchType.BASIC,
       fields,
       match_type = MatchType.PARTIAL,
@@ -93,9 +330,6 @@ export class UniversalSearchService {
     // Track validation timing
     const validationStart = performance.now();
 
-    // Validate pagination parameters using ValidationService
-    ValidationService.validatePaginationParameters({ limit, offset }, perfId);
-
     // Validate filter schema for malformed advanced filters
     ValidationService.validateFiltersSchema(filters);
 
@@ -114,16 +348,19 @@ export class UniversalSearchService {
     };
 
     try {
-      const dateConversion = convertDateParamsToTimeframeQuery({
-        date_from,
-        date_to,
-        created_after,
-        created_before,
-        updated_after,
-        updated_before,
-        timeframe,
-        date_field,
-      });
+      const dateConversion =
+        resolvedDateConversion === undefined
+          ? convertDateParamsToTimeframeQuery({
+              date_from,
+              date_to,
+              created_after,
+              created_before,
+              updated_after,
+              updated_before,
+              timeframe,
+              date_field,
+            })
+          : resolvedDateConversion;
 
       if (dateConversion) {
         // Use converted parameters, prioritizing user-friendly parameters
@@ -173,6 +410,7 @@ export class UniversalSearchService {
         filters,
         limit,
         offset,
+        upstreamCursor,
         search_type: finalSearchType,
         fields,
         match_type,
@@ -226,6 +464,7 @@ export class UniversalSearchService {
       filters?: Record<string, unknown>;
       limit?: number;
       offset?: number;
+      upstreamCursor?: string;
       search_type?: SearchType;
       fields?: string[];
       match_type?: MatchType;

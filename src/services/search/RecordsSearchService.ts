@@ -9,68 +9,16 @@ import type { AxiosInstance } from 'axios';
 
 import type { UniversalRecord } from '@/types/attio.js';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
-import { listObjectRecords } from '@/objects/records/index.js';
 import { ValidationService } from '@/services/ValidationService.js';
-import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
-import {
-  AuthenticationError,
-  AuthorizationError,
-  NetworkError,
-  RateLimitError,
-  ServerError,
-  ResourceNotFoundError,
-  createApiErrorFromAxiosError,
-} from '@/errors/api-errors.js';
+import { createScopedLogger, OperationType } from '@/utils/logger.js';
+import { createApiErrorFromAxiosError } from '@/errors/api-errors.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 /**
  * Resolve API client from context-aware lazy client.
  */
 function resolveApiClient(): AxiosInstance {
   return getLazyAttioClient();
-}
-
-/**
- * Handle API errors consistently
- * Issue #935: Matches QueryApiService error handling pattern
- */
-function handleRecordsApiError(
-  error: unknown,
-  path: string,
-  context: {
-    operation: string;
-    metadata?: Record<string, unknown>;
-  }
-): UniversalRecord[] {
-  const apiError = createApiErrorFromAxiosError(error, path, 'POST');
-
-  // Re-throw critical errors that should bubble up
-  if (
-    apiError instanceof AuthenticationError ||
-    apiError instanceof AuthorizationError ||
-    apiError instanceof NetworkError ||
-    apiError instanceof RateLimitError ||
-    apiError instanceof ServerError
-  ) {
-    throw apiError;
-  }
-
-  // Handle not found gracefully - return empty results
-  if (apiError instanceof ResourceNotFoundError) {
-    debug(
-      'RecordsSearchService',
-      `No results for ${context.operation}`,
-      context.metadata
-    );
-    return [];
-  }
-
-  // Log and return empty for other errors
-  createScopedLogger(
-    'RecordsSearchService',
-    context.operation,
-    OperationType.API_CALL
-  ).error(`${context.operation} failed`, error);
-  return [];
 }
 
 /**
@@ -85,23 +33,7 @@ export class RecordsSearchService {
     offset?: number,
     filters?: Record<string, unknown>
   ): Promise<UniversalRecord[]> {
-    // Handle list_membership filters - invalid UUID should return empty array
-    if (filters?.list_membership) {
-      const listId = String(filters.list_membership);
-      if (!ValidationService.validateUUIDForSearch(listId)) {
-        return []; // Return empty success for invalid UUID
-      }
-      createScopedLogger(
-        'RecordsSearchService',
-        'searchRecordsObjectType',
-        OperationType.DATA_PROCESSING
-      ).warn('list_membership filter not yet supported in listObjectRecords');
-    }
-
-    return await listObjectRecords('records', {
-      pageSize: limit,
-      page: Math.floor((offset || 0) / (limit || 10)) + 1,
-    });
+    return this.searchCustomObject('records', limit ?? 10, offset, filters);
   }
 
   /**
@@ -159,7 +91,7 @@ export class RecordsSearchService {
     // Issue #935: Forward filters to request body (was silently dropped before)
     if (filters && Object.keys(filters).length > 0) {
       // Exclude list_membership from filter object as it's handled separately
-      const { list_membership, ...remainingFilters } = filters;
+      const { list_membership: _listMembership, ...remainingFilters } = filters;
       if (Object.keys(remainingFilters).length > 0) {
         requestBody.filter = remainingFilters;
       }
@@ -168,12 +100,10 @@ export class RecordsSearchService {
     try {
       const api = resolveApiClient();
       const response = await api.post(path, requestBody);
-      return Array.isArray(response?.data?.data) ? response.data.data : [];
+      if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+      return response.data.data;
     } catch (error: unknown) {
-      return handleRecordsApiError(error, path, {
-        operation: 'searchCustomObject',
-        metadata: { objectSlug, limit, offset, hasFilters: !!filters },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 }

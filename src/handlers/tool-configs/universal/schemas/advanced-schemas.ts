@@ -1,6 +1,7 @@
 import {
   resourceTypeProperty,
   paginationProperties,
+  cursorProperty,
 } from './common/properties.js';
 import {
   UniversalResourceType,
@@ -74,6 +75,7 @@ Also accepted aliases: eq, greater_than, greater_than_or_equals, less_than, less
       description: 'Sort order',
     },
     ...paginationProperties,
+    cursor: cursorProperty,
   },
   required: ['resource_type' as const],
   additionalProperties: false,
@@ -188,6 +190,7 @@ export const searchByTimeframeSchema = {
         'Optional explicit date field override. last_interaction is supported for people and companies; updated_at and modified_at remain accepted aliases but are not supported live on those objects.',
     },
     ...paginationProperties,
+    cursor: cursorProperty,
   },
   required: ['resource_type' as const],
   additionalProperties: false,

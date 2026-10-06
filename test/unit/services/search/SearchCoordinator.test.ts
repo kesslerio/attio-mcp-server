@@ -52,9 +52,10 @@ describe('SearchCoordinator', () => {
   describe('executeSearch - search type routing', () => {
     it('should route RELATIONSHIP search to QueryApiService', async () => {
       const mockResults = [{ id: { record_id: 'rec1' } }];
-      vi.mocked(QueryApiService.searchByRelationship).mockResolvedValue(
-        mockResults as any
-      );
+      vi.mocked(QueryApiService.searchByRelationship).mockResolvedValue({
+        data: mockResults,
+        upstreamCursor: null,
+      } as any);
 
       const results = await SearchCoordinator.executeSearch({
         resource_type: UniversalResourceType.COMPANIES,
@@ -71,7 +72,8 @@ describe('SearchCoordinator', () => {
         UniversalResourceType.PEOPLE,
         'target-uuid',
         10,
-        0
+        0,
+        undefined
       );
     });
 
@@ -88,9 +90,10 @@ describe('SearchCoordinator', () => {
 
     it('should route TIMEFRAME search to QueryApiService', async () => {
       const mockResults = [{ id: { record_id: 'rec1' } }];
-      vi.mocked(QueryApiService.searchByTimeframe).mockResolvedValue(
-        mockResults as any
-      );
+      vi.mocked(QueryApiService.searchByTimeframe).mockResolvedValue({
+        data: mockResults,
+        upstreamCursor: null,
+      } as any);
 
       const results = await SearchCoordinator.executeSearch({
         resource_type: UniversalResourceType.COMPANIES,
@@ -110,6 +113,7 @@ describe('SearchCoordinator', () => {
           endDate: '2024-12-31',
           operator: 'between',
         }),
+        undefined,
         undefined,
         undefined
       );
@@ -132,6 +136,7 @@ describe('SearchCoordinator', () => {
           operator: 'greater_than',
         }),
         undefined,
+        undefined,
         undefined
       );
     });
@@ -153,6 +158,7 @@ describe('SearchCoordinator', () => {
           operator: 'less_than',
         }),
         undefined,
+        undefined,
         undefined
       );
     });
@@ -170,9 +176,10 @@ describe('SearchCoordinator', () => {
 
     it('should route CONTENT search with fields to QueryApiService', async () => {
       const mockResults = [{ id: { record_id: 'rec1' } }];
-      vi.mocked(QueryApiService.searchByContent).mockResolvedValue(
-        mockResults as any
-      );
+      vi.mocked(QueryApiService.searchByContent).mockResolvedValue({
+        data: mockResults,
+        upstreamCursor: null,
+      } as any);
 
       const results = await SearchCoordinator.executeSearch({
         resource_type: UniversalResourceType.COMPANIES,

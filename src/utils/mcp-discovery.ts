@@ -1,4 +1,4 @@
-import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
+import { TOOL_DEFINITIONS, findToolConfig } from '@/handlers/tools/registry.js';
 import { filterAllowedTools } from '@/config/tool-mode.js';
 import { getAllPrompts } from '@/prompts/templates/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
@@ -24,8 +24,10 @@ function ensureAnnotations(tool: Tool): Tool {
     annotations.openWorldHint = true;
   }
 
+  const outputSchema = findToolConfig(tool.name)?.toolConfig.outputSchema;
   return {
     ...tool,
+    ...(outputSchema ? { outputSchema } : {}),
     annotations,
   } as Tool;
 }

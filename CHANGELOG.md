@@ -30,10 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Stdio server no longer stays resident after the client closes stdin** — the performance tracker's cache-cleanup interval was registered as a ref'd timer, so an abandoned server kept its event loop open indefinitely and lingered as an orphan process; the interval now releases its hold on the loop while still firing on schedule. A client that never closes the pipe still leaves the server running (#1288)
 - **Test-data cleanup script no longer 404s on lists and notes** — lists are fetched via `GET /v2/lists` and deleted via `DELETE /v2/lists/{id}` (list resources, not object records), and notes requests exit with an explanatory notice instead of hitting the nonexistent `notes` object slug (#620)
 
 ### Changed
 
+- **Every default tool now returns validated structured results** — list, workspace-member, diagnostic, and connector tools join the shared boundary; see the [result contract](docs/universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d) and [client migration checklist](docs/MIGRATION-GUIDE.md#updating-a-client)
+- Universal read, metadata, interaction, and batch tools now return validated structured results; batch searches retain ordered query outcomes and item failures — see the [result contract](docs/universal-tools/developer-guide.md#structured-universal-reads-and-batches-v2-boundary-c)
 - **Cleanup script refactored into focused modules** — the 680-line `scripts/cleanup/index.ts` entry point is now a 55-line wrapper over `core/` (cli, preflight, orchestrator, resources, main), `processors/`, and `utils/`; per-resource fetch/filter/delete logic shares one safety pipeline (API-token filter → pattern filter → dry-run /tmp reports → batch delete) (#620)
 
 ### Added

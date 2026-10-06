@@ -705,13 +705,22 @@ async function processNewLead(leadData) {
 
 ```typescript
 async function syncCompanyData(externalCompanies) {
-  const existingCompanies = await client.callTool('records.batch', {
+  const searchResult = await client.callTool('records.batch', {
     resource_type: 'companies',
     operation_type: 'search',
     query: 'all companies',
     limit: 50,
   });
 
+  if (searchResult.isError) {
+    throw new Error(searchResult.structuredContent.error.message);
+  }
+  const outcomes = searchResult.structuredContent.data;
+  const failed = outcomes.find((outcome) => !outcome.success);
+  if (failed) {
+    throw new Error(failed.error.message);
+  }
+  const existingCompanies = outcomes.flatMap((outcome) => outcome.result);
   const existingMap = new Map(existingCompanies.map((c) => [c.external_id, c]));
 
   const toCreate = [];

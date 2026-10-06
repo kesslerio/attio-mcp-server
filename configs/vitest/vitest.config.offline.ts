@@ -11,6 +11,11 @@ export default defineConfig({
       'test/manual/**',
       'test/e2e/**',
       'test/mcp/**', // MCP tests hit real APIs via MCPTestClient
+      // Spawns the built dist/cli.js, so it asserts against a compiled artifact.
+      // This lane has no build step, so running it here can test a stale bundle
+      // and report a green that does not describe current src. `bun run
+      // test:lifecycle` is the gate, and CI runs it directly after Build (#1288).
+      'test/lifecycle/**',
       'test/**/*.manual.*',
       'test/**/*real-api-integration*',
       'test/**/*claude-desktop-scenario*',

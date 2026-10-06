@@ -1,22 +1,24 @@
+import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
  * Task operations for Attio
  */
-import { getLazyAttioClient } from '../../api/lazy-client.js';
-import { getValidatedAttioClient } from '../../utils/client-resolver.js';
+import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
+import { getValidatedAttioClient } from '@/utils/client-resolver.js';
 import type { AxiosInstance } from 'axios';
 import {
   AttioTask,
   AttioListResponse,
   AttioSingleResponse,
-} from '../../types/attio.js';
-import { callWithRetry, RetryConfig } from './retry.js';
-import { TaskCreateData, TaskUpdateData } from '../../types/api-operations.js';
-import { debug, OperationType } from '../../utils/logger.js';
+} from '@/types/attio.js';
+import { callWithRetry, RetryConfig } from '@/api/operations/retry.js';
+import { TaskCreateData, TaskUpdateData } from '@/types/api-operations.js';
+import { debug, OperationType } from '@/utils/logger.js';
 import {
   logTaskDebug,
   sanitizePayload,
   inspectTaskRecordShape,
-} from '../../utils/task-debug.js';
+} from '@/utils/task-debug.js';
 
 /**
  * Helper function to transform Attio API task response to internal format
@@ -56,7 +58,7 @@ function extractTaskFromResponse(res: Record<string, unknown>): AttioTask {
     // Direct task object in data
     return data as unknown as AttioTask;
   } else {
-    throw new Error('Invalid API response structure: missing task data');
+    throw new ResultEncodingError();
   }
 }
 
@@ -146,12 +148,39 @@ export async function listTasks(
   if (status) params.append('status', status);
   if (assigneeId) params.append('assignee', assigneeId);
   const path = `/tasks?${params.toString()}`;
-  return callWithRetry(async () => {
-    const res = await api.get<AttioListResponse<AttioTask>>(path);
-    const tasks = res?.data?.data || [];
-    // Transform each task in the response for backward compatibility
-    return tasks.map((task) => transformTaskResponse(task));
-  }, retryConfig);
+  const res = await callWithRetry(
+    () => api.get<AttioListResponse<AttioTask>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const tasks = res?.data?.data;
+  if (
+    !Array.isArray(tasks) ||
+    tasks.some(
+      (task) => !task || typeof task !== 'object' || Array.isArray(task)
+    )
+  )
+    throw new ResultEncodingError();
+  let truncated = false;
+  if (tasks.length >= 500) {
+    const probe = await callWithRetry(
+      () =>
+        api.get<AttioListResponse<AttioTask>>(
+          `${path}&limit=1&offset=${tasks.length}`
+        ),
+      retryConfig,
+      { uncertainMutation: false }
+    );
+    if (!Array.isArray(probe?.data?.data)) throw new ResultEncodingError();
+    truncated = probe.data.data.length > 0;
+  }
+  return Object.defineProperty(
+    tasks.map((task) => transformTaskResponse(task)),
+    'truncated',
+    {
+      value: truncated,
+    }
+  );
 }
 
 export async function getTask(
@@ -160,13 +189,18 @@ export async function getTask(
 ): Promise<AttioTask> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
-  return callWithRetry(async () => {
-    const res = await api.get<AttioSingleResponse<AttioTask>>(path);
-    const task = extractTaskFromResponse(
-      res as unknown as Record<string, unknown>
-    );
-    return transformTaskResponse(task);
-  }, retryConfig);
+  const res = await callWithRetry(
+    () => api.get<AttioSingleResponse<AttioTask>>(path),
+    retryConfig,
+    { uncertainMutation: false }
+  );
+  const task = extractTaskFromResponse(
+    res as unknown as Record<string, unknown>
+  );
+  if (!task || typeof task !== 'object' || Array.isArray(task)) {
+    throw new ResultEncodingError();
+  }
+  return transformTaskResponse(task);
 }
 
 export async function createTask(
@@ -273,41 +307,41 @@ export async function createTask(
     data: dataPayload,
   };
 
-  return callWithRetry(async () => {
-    logTaskDebug(
-      'createTask',
-      'Prepared create payload',
-      sanitizePayload({ path, payload: requestPayload })
-    );
+  logTaskDebug(
+    'createTask',
+    'Prepared create payload',
+    sanitizePayload({ path, payload: requestPayload })
+  );
 
+  debug(
+    'tasks.createTask',
+    'Creating task',
+    { path, hasLinkedRecords: linkedRecords.length > 0 },
+    'createTask',
+    OperationType.API_CALL
+  );
+
+  let res;
+  try {
+    res = await callWithRetry(
+      () => api.post<AttioSingleResponse<AttioTask>>(path, requestPayload),
+      retryConfig
+    );
+  } catch (err) {
     debug(
       'tasks.createTask',
-      'Creating task',
-      { path, hasLinkedRecords: linkedRecords.length > 0 },
+      'API call failed',
+      {
+        errorMessage: err instanceof Error ? err.message : String(err),
+        isAxiosError: err && typeof err === 'object' && 'isAxiosError' in err,
+      },
       'createTask',
       OperationType.API_CALL
     );
+    throw err;
+  }
 
-    let res;
-    try {
-      res = await api.post<AttioSingleResponse<AttioTask>>(
-        path,
-        requestPayload
-      );
-    } catch (err) {
-      debug(
-        'tasks.createTask',
-        'API call failed',
-        {
-          errorMessage: err instanceof Error ? err.message : String(err),
-          isAxiosError: err && typeof err === 'object' && 'isAxiosError' in err,
-        },
-        'createTask',
-        OperationType.API_CALL
-      );
-      throw err;
-    }
-
+  return decodeMutationResult(async () => {
     // Handle response validation
     if (!res) {
       debug(
@@ -345,7 +379,7 @@ export async function createTask(
       inspectTaskRecordShape(transformed)
     );
     return transformed;
-  }, retryConfig);
+  });
 }
 
 export async function updateTask(
@@ -418,25 +452,26 @@ export async function updateTask(
 
   // Wrap in Attio envelope as per API requirements
   const requestPayload = { data };
-  return callWithRetry(async () => {
-    // Debug request for tracing
-    debug(
-      'tasks.updateTask',
-      'PATCH payload',
-      { path, payload: requestPayload },
-      'updateTask',
-      OperationType.API_CALL
-    );
-    logTaskDebug(
-      'updateTask',
-      'Prepared update payload',
-      sanitizePayload({ path, payload: requestPayload })
-    );
 
-    const res = await api.patch<AttioSingleResponse<AttioTask>>(
-      path,
-      requestPayload
-    );
+  // Debug request for tracing
+  debug(
+    'tasks.updateTask',
+    'PATCH payload',
+    { path, payload: requestPayload },
+    'updateTask',
+    OperationType.API_CALL
+  );
+  logTaskDebug(
+    'updateTask',
+    'Prepared update payload',
+    sanitizePayload({ path, payload: requestPayload })
+  );
+
+  const res = await callWithRetry(
+    () => api.patch<AttioSingleResponse<AttioTask>>(path, requestPayload),
+    retryConfig
+  );
+  return decodeMutationResult(async () => {
     const task = extractTaskFromResponse(
       res as unknown as Record<string, unknown>
     );
@@ -459,7 +494,7 @@ export async function updateTask(
     );
 
     return transformed;
-  }, retryConfig);
+  });
 }
 
 export async function deleteTask(
@@ -468,10 +503,9 @@ export async function deleteTask(
 ): Promise<boolean> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}`;
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }
 
 export async function linkRecordToTask(
@@ -481,10 +515,11 @@ export async function linkRecordToTask(
 ): Promise<boolean> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}/linked-records`;
-  return callWithRetry(async () => {
-    await api.post(path, { record_id: recordId });
-    return true;
-  }, retryConfig);
+  await callWithRetry(
+    () => api.post(path, { record_id: recordId }),
+    retryConfig
+  );
+  return true;
 }
 
 export async function unlinkRecordFromTask(
@@ -494,10 +529,8 @@ export async function unlinkRecordFromTask(
 ): Promise<boolean> {
   const api = resolveAttioClient();
   const path = `/tasks/${taskId}/linked-records/${recordId}`;
-  return callWithRetry(async () => {
-    await api.delete(path);
-    return true;
-  }, retryConfig);
+  await callWithRetry(() => api.delete(path), retryConfig);
+  return true;
 }
 
 /**
@@ -514,7 +547,8 @@ function resolveAttioClient(): AxiosInstance {
       return getLazyAttioClient();
     } catch {
       throw new Error(
-        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`
+        `Could not initialize Attio client: ${error instanceof Error ? error.message : String(error)}`,
+        { cause: error }
       );
     }
   }

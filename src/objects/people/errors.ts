@@ -9,12 +9,14 @@ export class PersonOperationError extends Error {
   constructor(
     public operation: string,
     public personId?: string,
-    message?: string
+    message?: string,
+    options?: ErrorOptions
   ) {
     super(
       `Person ${operation} failed${
         personId ? ` for ${personId}` : ''
-      }: ${message}`
+      }: ${message}`,
+      options
     );
     this.name = 'PersonOperationError';
   }

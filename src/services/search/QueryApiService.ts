@@ -3,27 +3,25 @@
  *
  * Issue #935: Extracted from UniversalSearchService.ts to reduce file size
  * Handles relationship, timeframe, and content searches using the Query API
+ *
+ * U5 (KTD6): every query path returns the page plus reliable continuation
+ * evidence. The API is offset-backed, so a lookahead fetch proves more results
+ * exist; a full page alone never does. Native `meta.next_cursor` values, when
+ * the upstream supplies them, are preserved for the result-cursor module to
+ * seal — they are never exposed raw to clients.
  */
 
 import type { UniversalRecord } from '@/types/attio.js';
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
-import { debug, createScopedLogger, OperationType } from '@/utils/logger.js';
-import {
-  AuthenticationError,
-  AuthorizationError,
-  NetworkError,
-  RateLimitError,
-  ServerError,
-  ResourceNotFoundError,
-  createApiErrorFromAxiosError,
-} from '@/errors/api-errors.js';
+import { createApiErrorFromAxiosError } from '@/errors/api-errors.js';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 import {
   createRelationshipQuery,
   createTimeframeQuery,
   createContentSearchQuery,
 } from '@/utils/filters/index.js';
 import { RelationshipQuery, TimeframeQuery } from '@/utils/filters/types.js';
-import type { AxiosInstance } from 'axios';
+import type { AxiosInstance, AxiosResponse } from 'axios';
 import { getLazyAttioClient } from '@/api/lazy-client.js';
 
 /**
@@ -31,74 +29,6 @@ import { getLazyAttioClient } from '@/api/lazy-client.js';
  */
 function resolveQueryApiClient(): AxiosInstance {
   return getLazyAttioClient();
-}
-
-/**
- * Handle Query API errors consistently across methods
- * Issue #935: Extracted to reduce code duplication
- */
-function handleQueryApiError(
-  error: unknown,
-  path: string,
-  context: {
-    resourceType: string;
-    operation: string;
-    metadata?: Record<string, unknown>;
-  }
-): UniversalRecord[] {
-  const apiError = createApiErrorFromAxiosError(error, path, 'POST');
-
-  // Re-throw critical errors that should bubble up
-  if (
-    apiError instanceof AuthenticationError ||
-    apiError instanceof AuthorizationError ||
-    apiError instanceof NetworkError ||
-    apiError instanceof RateLimitError ||
-    apiError instanceof ServerError
-  ) {
-    throw apiError;
-  }
-
-  // Handle not found gracefully - return empty results
-  if (apiError instanceof ResourceNotFoundError) {
-    debug(
-      'QueryApiService',
-      `No results for ${context.operation}`,
-      context.metadata
-    );
-    return [];
-  }
-
-  // Log and return empty for other errors
-  createScopedLogger(
-    'QueryApiService',
-    context.operation,
-    OperationType.API_CALL
-  ).error(`${context.operation} failed for ${context.resourceType}`, error);
-  return [];
-}
-
-function getAxiosErrorDetails(error: unknown): {
-  status?: number;
-  message?: string;
-  code?: string;
-} {
-  const errorObject = error as {
-    response?: {
-      status?: number;
-      data?: {
-        message?: string;
-        code?: string;
-      };
-    };
-    message?: string;
-  };
-
-  return {
-    status: errorObject.response?.status,
-    message: errorObject.response?.data?.message ?? errorObject.message,
-    code: errorObject.response?.data?.code,
-  };
 }
 
 function assertSupportedTimeframeQuery(
@@ -119,6 +49,25 @@ function assertSupportedTimeframeQuery(
   }
 }
 
+/** A queried page plus the evidence that decides whether more exist. */
+export interface QueryPage<T> {
+  data: T[];
+  /** Reliable continuation evidence: a native upstream cursor when present. */
+  upstreamCursor: string | null;
+}
+
+function extractPage<T>(response: AxiosResponse | undefined): QueryPage<T> {
+  // Upstream continuation evidence only. A present next_cursor proves more
+  // results; its absence means we must use lookahead instead of guessing.
+  const meta = response?.data?.meta as { next_cursor?: unknown } | undefined;
+  const upstreamCursor =
+    typeof meta?.next_cursor === 'string' && meta.next_cursor.length > 0
+      ? meta.next_cursor
+      : null;
+  if (!Array.isArray(response?.data?.data)) throw new ResultEncodingError();
+  return { data: response.data.data as T[], upstreamCursor };
+}
+
 /**
  * Query API Service for advanced search operations
  */
@@ -131,8 +80,9 @@ export class QueryApiService {
     targetResourceType: UniversalResourceType,
     targetRecordId: string,
     limit?: number,
-    offset?: number
-  ): Promise<UniversalRecord[]> {
+    offset?: number,
+    cursor?: string
+  ): Promise<QueryPage<UniversalRecord>> {
     const relationshipQuery: RelationshipQuery = {
       sourceObjectType: sourceResourceType,
       targetObjectType: targetResourceType,
@@ -149,17 +99,13 @@ export class QueryApiService {
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
-        offset: offset || 0,
+        ...(cursor ? { cursor } : { offset: offset || 0 }),
       };
 
       const response = await client.post(path, requestBody);
-      return response?.data?.data || [];
+      return extractPage<UniversalRecord>(response);
     } catch (error: unknown) {
-      return handleQueryApiError(error, path, {
-        resourceType: sourceResourceType,
-        operation: 'searchByRelationship',
-        metadata: { targetResourceType, targetRecordId },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 
@@ -170,8 +116,9 @@ export class QueryApiService {
     resourceType: UniversalResourceType,
     timeframeConfig: TimeframeQuery,
     limit?: number,
-    offset?: number
-  ): Promise<UniversalRecord[]> {
+    offset?: number,
+    cursor?: string
+  ): Promise<QueryPage<UniversalRecord>> {
     assertSupportedTimeframeQuery(resourceType, timeframeConfig);
 
     const queryApiFilter = createTimeframeQuery(timeframeConfig);
@@ -182,27 +129,13 @@ export class QueryApiService {
       const requestBody = {
         ...queryApiFilter,
         limit: limit || 10,
-        offset: offset || 0,
+        ...(cursor ? { cursor } : { offset: offset || 0 }),
       };
 
       const response = await client.post(path, requestBody);
-      return response?.data?.data || [];
+      return extractPage<UniversalRecord>(response);
     } catch (error: unknown) {
-      const { status, message } = getAxiosErrorDetails(error);
-
-      if (status === 400) {
-        throw new Error(
-          `Timeframe query rejected by Attio for ${resourceType}: ${
-            message || 'invalid timeframe filter'
-          }`
-        );
-      }
-
-      return handleQueryApiError(error, path, {
-        resourceType,
-        operation: 'searchByTimeframe',
-        metadata: { timeframeConfig },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 
@@ -216,7 +149,7 @@ export class QueryApiService {
     useOrLogic: boolean = true,
     limit?: number,
     offset?: number
-  ): Promise<UniversalRecord[]> {
+  ): Promise<QueryPage<UniversalRecord>> {
     let fields = searchFields;
     if (fields.length === 0) {
       switch (resourceType) {
@@ -244,13 +177,9 @@ export class QueryApiService {
       };
 
       const response = await client.post(path, requestBody);
-      return response?.data?.data || [];
+      return extractPage<UniversalRecord>(response);
     } catch (error: unknown) {
-      return handleQueryApiError(error, path, {
-        resourceType,
-        operation: 'searchByContent',
-        metadata: { query, fields },
-      });
+      throw createApiErrorFromAxiosError(error, path, 'POST');
     }
   }
 }

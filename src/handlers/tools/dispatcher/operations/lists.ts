@@ -5,10 +5,13 @@
  */
 
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '@utils/error-handler.js';
-import { ToolConfig, GetListsToolConfig } from '@handlers/tool-types.js';
-import { formatResponse } from '@handlers/tools/formatters.js';
-import { hasResponseData } from '@handlers/tools/error-types.js';
+import { createErrorResult } from '@/utils/error-handler.js';
+import { ToolConfig, GetListsToolConfig } from '@/handlers/tool-types.js';
+import {
+  buildStructuredToolResult,
+  ResultEncodingError,
+} from '@/handlers/tools/result-contract.js';
+import { hasResponseData } from '@/handlers/tools/error-types.js';
 import {
   filterListEntries,
   advancedFilterListEntries,
@@ -20,7 +23,7 @@ import {
   removeRecordFromList,
   updateListEntry,
 } from '@/objects/lists/entries.js';
-import { ListEntryFilters } from '@api/operations/index.js';
+import { ListEntryFilters } from '@/api/operations/index.js';
 import { warn, OperationType } from '@/utils/logger.js';
 import { ListConfigurationValidator } from '@/services/lists/ListConfigurationValidator.js';
 import { createList, updateList } from '@/objects/lists/base.js';
@@ -33,6 +36,15 @@ import {
 const DEPRECATION_VERSION = 'v2.0.0';
 const MIGRATION_GUIDE_PATH = '/docs/migration/v2-list-tools.md';
 
+function listToolResult(
+  toolConfig: ToolConfig,
+  request: CallToolRequest,
+  rawResult: unknown
+) {
+  const args = (request.params.arguments ?? {}) as Record<string, unknown>;
+  return buildStructuredToolResult(toolConfig, rawResult, args);
+}
+
 /**
  * Shared error handler for list configuration tool catch blocks.
  * Preserves 4xx status for validation errors and categorizes for actionable guidance.
@@ -42,6 +54,7 @@ function handleListToolError(
   path: string,
   method: string
 ): ReturnType<typeof createErrorResult> {
+  if (error instanceof ResultEncodingError) throw error;
   const categorized = ListConfigurationValidator.categorizeError(error);
   const errorMessage = categorized
     ? `${categorized.message} (Next step: ${categorized.suggested_next_step}) [category: ${categorized.category}]`
@@ -63,7 +76,12 @@ function handleListToolError(
     responseData.error_category = categorized.category;
   }
 
-  return createErrorResult(new Error(errorMessage), path, method, responseData);
+  return createErrorResult(
+    new Error(errorMessage, { cause: error }),
+    path,
+    method,
+    responseData
+  );
 }
 
 /**
@@ -89,13 +107,14 @@ export async function handleGetListsOperation(
   );
 
   try {
-    const lists = await toolConfig.handler();
-    const formattedResult = toolConfig.formatResult!(lists);
-
-    return formatResponse(formattedResult);
+    const args = (request.params?.arguments ?? {}) as Record<string, unknown>;
+    const lists = await toolConfig.handler(args.cursor);
+    return listToolResult(toolConfig, request, lists);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       '/lists',
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -166,14 +185,12 @@ export async function handleAddRecordToListOperation(
       objectType,
       initialValues
     );
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : `Successfully added record ${recordId} to list ${listId}`;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/records`,
       'POST',
       hasResponseData(error) ? error.response.data : {}
@@ -226,14 +243,12 @@ export async function handleRemoveRecordFromListOperation(
 
   try {
     const result = await toolConfig.handler(listId, entryId);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : `Successfully removed entry ${entryId} from list ${listId}`;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries/${entryId}`,
       'DELETE',
       hasResponseData(error) ? error.response.data : {}
@@ -296,14 +311,12 @@ export async function handleUpdateListEntryOperation(
 
   try {
     const result = await toolConfig.handler(listId, entryId, attributes);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries/${entryId}`,
       'PUT',
       hasResponseData(error) ? error.response.data : {}
@@ -348,21 +361,21 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   if (modesDetected === 0) {
     // Provide more helpful error messages for common edge cases
     if (hasRecordId && !hasObjectType) {
-      throw new Error(
+      throw new UniversalValidationError(
         'Mode 1 (Add) requires both recordId AND objectType.\n' +
           'You provided recordId but missing objectType (must be "companies" or "people").\n' +
           'Example: { listId: "...", recordId: "...", objectType: "companies" }'
       );
     }
     if (hasObjectType && !hasRecordId) {
-      throw new Error(
+      throw new UniversalValidationError(
         'Mode 1 (Add) requires both recordId AND objectType.\n' +
           'You provided objectType but missing recordId.\n' +
           'Example: { listId: "...", recordId: "...", objectType: "companies" }'
       );
     }
 
-    throw new Error(
+    throw new UniversalValidationError(
       'No management mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Add): recordId, objectType, [initialValues]\n' +
         '  - Mode 2 (Remove): entryId (only)\n' +
@@ -372,7 +385,7 @@ function detectManagementMode(params: Record<string, unknown>): ManagementMode {
   }
 
   if (modesDetected > 1) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Multiple management modes detected. Provide parameters for exactly ONE mode.\n' +
         'See tool description for details on parameter requirements for each mode.'
     );
@@ -516,21 +529,12 @@ export async function handleManageListEntryOperation(
       }
     }
 
-    // Format result based on mode
-    // Add and Update return AttioListEntry, Remove returns boolean
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : mode === 'remove'
-        ? JSON.stringify({
-            success: true,
-            message: `Entry removed from list ${listId}`,
-          })
-        : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       httpMethod,
       hasResponseData(error) ? error.response.data : {}
@@ -633,15 +637,12 @@ export async function handleFilterListEntriesByParentOperation(
       offset
     );
 
-    // Format the result using the configured formatter
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -702,15 +703,12 @@ export async function handleFilterListEntriesByParentIdOperation(
     // Call the handler function with all parameters
     const result = await toolConfig.handler(listId, recordId, limit, offset);
 
-    // Format the result using the configured formatter
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -753,14 +751,12 @@ export async function handleGetListDetailsOperation(
 
   try {
     const result = await toolConfig.handler(listId);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -778,6 +774,7 @@ export async function handleGetListEntriesOperation(
   const listId = request.params.arguments?.listId as string;
   const limit = request.params.arguments?.limit as number;
   const offset = request.params.arguments?.offset as number;
+  const cursor = request.params.arguments?.cursor as string | undefined;
   const filters = request.params.arguments?.filters;
 
   if (!listId) {
@@ -790,15 +787,19 @@ export async function handleGetListEntriesOperation(
   }
 
   try {
-    const result = await toolConfig.handler(listId, limit, offset, filters);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    const result = await toolConfig.handler(
+      listId,
+      limit,
+      offset,
+      filters,
+      cursor
+    );
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -848,7 +849,7 @@ function detectFilterMode(params: Record<string, unknown>): FilterMode {
   ].filter(Boolean).length;
 
   if (modesDetected === 0) {
-    throw new Error(
+    throw new UniversalValidationError(
       'No filter mode detected. Must provide parameters for one of:\n' +
         '  - Mode 1 (Simple): attributeSlug, condition, value\n' +
         '  - Mode 2 (Advanced): filters (object with filters array)\n' +
@@ -859,7 +860,7 @@ function detectFilterMode(params: Record<string, unknown>): FilterMode {
   }
 
   if (modesDetected > 1) {
-    throw new Error(
+    throw new UniversalValidationError(
       'Multiple filter modes detected. Provide parameters for exactly ONE mode.\n' +
         'See tool description for details on parameter requirements for each mode.'
     );
@@ -1091,15 +1092,12 @@ export async function handleFilterListEntriesOperation(
       }
     }
 
-    // Format result using tool config formatter
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1154,14 +1152,12 @@ export async function handleAdvancedFilterListEntriesOperation(
 
   try {
     const result = await toolConfig.handler(listId, filters, limit, offset);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       `/lists/${listId}/entries`,
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1201,14 +1197,12 @@ export async function handleGetRecordListMembershipsOperation(
       includeEntryValues,
       batchSize
     );
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(result)
-      : result;
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, result);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
+      error,
       '/lists/memberships',
       'GET',
       hasResponseData(error) ? error.response.data : {}
@@ -1345,21 +1339,16 @@ export async function handleCreateListOperation(
         } as import('@/types/attio.js').AttioList,
         true
       );
-      const formattedResult = toolConfig.formatResult
-        ? toolConfig.formatResult(preview)
-        : JSON.stringify(preview);
-      return formatResponse(formattedResult);
+      return listToolResult(toolConfig, request, preview);
     }
 
     // Create the list via the API
     const result = await createList(listAttributes);
     const normalized = ListConfigurationValidator.normalizeResponse(result);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(normalized)
-      : JSON.stringify(normalized);
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, normalized);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return handleListToolError(error, '/lists', 'POST');
   }
 }
@@ -1456,21 +1445,16 @@ export async function handleUpdateListConfigurationOperation(
         } as import('@/types/attio.js').AttioList,
         true
       );
-      const formattedResult = toolConfig.formatResult
-        ? toolConfig.formatResult(preview)
-        : JSON.stringify(preview);
-      return formatResponse(formattedResult);
+      return listToolResult(toolConfig, request, preview);
     }
 
     // Update the list via the API
     const result = await updateList(listId, mergedAttributes);
     const normalized = ListConfigurationValidator.normalizeResponse(result);
-    const formattedResult = toolConfig.formatResult
-      ? toolConfig.formatResult(normalized)
-      : JSON.stringify(normalized);
-
-    return formatResponse(formattedResult);
+    return listToolResult(toolConfig, request, normalized);
   } catch (error: unknown) {
+    // Encoding failures belong to the shared boundary, not to local prose.
+    if (error instanceof ResultEncodingError) throw error;
     return handleListToolError(error, `/lists/${listId}`, 'PATCH');
   }
 }

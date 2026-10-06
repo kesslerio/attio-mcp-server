@@ -1,21 +1,24 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
 // Import shared helpers
-import { setupUnitTestMocks, cleanupMocks } from './helpers/index.js';
+import {
+  setupUnitTestMocks,
+  cleanupMocks,
+} from '@test/handlers/tool-configs/universal/helpers/index.js';
 
 // Import tool configurations
 import {
   searchRecordsConfig,
   getRecordDetailsConfig,
-} from '../../../../src/handlers/tool-configs/universal/core/index.js';
+} from '@/handlers/tool-configs/universal/core/index.js';
 
 // Import types
 import {
   UniversalResourceType,
   UniversalSearchParams,
   UniversalRecordDetailsParams,
-} from '../../../../src/handlers/tool-configs/universal/types.js';
-import { resolveToolName } from '../../../../src/config/tool-aliases.js';
+} from '@/handlers/tool-configs/universal/types.js';
+import { resolveToolName } from '@/config/tool-aliases.js';
 
 describe('Universal Core Operations Search Tests', () => {
   beforeEach(async () => {
@@ -38,8 +41,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const { handleUniversalSearch } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+      const { handleUniversalSearch, handleUniversalSearchPage } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue(mockResults);
 
       const params: UniversalSearchParams = {
@@ -48,8 +51,14 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const result = await searchRecordsConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
+      // U5: the handler pages through the continuation seam and returns the
+      // envelope with the raw page under `data`.
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
+      expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledWith(params);
     });
 
     it('should search people successfully', async () => {
@@ -63,8 +72,8 @@ describe('Universal Core Operations Search Tests', () => {
         },
       ];
 
-      const { handleUniversalSearch } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+      const { handleUniversalSearch, handleUniversalSearchPage } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockResolvedValue(mockResults);
 
       const params: UniversalSearchParams = {
@@ -74,14 +83,18 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const result = await searchRecordsConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
+      expect(result).toEqual({
+        data: mockResults,
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
+      expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledWith(params);
     });
 
     it('should handle search errors properly', async () => {
       const mockError = new Error('API error');
       const { handleUniversalSearch } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalSearch).mockRejectedValue(mockError);
 
       const params: UniversalSearchParams = {
@@ -89,57 +102,10 @@ describe('Universal Core Operations Search Tests', () => {
         query: 'test',
       };
 
-      await expect(searchRecordsConfig.handler(params)).rejects.toSatisfy(
-        (error: unknown) => {
-          if (!error) return false;
-
-          if (
-            typeof error === 'object' &&
-            'name' in error &&
-            (error as { name?: unknown }).name === 'search_error'
-          ) {
-            const typed = error as {
-              message?: string;
-              details?: {
-                context?: {
-                  operation?: string;
-                  resourceType?: string;
-                  recordData?: Record<string, unknown>;
-                };
-              };
-            };
-
-            return (
-              typed.message === 'Failed to search companies: API error' &&
-              typed.details?.context?.operation === 'search' &&
-              typed.details?.context?.resourceType === 'companies' &&
-              typed.details?.context?.recordData?.resource_type ===
-                'companies' &&
-              typed.details?.context?.recordData?.query === 'test'
-            );
-          }
-
-          if (
-            typeof error === 'object' &&
-            'status' in error &&
-            'body' in error
-          ) {
-            const typed = error as {
-              status?: number;
-              body?: { message?: string; type?: string };
-            };
-
-            return (
-              typeof typed.status === 'number' &&
-              typed.body?.message ===
-                'Universal search failed for resource type companies: API error' &&
-              typed.body?.type === 'validation_error'
-            );
-          }
-
-          return false;
-        }
-      );
+      await expect(searchRecordsConfig.handler(params)).rejects.toMatchObject({
+        message:
+          'Universal search failed for resource type companies: API error',
+      });
     });
 
     it('should format search results correctly', () => {
@@ -206,7 +172,7 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const { handleUniversalGetDetails } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord as any);
 
       const params: UniversalRecordDetailsParams = {
@@ -230,7 +196,7 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const { handleUniversalGetDetails } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       // Cast to any to align with AttioRecord typing used by handler
       vi.mocked(handleUniversalGetDetails).mockResolvedValue(mockRecord as any);
 
@@ -255,7 +221,7 @@ describe('Universal Core Operations Search Tests', () => {
       };
 
       const { getSingularResourceType } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
       vi.mocked(getSingularResourceType).mockReturnValue('company');
 
       const formatted = (getRecordDetailsConfig.formatResult as any)(
@@ -289,9 +255,13 @@ describe('Universal Core Operations Search Tests', () => {
 
   describe('Cross-resource type validation', () => {
     it('should handle all resource types for search', async () => {
-      const { handleUniversalSearch } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
-      vi.mocked(handleUniversalSearch).mockResolvedValue([]);
+      const { handleUniversalSearchPage } =
+        await import('@/handlers/tool-configs/universal/shared-handlers.js');
+      vi.mocked(handleUniversalSearchPage).mockResolvedValue({
+        data: [],
+        next_cursor: null,
+        pagination: { supported: true, truncated: false },
+      });
 
       const resourceTypes = [
         UniversalResourceType.COMPANIES,
@@ -309,10 +279,12 @@ describe('Universal Core Operations Search Tests', () => {
         };
 
         await searchRecordsConfig.handler(params);
-        expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledWith(params);
+        expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledWith(
+          params
+        );
       }
 
-      expect(vi.mocked(handleUniversalSearch)).toHaveBeenCalledTimes(6);
+      expect(vi.mocked(handleUniversalSearchPage)).toHaveBeenCalledTimes(6);
     });
 
     it('should handle all resource types for CRUD operations', async () => {
@@ -321,8 +293,7 @@ describe('Universal Core Operations Search Tests', () => {
         handleUniversalCreate,
         handleUniversalUpdate,
         handleUniversalDelete,
-      } =
-        await import('../../../../src/handlers/tool-configs/universal/shared-handlers.js');
+      } = await import('@/handlers/tool-configs/universal/shared-handlers.js');
 
       vi.mocked(handleUniversalGetDetails).mockResolvedValue({} as any);
       vi.mocked(handleUniversalCreate).mockResolvedValue({} as any);

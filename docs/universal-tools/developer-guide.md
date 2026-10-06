@@ -61,6 +61,181 @@ export const toolConfig: UniversalToolConfig = {
 };
 ```
 
+### Structured results (v2 boundary A)
+
+`search_records` and `get_record_details` publish `outputSchema` through
+`tools/list`. Their `tools/call` results include `structuredContent` with a stable
+envelope. For both success and execution failure, `content[0].text` serializes
+the final sanitized structured envelope for MCP clients that consume JSON text.
+Optional human-readable prose follows in `content[1]`. With
+`MCP_TEXT_RESULTS=false`, only the envelope JSON remains:
+
+```typescript
+// search_records
+{ data: records, count: records.length, next_cursor, pagination }
+// get_record_details (including task, list, and custom-object details)
+{ data: record }
+// execution failures
+{ error: { code: 'PERMISSION_DENIED', message: '...', retryable: false } }
+```
+
+For example, read a record identifier from
+`result.structuredContent.data.id.record_id`, or from
+`JSON.parse(result.content[0].text).data.id.record_id`. Details JSON text retains
+the `data` wrapper; search JSON text includes `data`, `count`, and `next_cursor`.
+For a failed call, read `JSON.parse(result.content[0].text).error`; it contains
+the same sanitized `code`, `message`, and `retryable` as `structuredContent.error`.
+There is no third JSON block. Search counts describe the
+returned array. `next_cursor` carries an opaque sealed continuation token on
+supported families (U5) or null; see
+[Collection Continuation](api-reference.md#collection-continuation-u5) for the
+token contract. On bounded families the `pagination` disclosure states whether
+the tool withheld capped results, and null there never guarantees an unbounded
+search was complete.
+
+The config owns its adapter and paired runtime/discovery schemas. The shared
+result boundary validates JSON-compatible adapter data, sanitizes it, then
+validates the final envelope before reporting success. Missing identifiers,
+unsupported values, sanitizer fallbacks, and changed domain data produce
+`RESULT_ENCODING_FAILED`, with `isError: true` and `retryable: false`. A prose
+formatter failure leaves completed machine data successful.
+
+Execution errors use the stable codes defined by
+[`executionErrorCodes`](../../src/handlers/tools/result-schemas.ts);
+`INVALID_CURSOR` is reserved for continuation. Messages retain sanitized guidance
+and correlation references.
+Read rate limits and upstream outages may be retryable; uncertain write outcomes
+are non-retryable and require readback before another write. The execution
+`retryable` field does not trigger a server retry; see
+[API call retry logic](../api/error-handling.md#api-call-retry-logic) for automatic
+retry and mutation fallback rules. Unknown tools and
+malformed MCP requests remain protocol errors rather than execution results.
+
+See [U1 delivery scope](u1-delivery-notes.md) for historical verification evidence.
+
+### Structured core writes and notes (v2 boundary B)
+
+`create_record`, `update_record`, `delete_record`, `upsert_record`,
+`create_company`, `update_company`, `create_deal`, `update_deal`, `merge_records`,
+`create_note`, and `list_notes` also advertise output schemas and use the shared
+validated result boundary, including the JSON-text ordering and prose opt-out
+described above.
+
+Create/update and create-note results preserve their existing JSON projections:
+record identifiers are in `structuredContent.id` (including `task_id`, `list_id`,
+and `note_id`). Delete results contain `{ success: true, record_id }`.
+Upsert preserves `action`, optional `planned_action`, `record_id` (required except
+for dry runs), `matched_on`, `changed_fields`, and optional `concurrent_duplicates`.
+Merge preserves its dry-run plan/fingerprint, or its `complete`/`wait` mode,
+status, `new_record_id`, and original IDs. Notes lists use the [collection envelope](api-reference.md#collection-continuation-u5).
+
+See [API call retry logic](../api/error-handling.md#api-call-retry-logic) for
+post-write decoding and uncertain-mutation recovery. Merge confirmation, plan
+freshness, upsert dry-run, and scoped resource controls remain enforced by their
+handlers.
+
+### Structured universal reads and batches (v2 boundary C)
+
+The remaining universal search, metadata, detailed-info, interaction, and batch
+families also advertise output schemas and use the shared validated result
+boundary, including the JSON-text ordering, prose opt-out, and execution errors
+described above. Exact runtime and discovery schemas are derived together from
+[`result-schemas.ts`](../../src/handlers/tools/result-schemas.ts); the read and
+batch projections are owned by
+[`read-result-adapters.ts`](../../src/handlers/tool-configs/universal/read-result-adapters.ts)
+and each tool's `structuredOutput` adapter.
+
+Advanced, relationship, content, and timeframe searches use the same collection
+envelope as `search_records`. Metadata arrays include a response count; grouped
+metadata and record attribute maps retain their native structure inside `data`.
+Only discovery removes its service-generated string usage guidance; record
+attribute maps and note bodies remain domain data. Attribute options retain
+their IDs and titles inside `data`, with a response count and `attribute_type`
+(`select` or `status`). Detailed info wraps the native record in `data`.
+Interactions wrap record identity/name and interaction aggregates in `data`,
+preserving dates and owner metadata. Metadata and options also include `pagination` disclosures as defined by the
+[collection contract](api-reference.md#collection-continuation-u5). Metadata,
+options, interaction, and batch envelopes have no continuation cursor.
+
+`batch_records` and `batch_search_records` return per-input outcomes in `data`,
+with a response count and a summary of total, successful, and failed items.
+Outcomes retain input order and a zero-based `index`, including duplicate search
+queries, plus `query` or `record_id` where supplied. Successful items carry
+`result`; failed items carry the shared sanitized error fields. A completed batch
+has `isError: false`, even if every item failed; a whole-call failure uses only
+the shared error envelope and has `isError: true`. Legacy batch search now
+retains query outcomes instead of flattening records and dropping failures.
+Batch search is read-only; `batch_records` remains write-capable and requires
+existing host controls. Batch writes are never replayed after result encoding or
+companion formatting fails; uncertain completion requires readback before retry.
+
+Connector and list/member/diagnostic families are covered by the next boundary;
+see below. Deprecated resource-specific configurations enabled by
+`DISABLE_UNIVERSAL_TOOLS=true` may retain successful text contracts without
+output schemas; their boundary-owned failures use the shared structured error
+envelope and prose opt-out above.
+
+Verify deterministic contracts with
+`bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/handlers/tools/universal-output-schemas.test.ts test/api/universal-batch-results.test.ts test/api/retry-safety.test.ts`.
+After `bun run build`, run
+`bun run test:mcp test/e2e/mcp/core-operations/structured-results.mcp.test.ts`
+for real stdio discovery/error serialization. Its read-only Attio composition
+case requires `ATTIO_API_KEY` or `ATTIO_ACCESS_TOKEN` and a readable company.
+The test uses the installed SDK directly because `mcp-test-client@1.0.1` strips
+`structuredContent` and `isError` and does not close its stdio transport.
+
+### Structured surface coverage (v2 boundary D)
+
+Every tool in the default catalogue now advertises an output schema and publishes
+its results through the shared validated boundary. Coverage checks every tool
+discovered from the registry and verifies the program's inventory ledger in
+`test/handlers/tools/catalog-output-coverage.test.ts`.
+
+List tools keep their native identifier nesting. List collections and list
+details use `{ data: lists, count, next_cursor: null }` and `{ data: list }`,
+with `id.list_id` retained; entry queries and entry writes use the entry
+collection/entry envelopes, retaining `id.entry_id`. Entry writes fill `list_id`
+from the request when the Attio response omits it. Removals report
+`{ success: true, list_id, entry_id }` rather than a bare `true`, matching the
+record delete shape, so a caller can verify which entry the outcome describes.
+`manage-list-entry` publishes either the written entry or the removal outcome,
+depending on the detected mode. `create-list` and `update-list-configuration`
+publish the normalized flat projection in `data` (`list_id`, `name`,
+`parent_object`, `fields_summary`, and `dry_run` for previews). Membership
+outcomes keep their camelCase domain shape (`listId`, `listName`, `entryId`,
+optional `entryValues`) inside a collection envelope.
+
+Workspace member tools publish `{ data: members, count, next_cursor: null }` and
+`{ data: member }`, preserving `id.workspace_member_id` and allowing a null
+`avatar_url`. A member lookup that returns nothing is now a `NOT_FOUND` execution
+failure instead of a not-found success string.
+
+`aaa-health-check` and `smithery_debug_config` return their payload in `data`
+instead of hand-building an MCP text block, so both stay schema-valid with no
+Attio credentials configured and still expose no credential material.
+
+Connector `search` and `fetch` are the one documented exception to
+native-fallback equality (KTD4). Their `content[0]` keeps the JSON document
+ChatGPT already parses — `{ "results": [...] }` for `search`, the record document
+for `fetch` — while `structuredContent` carries the shared envelope
+(`{ data, count, next_cursor }` and `{ data }`). The projection is derived from
+the validated envelope, never re-parsed from formatted prose, and connector
+successes carry no prose companion under either `MCP_TEXT_RESULTS` setting because
+the text channel already holds the payload. Failures use the shared error envelope
+in both `structuredContent` and `content[0].text`, with `isError: true`; error
+codes depend on the failure as described in boundary A above.
+
+List and connector adapters omit absent optional fields rather than publishing
+them as null. Exact runtime and discovery schemas are generated together from
+[`result-schemas.ts`](../../src/handlers/tools/result-schemas.ts); use MCP
+`tools/list` for the current catalogue and each tool's advertised `outputSchema`.
+
+`next_cursor` stays `null` for every collection in this boundary unless U5
+continuation is supported for that family; bounded families disclose their cap
+and truncation state through the `pagination` metadata (see
+[Collection Continuation](api-reference.md#collection-continuation-u5)), and
+`null` alone never claims a bounded result set was complete.
+
 ### formatResult Architecture Update (PR #483)
 
 **CRITICAL CHANGE**: All formatResult functions now use consistent `: string` return types:
@@ -785,46 +960,8 @@ export class ResourceNotFoundError extends UniversalToolError {
 
 ### Error Recovery Strategies
 
-```typescript
-// src/handlers/tool-configs/universal/error-recovery.ts
-export async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries: number = 3,
-  backoffMs: number = 1000
-): Promise<T> {
-  let lastError: Error;
-
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-
-      if (attempt === maxRetries) break;
-
-      // Exponential backoff
-      const delay = backoffMs * Math.pow(2, attempt - 1);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-
-  throw lastError!;
-}
-
-// Usage
-export async function handleUniversalCreate(
-  params: UniversalCreateParams
-): Promise<AttioRecord> {
-  return await withRetry(
-    async () => {
-      // Actual creation logic
-      return await createRecord(params);
-    },
-    3,
-    500
-  );
-}
-```
+Use the shared [API call retry logic](../api/error-handling.md#api-call-retry-logic)
+instead of wrapping mutation handlers in a generic retry loop.
 
 ## Contribution Guidelines
 

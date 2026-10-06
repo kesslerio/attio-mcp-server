@@ -1,6 +1,7 @@
 import {
   resourceTypeProperty,
   paginationProperties,
+  cursorProperty,
 } from './common/properties.js';
 
 export const searchRecordsSchema = {
@@ -122,6 +123,7 @@ export const searchRecordsSchema = {
         'Which date field to filter on. Attio supports created_at and last_interaction for people and companies. updated_at/modifed-style filtering is not supported live on those objects.',
     },
     ...paginationProperties,
+    cursor: cursorProperty,
   },
   required: ['resource_type' as const],
   additionalProperties: false,

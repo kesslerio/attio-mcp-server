@@ -2,6 +2,8 @@
  * Attribute type detection and management for Attio attributes
  */
 import { getLazyAttioClient } from '@/api/lazy-client.js';
+import { getContextApiKey } from '@/api/client-context.js';
+import { createHash } from 'node:crypto';
 import {
   validateLocationValue,
   validatePersonalNameValue,
@@ -57,6 +59,29 @@ export interface AttioAttributeMetadata {
 }
 
 /**
+ * Credential-scoped cache key prefix (U5 request isolation).
+ *
+ * Attribute metadata is workspace data in multi-tenant deployments: caching it
+ * under the object slug alone could serve one tenant another tenant's fields.
+ * Keys therefore carry a fingerprint of the effective credential, resolved
+ * through the same precedence as the Attio client; the raw credential is never
+ * stored or logged. The full scope resolver is imported lazily inside the
+ * function because client-resolver pulls the Attio client module graph, and an
+ * eager edge here would re-order that graph at import time.
+ */
+async function credentialCacheScope(): Promise<string> {
+  const { resolveCredentialScope } = await import('@/utils/client-resolver.js');
+  const resolved = getContextApiKey() || resolveCredentialScope();
+  return (
+    createHash('sha256')
+      // codeql[js/insufficient-password-hash] CWE-916 / alert 141: API-key scope fingerprint for cache isolation, not password storage; raw credentials are never cached or logged.
+      .update(resolved ?? '<no-credential>')
+      .digest('hex')
+      .slice(0, 16)
+  );
+}
+
+/**
  * Workspace-level cache for attribute metadata with TTL
  * Reduces API calls while preventing stale data (15-minute expiration)
  * Per PR #905 performance optimization
@@ -90,9 +115,10 @@ export async function getObjectAttributeMetadata(
   objectSlug: string
 ): Promise<Map<string, AttioAttributeMetadata>> {
   const cache = getAttributeCache();
+  const cacheKey = `${await credentialCacheScope()}:${objectSlug}`;
   // Check cache first
-  if (cache.has(objectSlug)) {
-    return cache.get(objectSlug)!;
+  if (cache.has(cacheKey)) {
+    return cache.get(cacheKey)!;
   }
 
   try {
@@ -100,7 +126,7 @@ export async function getObjectAttributeMetadata(
     if (objectSlug === 'tasks') {
       // Tasks have predefined fields, not dynamic attributes
       const taskMetadata = createTaskAttributeMetadata();
-      cache.set(objectSlug, taskMetadata);
+      cache.set(cacheKey, taskMetadata);
       return taskMetadata;
     }
 
@@ -144,7 +170,7 @@ export async function getObjectAttributeMetadata(
     });
 
     // Cache the result
-    cache.set(objectSlug, metadataMap);
+    cache.set(cacheKey, metadataMap);
 
     return metadataMap;
   } catch (err: unknown) {
@@ -360,14 +386,15 @@ export async function getAttributeTypeInfo(
 }
 
 /**
- * Clears the attribute cache for a specific object type or all types
+ * Clears all object metadata across every credential scope.
  *
- * @param objectSlug - Optional object type to clear (clears all if not provided)
+ * @param objectSlug - Retained for compatibility; clearing always invalidates all types
  */
 export function clearAttributeCache(objectSlug?: string): void {
   const cache = getAttributeCache();
   if (objectSlug) {
-    cache.delete(objectSlug);
+    // Synchronous invalidation covers every credential scope.
+    cache.clear();
   } else {
     cache.clear();
   }

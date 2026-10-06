@@ -19,6 +19,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { ResultEncodingError } from '@/handlers/tools/result-contract.js';
 
 import {
   SearchType,
@@ -33,7 +34,6 @@ import type {
   SearchStrategyParams,
   StrategyDependencies,
 } from '@/services/search-strategies/interfaces.js';
-import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
 import type {
   AttioNote,
   AttioRecord,
@@ -143,29 +143,36 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         }
 
         const notesResponse = await this.dependencies.noteFunction(queryParams);
-        const notesList = notesResponse.data || [];
+        const notesList = notesResponse?.data;
 
         // Convert notes to records and ensure it's always an array
         if (!Array.isArray(notesList)) {
           log.warn('NOTES API WARNING: listNotes() returned non-array value', {
             returnedType: typeof notesList,
           });
-          return [];
-        } else {
-          // Convert AttioNote[] to UniversalRecordResult[]
-          // Cast to AttioNote[] since we know the API returns notes
-          return (notesList as AttioNote[]).map((note) =>
-            this.convertNoteToRecord(note)
-          );
+          throw new ResultEncodingError();
         }
+        return Object.defineProperty(
+          (notesList as AttioNote[]).map((note) =>
+            this.convertNoteToRecord(note)
+          ),
+          'truncated',
+          {
+            value:
+              Boolean(notesResponse.meta?.next_cursor) ||
+              notesList.length >= 10,
+          }
+        );
       } catch (error: unknown) {
         log.error('Failed to load notes from API', error);
-        return []; // Fallback to empty array
+        throw error;
       }
     };
 
     // SECURITY: note results can include sensitive tenant data; avoid process-wide caching.
     const notes = await loadNotesData();
+    const upstreamTruncated =
+      (notes as { truncated?: boolean }).truncated ?? true;
     const fromCache = false;
 
     // Performance warning for large datasets
@@ -191,7 +198,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
 
     // Handle empty dataset cleanly
     if (notes.length === 0) {
-      return []; // No warning for empty datasets
+      return Object.defineProperty([], 'truncated', {
+        value: upstreamTruncated,
+      });
     }
 
     // Apply content search filtering if requested
@@ -226,7 +235,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         filteredSize: filteredNotes.length,
         action: 'returning empty results',
       });
-      return [];
+      return Object.defineProperty([], 'truncated', {
+        value: upstreamTruncated || start > 0,
+      });
     } else {
       const end = Math.min(start + requestedLimit, filteredNotes.length);
       const paginatedNotes = filteredNotes.slice(start, end);
@@ -238,7 +249,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         fromCache ? 1 : performance.now() - apiStart
       );
 
-      return paginatedNotes;
+      return Object.defineProperty(paginatedNotes, 'truncated', {
+        value: upstreamTruncated || start > 0 || end < filteredNotes.length,
+      });
     }
   }
 
@@ -312,7 +325,9 @@ export class NoteSearchStrategy extends BaseSearchStrategy {
         parent_object: note.parent_object || '',
         parent_record_id: note.parent_record_id || '',
         created_at: note.created_at || '',
-        created_by_actor: note.created_by_actor,
+        ...(note.created_by_actor !== undefined
+          ? { created_by_actor: note.created_by_actor }
+          : {}),
       },
     };
 

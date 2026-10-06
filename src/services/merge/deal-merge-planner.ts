@@ -10,15 +10,15 @@ export type DealMergeFieldKind = 'fill' | 'conflict' | 'dangerous_empty_fill';
 export interface DealMergeField {
   attribute: string;
   kind: DealMergeFieldKind;
-  primary_value: unknown;
-  leftover_value: unknown;
+  primary_value?: unknown;
+  leftover_value?: unknown;
   reason?: string;
 }
 
 export interface DealLinkedMismatch {
   attribute: string;
-  primary_value: unknown;
-  leftover_value: unknown;
+  primary_value?: unknown;
+  leftover_value?: unknown;
 }
 
 export interface DealMergePlan {
@@ -127,8 +127,8 @@ function makeField(
   return {
     attribute,
     kind,
-    primary_value: primaryValue,
-    leftover_value: leftoverValue,
+    ...(primaryValue !== undefined ? { primary_value: primaryValue } : {}),
+    ...(leftoverValue !== undefined ? { leftover_value: leftoverValue } : {}),
     ...(reason ? { reason } : {}),
   };
 }
@@ -187,8 +187,12 @@ export function buildDealMergePlan(
       if (linkedValuesDiffer(primaryValue, leftoverValue)) {
         linkedMismatches.push({
           attribute,
-          primary_value: primaryValue,
-          leftover_value: leftoverValue,
+          ...(primaryValue !== undefined
+            ? { primary_value: primaryValue }
+            : {}),
+          ...(leftoverValue !== undefined
+            ? { leftover_value: leftoverValue }
+            : {}),
         });
       }
       if (primaryEmpty && !leftoverEmpty) {

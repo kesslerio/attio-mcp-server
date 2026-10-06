@@ -1,3 +1,4 @@
+import { interactionsResultContract } from '@/handlers/tools/result-schemas.js';
 /**
  * Interaction metadata operations (Issue #1116)
  *
@@ -103,6 +104,8 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
   InteractionsResult
 > = {
   name: 'get_record_interactions',
+  ...interactionsResultContract,
+  structuredOutput: (result) => ({ data: result }),
   handler: async (
     params: GetRecordInteractionsParams
   ): Promise<InteractionsResult> => {
@@ -119,9 +122,12 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
         resource_type !== UniversalResourceType.PEOPLE &&
         resource_type !== UniversalResourceType.COMPANIES
       ) {
-        throw new Error(
-          `Interaction metadata is only available for people and companies, ` +
-            `not ${resource_type}. Use get_record_details for other resource types.`
+        throw Object.assign(
+          new Error(
+            `Interaction metadata is only available for people and companies, ` +
+              `not ${resource_type}. Use get_record_details for other resource types.`
+          ),
+          { code: 'VALIDATION_ERROR' }
         );
       }
 
@@ -163,7 +169,7 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
 
       throw ErrorService.createUniversalError(
         'get_record_interactions',
-        params.resource_type,
+        params?.resource_type ?? '',
         error
       );
     }

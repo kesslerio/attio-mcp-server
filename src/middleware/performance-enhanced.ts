@@ -140,7 +140,18 @@ export class EnhancedPerformanceTracker extends EventEmitter {
     // Only start cache cleanup interval when running as MCP server
     // This prevents scripts from hanging when they import this module
     if (process.env.MCP_SERVER_MODE === 'true') {
-      setInterval(() => this.cleanupCache(), 5 * 60 * 1000);
+      const cleanupInterval = setInterval(
+        () => this.cleanupCache(),
+        5 * 60 * 1000
+      );
+
+      // Ensure cleanup interval doesn't keep process alive.
+      // This releases only this timer's hold on the loop: stdin is itself a
+      // ref'd handle, so the process still waits for EOF. A client that never
+      // closes the write end of the pipe still leaves the server resident.
+      if (cleanupInterval.unref) {
+        cleanupInterval.unref();
+      }
     }
   }
 

@@ -1,6 +1,7 @@
 import { UniversalResourceType } from '@/handlers/tool-configs/universal/types.js';
 import {
   paginationProperties,
+  cursorProperty,
   resourceTypeProperty,
 } from '@/handlers/tool-configs/universal/schemas/common/properties.js';
 
@@ -118,6 +119,7 @@ export const listNotesSchema = {
       description: 'Alias for record_id (backward compatibility)',
     },
     ...paginationProperties,
+    cursor: cursorProperty,
   },
   required: ['resource_type' as const],
   additionalProperties: false,

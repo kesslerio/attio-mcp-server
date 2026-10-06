@@ -1,3 +1,5 @@
+import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
+import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
 /**
  * Content search tool configuration
  */
@@ -15,7 +17,10 @@ import { isAttioRecord } from '@/types/attio.js';
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
 import { UniversalSearchService } from '@/services/UniversalSearchService.js';
 import { ErrorService } from '@/services/ErrorService.js';
-import { getPluralResourceType } from '@/handlers/tool-configs/universal/core/utils.js';
+import {
+  getPluralResourceType,
+  extractResourceTypeFromFormatArgs,
+} from '@/handlers/tool-configs/universal/core/utils.js';
 import { formatResourceType } from '@/handlers/tool-configs/universal/shared-handlers.js';
 
 export const searchByContentConfig: UniversalToolConfig<
@@ -23,6 +28,8 @@ export const searchByContentConfig: UniversalToolConfig<
   UniversalRecordResult[]
 > = {
   name: 'search_records_by_content',
+  ...recordSearchResultContract,
+  structuredOutput: normalizeRecordCollection,
   handler: async (
     params: ContentSearchParams
   ): Promise<UniversalRecordResult[]> => {
@@ -105,8 +112,17 @@ export const searchByContentConfig: UniversalToolConfig<
     }
   },
   formatResult: (results: UniversalRecordResult[], ...args: unknown[]) => {
-    const contentType = args[0] as ContentSearchType | undefined;
-    const resourceType = args[1] as UniversalResourceType | undefined;
+    const first = args[0];
+    const contentType =
+      first && typeof first === 'object' && 'content_type' in first
+        ? (first.content_type as ContentSearchType | undefined)
+        : (first as ContentSearchType | undefined);
+    const resourceType =
+      first && typeof first === 'object'
+        ? (extractResourceTypeFromFormatArgs(args) as
+            | UniversalResourceType
+            | undefined)
+        : (args[1] as UniversalResourceType | undefined);
     if (!Array.isArray(results)) {
       return 'Found 0 records (content search)\nTip: Ensure your workspace has notes/content for this query.';
     }
