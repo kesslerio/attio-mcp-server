@@ -1076,7 +1076,6 @@ ${formatToolDescription({
 
 Please use 'list_entries_filter' with Mode 4 (Parent UUID) parameters instead:
 - Pass 'parentRecordId' parameter
-- Note: Parameter renamed from 'recordId' to 'parentRecordId' for consistency
 - All functionality remains identical (fastest filtering mode)
 
 This tool will be removed in version 2.0.0.
