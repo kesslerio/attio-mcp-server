@@ -267,36 +267,9 @@ export async function executeToolRequest(request: CallToolRequest) {
           isError: false,
         };
       }
-    } else if (resourceType === 'GENERAL') {
-      // For general tools, use the tool's own handler directly
-      const args = request.params.arguments as Record<string, unknown>;
-      let handlerArgs: unknown[] = [];
-
-      // Map arguments based on tool type
-      if (
-        toolType === 'linkPersonToCompany' ||
-        toolType === 'unlinkPersonFromCompany'
-      ) {
-        handlerArgs = [args?.personId, args?.companyId];
-      } else if (toolType === 'getPersonCompanies') {
-        handlerArgs = [args?.personId];
-      } else if (toolType === 'getCompanyTeam') {
-        handlerArgs = [args?.companyId];
-      } else {
-        handlerArgs = [args];
-      }
-
-      const rawResult = await (toolConfig as ToolConfig).handler(
-        ...handlerArgs
-      );
-      const formattedResult =
-        toolConfig.formatResult?.(rawResult) ||
-        JSON.stringify(rawResult, null, 2);
-
-      result = {
-        content: [{ type: 'text', text: formattedResult }],
-        isError: false,
-      };
+      // No general-resource branch: the relationship configs that only
+      // registered behind the removed legacy flag are gone, so every
+      // remaining call is handled by its operation adapter below.
     } else if (toolType === 'search') {
       result = await handleBasicSearch(
         request,

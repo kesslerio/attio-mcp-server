@@ -86,7 +86,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
   - `lists_create` - Create lists with first-class access controls: `workspace_access` (`full-access` \| `read-and-write` \| `read-only` \| `"null"` for a private list) and `workspace_member_access` (per-member grants). Omitting both access fields defaults the new list to workspace-wide **full access**; new lists must keep at least one full-access grantee.
   - `lists_update_configuration` - Update name, custom fields, and the same access controls. Member-level grants can raise access above the workspace default but never lower it below `workspace_access`.
   - Errors distinguish `plan_gating` (workspace plan does not support the requested access configuration) from `permission_failure` (token/workspace permissions) and `unsupported_input` (malformed access config), each with a suggested next step.
-- **Deprecated (v2.0.0 removal)**: 8 legacy tools replaced by consolidated versions
+- **Removed legacy tools**: the resource-specific tools deprecated after #1022 were removed in v2.0.0; the v2 surface is the only registered surface
 - **Pipeline Operations**: Move deals through sales stages
 - **Smart Segmentation**: Create and manage targeted contact lists
 - **Advanced Filtering**: Complex multi-condition filtering with AND/OR logic
@@ -208,7 +208,7 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 ### **API Compatibility**
 
 - **Universal Tools**: Primary interface (19 tools) - recommended for all new integrations
-- **Legacy Tools**: Available via `DISABLE_UNIVERSAL_TOOLS=true` environment variable (deprecated)
+- **Legacy tools**: removed in v2.0.0. `DISABLE_UNIVERSAL_TOOLS` is an obsolete flag name that now only logs a startup warning; the v2 surface is registered unconditionally
 - **Lists API**: Fully functional with complete CRUD operations (contrary to some outdated documentation)
 
 ### 🤝 **OpenAI MCP Compatibility**

@@ -170,10 +170,10 @@ existing host controls. Batch writes are never replayed after result encoding or
 companion formatting fails; uncertain completion requires readback before retry.
 
 Connector and list/member/diagnostic families are covered by the next boundary;
-see below. Deprecated resource-specific configurations enabled by
-`DISABLE_UNIVERSAL_TOOLS=true` may retain successful text contracts without
-output schemas; their boundary-owned failures use the shared structured error
-envelope and prose opt-out above.
+see below. The deprecated resource-specific configurations that
+`DISABLE_UNIVERSAL_TOOLS=true` used to register were removed with the v2
+surface, so every registered tool now reaches the shared result boundary; their
+boundary-owned failures use the structured error envelope and prose opt-out above.
 
 Verify deterministic contracts with
 `bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/handlers/tools/universal-output-schemas.test.ts test/api/universal-batch-results.test.ts test/api/retry-safety.test.ts`.
@@ -299,21 +299,25 @@ export enum UniversalResourceType {
 }
 ```
 
-### Step 2: Update Resource Type Mappings
+### Step 2: Accept the New Resource-Type Spellings
+
+Resource-type arguments come from the caller, so accepted spellings live in one
+shared map rather than per tool.
 
 ```typescript
-// src/handlers/tool-configs/universal/index.ts
-export const resourceTypeMappings: Record<string, string> = {
+// src/constants/universal.constants.ts
+export const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
   // Existing mappings...
 
-  // New resource type mappings
-  'create-project': 'projects',
-  'search-projects': 'projects',
-  'get-project-details': 'projects',
-  'create-deal': 'deals',
-  'search-deals': 'deals',
+  // New resource type and accepted spelling forms
+  project: UniversalResourceType.PROJECTS,
+  projects: UniversalResourceType.PROJECTS,
 };
 ```
+
+Tool names themselves use `resource_verb` snake case (`projects_search`,
+`projects_get_details`, `projects_create`) and reach the handler through the
+single universal dispatcher; there is no per-legacy-name routing table to update.
 
 ### Step 3: Implement Resource Handlers
 
@@ -1058,43 +1062,25 @@ instead of wrapping mutation handlers in a generic retry loop.
 
 ## Migration Utilities
 
-### Tool Mapping Utilities
+### Name Resolution
+
+Legacy name handling is one resolver, not a mapping table. A prior default name
+resolves to its canonical tool before the mode filter runs, and nothing else.
 
 ```typescript
-// src/handlers/tool-configs/universal/migration-utils.ts
-export function getDeprecatedToolMappings(): Record<string, string> {
-  return deprecatedToolMappings;
-}
+// src/config/tool-aliases.ts
+import { resolveToolName } from '@/config/tool-aliases.js';
 
-export function getMigrationPath(deprecatedTool: string): {
-  universalTool: string;
-  resourceType: string;
-  additionalParams: Record<string, any>;
-} | null {
-  const universalTool = deprecatedToolMappings[deprecatedTool];
-  const resourceType = resourceTypeMappings[deprecatedTool];
-
-  if (!universalTool || !resourceType) return null;
-
-  const additionalParams: Record<string, any> = {};
-
-  // Add specific parameters based on tool type
-  const infoType = infoTypeMappings[deprecatedTool];
-  if (infoType) additionalParams.info_type = infoType;
-
-  const contentType = contentTypeMappings[deprecatedTool];
-  if (contentType) additionalParams.content_type = contentType;
-
-  const timeframeType = timeframeTypeMappings[deprecatedTool];
-  if (timeframeType) additionalParams.timeframe_type = timeframeType;
-
-  return {
-    universalTool,
-    resourceType,
-    additionalParams,
-  };
-}
+resolveToolName('create_record').name; // -> 'records_create'
+resolveToolName('get-lists').name; // -> 'lists_list'
+resolveToolName('create-company').name; // -> 'create-company' (removed; resolves to nothing)
 ```
+
+The alias pairs live in `src/constants/tool-names.ts` (`TOOL_NAME_MIGRATION`),
+and names dropped rather than aliased are listed in
+`REMOVED_PRE_V2_TOOL_ALIASES`. An alias renames only: it never supplies a
+`resource_type` or rewrites a payload, so there is no migration-parameter
+helper to call.
 
 ## Next Steps
 

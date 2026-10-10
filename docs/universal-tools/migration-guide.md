@@ -4,6 +4,12 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 
 ## Migration Overview
 
+> **v2.0.0**: the deprecated tools in the tables below were removed with the v2
+> surface. They are a from-to reference for saved clients, not a callable set,
+> and `DISABLE_UNIVERSAL_TOOLS` no longer registers them. If a client still
+> sends one of these names, switch it to the universal tool and keep the
+> arguments as they are.
+
 ### What Changed?
 
 - **Tool Count**: Reduced from 40+ tools to 13 universal operations (68% reduction)

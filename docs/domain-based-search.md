@@ -204,7 +204,7 @@ The enhancement works automatically with existing configurations. No additional 
 
 - `src/utils/domain-utils.ts` - Domain extraction utilities
 - `src/objects/companies/search.ts` - Enhanced search functions
-- `src/handlers/tool-configs/companies/search.ts` - Tool configurations
+- `src/handlers/tool-configs/universal/core/search-operations.ts` - Tool configurations
 - `test/manual/test-domain-based-company-search.js` - Manual testing
 - `test/integration/domain-based-search.integration.test.ts` - Integration tests
 - `test/utils/domain-utils.test.ts` - Unit tests

@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bun run cleanup:test-data:lists` — dry-run/delete shortcut for the new lists resource
 - Unit coverage for the cleanup fetchers, creator filter, deleter endpoint routing, and the mass-deletion safety gate (`test/scripts/cleanup-resources.test.ts`, `test/scripts/cleanup-safety-gate.test.ts`)
 
+### Removed
+
+- **The legacy resource-specific tool surface is gone** — the `DISABLE_UNIVERSAL_TOOLS` registration branch and the company, people, deal, record, task, and general tool configs behind it are deleted, so the v2 catalog registers unconditionally and that flag now only logs one obsolete-setting warning at startup. Names that existed only there (`create-company`, `search-people`, `create-task`, `link-person-to-company`, `batch-create-companies`, and the rest) are absent from `tools/list` and no longer resolve, with the alias toggle on or off. Surviving capabilities are unchanged: list and workspace-member routes, task and custom-object routes through the universal tools, focused company and deal writes, connector `search`/`fetch`, and safe merge. See [Legacy Tools → Universal Tools](docs/MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022)
+
 ## [1.7.0] - 2026-08-25
 
 **TL;DR for Users**: Safe deals-only `merge_records`, Cloudflare remote MCP sessions that no longer drop after an hour, and tenant/OAuth security hardening.

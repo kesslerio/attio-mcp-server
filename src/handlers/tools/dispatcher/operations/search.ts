@@ -94,8 +94,9 @@ export async function handleBasicSearch(
 
   let effectiveQuery = queryFromArgs;
 
-  // If 'query' is not provided, but 'domain' is, and the specific tool being handled is 'search-companies',
-  // use the 'domain' value as the query. This makes 'search-companies' more robust to this specific invocation pattern.
+  // If 'query' is not provided, but 'domain' is, and the tool being handled
+  // is the record search tool, use the 'domain' value as the query. This keeps
+  // that invocation pattern working without widening the tool's input contract.
   if (
     effectiveQuery === undefined &&
     domainFromArgs !== undefined &&

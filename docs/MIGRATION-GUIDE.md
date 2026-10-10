@@ -105,9 +105,9 @@ Create:
 
 ## Migration 2: Legacy Tools → Universal Tools (#1022)
 
-**Status**: Legacy tools deprecated (Q1 2026 removal target)
+**Status**: Removed in v2.0.0 (U8 finished the deprecation that started in #1022)
 **Issue**: #1022
-**Effective**: v1.3.7
+**Effective**: v1.3.7 (deprecation) -> v2.0.0 (removal)
 
 ### Overview
 
@@ -122,15 +122,14 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ### Timeline
 
-- **Now**: Legacy tools deprecated, accessible via `DISABLE_UNIVERSAL_TOOLS=true`
-- **Q1 2026**: Legacy tools removed in v2.0.0
+- **Then**: Legacy tools deprecated; `DISABLE_UNIVERSAL_TOOLS=true` still registered them as an escape hatch
+- **Now**: Removed. The v2 surface is the only registered surface, so no environment variable brings the legacy tools back.
 
 ### Environment Variables
 
-- **Default (no env var)**: Universal tools enabled ✓
-- **`DISABLE_UNIVERSAL_TOOLS=true`**: Enables legacy tools (deprecated)
+- **Any value of `DISABLE_UNIVERSAL_TOOLS`**: no effect on registration. Setting it to `true` logs one startup warning that the flag is obsolete, and otherwise changes nothing.
 
-> **Note**: `DISABLE_UNIVERSAL_TOOLS` is a legacy flag name. Setting it to `true` **enables** legacy tools, not disables universal tools.
+> **Note**: The flag name is retained only so an existing deployment gets an actionable warning instead of a silent behavior change. There is no code path that can restore the legacy tools.
 
 ## Quick Reference
 
@@ -271,7 +270,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ## Complete Mapping Table
 
-> **Note**: This mapping table may lag behind code changes. Use tool discovery output or the source definitions in `src/handlers/tool-configs/universal/index.ts:deprecatedToolMappings` as the authoritative reference.
+> **Note**: This mapping table may lag behind code changes. Use tool discovery output or the alias definitions in `src/constants/tool-names.ts` (`TOOL_NAME_MIGRATION`) as the authoritative reference.
 
 ### Company Tools
 
@@ -367,23 +366,24 @@ Universal tools require attributes in an `attributes` object:
 
 ## Testing Your Migration
 
-### 1. Enable Legacy Tools (temporary)
+### 1. Read the Live Surface
 
 ```bash
-DISABLE_UNIVERSAL_TOOLS=true npm run dev
+# Lists only what this build registers.
+npx attio-discover tools
 ```
 
 ### 2. Run Side-by-Side Tests
 
-Test both legacy and universal tools with the same data to verify identical results.
+Test the v2 tools with the data your saved client sends to verify identical results.
 
-### 3. Switch to Universal Tools
+### 3. Switch to v2 Names
 
-Remove `DISABLE_UNIVERSAL_TOOLS` to use universal tools by default.
+Point the client at the canonical names above and keep the arguments unchanged; supported prior names still resolve through the call-only aliases.
 
-### 4. Verify No Warnings
+### 4. Verify No Legacy Dependency
 
-Run your application - you should see NO deprecation warnings.
+Set `MCP_DISABLE_TOOL_ALIASES=true` and run your application. It must keep working, and a call to a legacy name must fail as "Tool not found".
 
 ## Need Help?
 
