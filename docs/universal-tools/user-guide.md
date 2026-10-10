@@ -101,8 +101,6 @@ const decisionMakers = await client.callTool('records.search_advanced', {
       { attribute: 'title', condition: 'contains', value: 'Founder' },
     ],
   },
-  sort_by: 'last_interaction',
-  sort_order: 'desc',
 });
 
 // Create new contact
@@ -212,8 +210,6 @@ const qualifiedLeads = await client.callTool('records.search_advanced', {
       { attribute: 'country', condition: 'equals', value: 'United States' },
     ],
   },
-  sort_by: 'created_at',
-  sort_order: 'desc',
   limit: 30,
 });
 
@@ -248,7 +244,7 @@ The kinds of decision you can make from the entry alone:
 | --- | --- |
 | "Read one record I already have an id for" | An entry with `action: "read"`, `readOnly: true`, and a `record_id` property: `records_get_details`. |
 | "Patch a company's fields" | `action: "write"`, a single value in `resourceTypes`, and no `resource_type` property: `companies_update`. Scoped tools skip the resource_type the generic ones require. |
-| "Create a record in a custom object" | A write with `customObjectSlugs: true` that still takes `resource_type`: `records_create`, `records_update`, `records_delete`, `records_get_details`, and the search variants. |
+| "Create a record in a custom object" | A write with `customObjectSlugs: true` that still takes `resource_type`: `records_create`. |
 | "Add a note to a person" | `notes_create` with `resourceTypes` covering note-bearing objects; `notes_list` for the read side. |
 | "Keep paging this query" | `pagination.kind: "cursor"` with `supported: true`: `records_search_by_timeframe`, `notes_list`, `list_entries_list`. Basic and advanced search declare conservative `supported: false`: cursor continuation is available on query/timeframe routes and empty-query object searches excluding tasks/lists/notes. Other text queries and basic tasks/lists/notes searches are bounded; inspect response `pagination.supported` before continuing. |
 | "Batch writes vs batch reads" | `records_batch` is `readOnly: false` (mixed writes), `records_batch_search` is `readOnly: true`. A client replays searches, not writes. |

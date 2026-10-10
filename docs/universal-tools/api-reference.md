@@ -360,7 +360,7 @@ await client.callTool('records.get_info', {
 
 ### 9. records.search_advanced
 
-**Description**: Complex searches with sorting and advanced filtering.
+**Description**: Complex searches with advanced filtering. `sort_by` and `sort_order` are accepted but ignored; results use provider order.
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
@@ -371,8 +371,8 @@ await client.callTool('records.get_info', {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
   query?: string,                    // Search query string
   filters?: object,                  // Advanced filter conditions
-  sort_by?: string,                  // Field to sort by
-  sort_order?: 'asc' | 'desc',      // Sort direction
+  sort_by?: string,                  // Accepted but ignored
+  sort_order?: 'asc' | 'desc',      // Accepted but ignored
   limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
   offset?: number,                   // Pagination offset (default: 0)
   cursor?: string                    // See Collection Continuation
@@ -382,7 +382,7 @@ await client.callTool('records.get_info', {
 **Examples**:
 
 ```typescript
-// Advanced company search with sorting
+// Advanced company search
 await client.callTool('records.search_advanced', {
   resource_type: 'companies',
   query: 'technology',
@@ -391,8 +391,6 @@ await client.callTool('records.search_advanced', {
       { attribute: 'employee_count', condition: 'greater_than', value: 100 },
     ],
   },
-  sort_by: 'created_at',
-  sort_order: 'desc',
   limit: 25,
 });
 ```

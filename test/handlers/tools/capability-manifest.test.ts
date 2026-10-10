@@ -209,7 +209,8 @@ describe('capability manifest consistency', () => {
     expect(entries.get('records_get_info')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
     expect(entries.get('records_search_by_relationship')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals']);
     expect(entries.get('records_search_by_content')!.operation!.resourceTypes).toEqual(['notes', 'people']);
-    for (const name of ['records_search', 'records_search_advanced', 'records_search_by_relationship', 'records_search_by_content', 'records_batch', 'records_batch_search']) {
+    expect(entries.get('records_batch_search')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
+    for (const name of ['records_search', 'records_search_advanced', 'records_search_by_relationship', 'records_search_by_content', 'records_batch', 'records_batch_search', 'list_entries_filter', 'list_entries_filter_advanced', 'list_entries_filter_by_parent', 'list_entries_filter_by_parent_id']) {
       expect(entries.get(name)!.operation!.pagination.supported).toBe(false);
     }
   });

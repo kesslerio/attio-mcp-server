@@ -567,10 +567,10 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       }),
       guidance: {
         capability:
-          'Search with nested filter groups, scoring, and ordering (for example deals by owner and stage).',
+          'Search with nested filter groups (for example deals by owner and stage).',
         boundaries: 'mutate records; use the write tools for that.',
         constraints:
-          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset.',
+          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. sort_by and sort_order are ignored; scoring and caller-selected ordering are not provided.',
         recovery: 'If filters are rejected, discover valid attributes.',
         alternatives: ['records_search', 'list_entries_filter_advanced'],
       },
@@ -648,7 +648,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         boundaries:
           'replay successful items automatically, or skip host approval guardrails.',
         constraints:
-          'Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; legacy search forwards limit/offset but provides no cursor. Lists are supported only by legacy get/search.',
+          'Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; Legacy search with queries forwards limit/offset only for lists, records, tasks, and deals; companies and people ignore them. Legacy search without queries forwards limit/offset to records_search; neither format provides a cursor. Lists are supported only by legacy get/search.',
         recovery:
           'Inspect each item outcome before considering a retry; never re-run successful writes.',
         alternatives: ['records_batch_search', 'records_create'],
@@ -657,7 +657,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_batch_search: {
       operation: operationOf({
         action: 'batch',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
         readOnly: true,
         destructive: false,
         idempotent: true,
@@ -668,7 +668,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
           'Run several searches together and return grouped outcomes per query.',
         boundaries: 'mutate or import data; use records_batch for writes.',
         constraints:
-          'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded to bounded resource-specific searches; no continuation cursor or universal page cap is guaranteed.',
+          'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed.',
         recovery: 'Retry a failed query on its own with records_search.',
         alternatives: ['records_batch', 'records_search'],
       },
@@ -809,14 +809,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: null },
+        pagination: { kind: 'offset', supported: false, cap: null },
       }),
       guidance: {
         capability:
           'Filter list entries by attribute, parent attribute, or parent record.',
         boundaries: 'modify entries or search several lists at once.',
         constraints:
-          'Mode auto-detects from the parameters supplied; exactly one mode per call.',
+          'Mode auto-detects from the parameters supplied; exactly one mode per call. Offset-only live view; no continuation cursor.',
         recovery: 'Confirm attribute slugs with records_discover_attributes.',
         alternatives: [
           'list_entries_list',
@@ -832,12 +832,12 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: null },
+        pagination: { kind: 'offset', supported: false, cap: null },
       }),
       guidance: {
         capability: 'Filter list entries with nested filter groups.',
         boundaries: 'mutate entries or search across multiple lists.',
-        constraints: 'Requires listId and a filters structure.',
+        constraints: 'Requires listId and a filters structure. Offset-only live view; no continuation cursor.',
         recovery: 'Falling back to single-attribute filtering is cheaper.',
         alternatives: ['list_entries_filter', 'list_entries_list'],
       },
@@ -917,13 +917,13 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: null },
+        pagination: { kind: 'offset', supported: false, cap: null },
       }),
       guidance: {
         capability: 'Filter entries by a parent record attribute.',
         boundaries: 'search multiple lists, or modify records.',
         constraints:
-          'Requires listId, parentObjectType, parentAttributeSlug, condition, and value.',
+          'Requires listId, parentObjectType, parentAttributeSlug, condition, and value. Offset-only live view; no continuation cursor.',
         recovery: 'Verify parent attribute slugs before filtering.',
         alternatives: [
           'list_entries_filter',
@@ -938,13 +938,13 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: null },
+        pagination: { kind: 'offset', supported: false, cap: null },
       }),
       guidance: {
         capability: 'Filter entries by an exact parent record identifier.',
         boundaries: 'search multiple lists.',
         constraints:
-          'Requires listId and recordId; faster than attribute-based filtering.',
+          'Requires listId and recordId; faster than attribute-based filtering. Offset-only live view; no continuation cursor.',
         recovery: 'For workspace-wide membership, list memberships instead.',
         alternatives: ['records_get_list_memberships', 'list_entries_filter'],
       },
