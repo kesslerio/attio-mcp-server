@@ -205,6 +205,15 @@ describe('capability manifest consistency', () => {
       expect(entries.get(name)!.operation!.resourceTypes).not.toContain('notes');
     }
     expect(entries.get('records_get_attributes')!.operation!.customObjectSlugs).toBe(false);
+    for (const name of ['records_discover_attributes', 'records_get_attribute_options', 'notes_list', 'records_batch']) {
+      expect(entries.get(name)!.operation!.customObjectSlugs).toBe(false);
+    }
+    expect(entries.get('records_update')!.operation!.resourceTypes).not.toContain('notes');
+    expect(entries.get('records_search_by_timeframe')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'records']);
+    for (const name of ['notes_create', 'notes_list']) {
+      expect(entries.get(name)!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'records']);
+    }
+    expect(entries.get('notes_create')!.guidance!.alternatives).not.toContain('records_update');
     expect(entries.get('records_get_attribute_options')!.operation!.resourceTypes).not.toContain('lists');
     expect(entries.get('records_get_info')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
     expect(entries.get('records_search_by_relationship')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals']);

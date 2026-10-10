@@ -360,7 +360,7 @@ await client.callTool('records.get_info', {
 
 ### 9. records.search_advanced
 
-**Description**: Complex searches with advanced filtering. `sort_by` and `sort_order` are accepted but ignored; results use provider order.
+**Description**: Nested attribute filtering for companies, people, deals, records, and configured custom objects. Basic task/list routes ignore filters; notes use only parent-object and parent-record filters, not nested groups. `sort_by` and `sort_order` are accepted but ignored; results use provider order. Timeframe routes reject modified/updated searches for people and companies and do not combine attribute filters or text queries.
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 

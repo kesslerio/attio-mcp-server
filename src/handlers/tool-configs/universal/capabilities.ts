@@ -55,7 +55,7 @@ const INTERACTION_RESOURCES = ['people', 'companies'] as const;
 const CONNECTOR_RESOURCES = ['companies', 'people', 'lists', 'tasks'] as const;
 
 /** Note creation targets the record families that carry notes. */
-const NOTE_RESOURCES = ['companies', 'people', 'deals', 'notes'] as const;
+const NOTE_RESOURCES = ['companies', 'people', 'deals', 'records'] as const;
 
 /** Authored metadata for one tool: semantics plus selection guidance. */
 export interface CatalogOperation {
@@ -197,7 +197,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         boundaries:
           'create or modify records, or return more than one page per call.',
         constraints:
-          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset.',
+          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Basic task and list routes ignore filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and do not combine the supplied filters or text query. Custom resource slugs must be configured in this server.',
         recovery:
           'If attributes are unknown or a page is empty, discover searchable fields.',
         alternatives: [
@@ -220,7 +220,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         capability: 'Fetch one record with enriched attribute formatting.',
         boundaries: 'search or filter a result set, or return several records.',
         constraints:
-          'Requires resource_type and record_id; fields filters output.',
+          'Requires resource_type and record_id; fields filters output. Custom resource slugs must be configured in this server.',
         recovery: 'Resolve the identifier with records_search before retrying.',
         alternatives: ['records_search', 'records_get_info', 'fetch'],
       },
@@ -246,15 +246,15 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       operation: operationOf({
         action: 'metadata',
         resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
-        customObjectSlugs: true,
+        customObjectSlugs: false,
         readOnly: true,
         destructive: false,
         idempotent: true,
       }),
       guidance: {
-        capability: 'Discover standard and custom attributes for a resource.',
+        capability: 'Discover standard and custom attributes for a standard resource type.',
         boundaries: 'alter schema, create fields, or read record values.',
-        constraints: 'Requires resource_type; categories selects subsets.',
+        constraints: 'Requires resource_type; categories selects subsets; custom resource slugs and notes are rejected by tool validation.',
         recovery:
           'For select or status fields, list valid values before writing.',
         alternatives: ['records_get_attribute_options'],
@@ -263,8 +263,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_get_attribute_options: {
       operation: operationOf({
         action: 'metadata',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
-        customObjectSlugs: true,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records'],
+        customObjectSlugs: false,
         readOnly: true,
         destructive: false,
         idempotent: true,
@@ -274,7 +274,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
           'List valid options for select, multi-select, and status attributes.',
         boundaries:
           'return options for text, number, or other non-option types.',
-        constraints: 'Requires resource_type and the attribute slug or ID.',
+        constraints: 'Requires a standard object resource_type and the attribute slug or ID; lists are rejected and custom resource slugs are rejected by tool validation; notes have no object-attribute endpoint.',
         recovery:
           'Discover option-based attributes, then retry with that slug.',
         alternatives: ['records_discover_attributes'],
@@ -312,7 +312,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         boundaries:
           'return email bodies, activity feeds, or note text; Attio exposes only system-generated interaction attributes.',
         constraints: 'Requires resource_type people or companies.',
-        recovery: 'Confirm the record exists, then search activity content.',
+        recovery: 'Confirm the record exists; people/activity searches cover last-month activity only, while company activity content is unsupported.',
         alternatives: ['records_search_by_content', 'records_get_details'],
       },
     },
@@ -348,11 +348,11 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       }),
       guidance: {
         capability:
-          'Create a record of any supported object type, including custom objects.',
+          'Create a record of any supported object type, including configured custom objects.',
         boundaries:
           'update existing records, attach files, or bypass required fields.',
         constraints:
-          'Requires resource_type plus record_data matching discovered schema; a write may be reported as uncertain, so read it back.',
+          'Requires resource_type plus record_data matching discovered schema; notes require content, parent_object, and parent_record_id in record_data; a write may be reported as uncertain, so read it back. Custom resource slugs must be configured in this server.',
         recovery:
           'Confirm required fields and enum values, then retry once with corrected values.',
         alternatives: [
@@ -366,17 +366,17 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_update: {
       operation: operationOf({
         action: 'write',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records'],
         customObjectSlugs: true,
         readOnly: false,
         destructive: false,
         idempotent: true,
       }),
       guidance: {
-        capability: 'Patch fields on one existing record of any type.',
+        capability: 'Patch fields on one existing company, person, deal, task, record, or configured custom object.',
         boundaries: 'create records, delete data, or manage list memberships.',
         constraints:
-          'Requires resource_type, record_id, and record_data; partial updates are validated against schema.',
+          'Requires resource_type, record_id, and record_data; partial updates are validated against schema; notes and lists cannot be updated here. Custom resource slugs must be configured in this server.',
         recovery: 'Inspect current values first, then retry the same patch.',
         alternatives: ['companies_update', 'deals_update', 'records_batch'],
       },
@@ -396,7 +396,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         boundaries:
           'match fuzzily, touch more than one record, or accept a caller-supplied record_id as the match key.',
         constraints:
-          'Requires resource_type, match {attribute,value} and values; multiple matches abort without writing; dry_run previews.',
+          'Requires resource_type, match {attribute,value} and values; multiple matches abort without writing; dry_run previews. Custom resource slugs must be configured in this server.',
         recovery:
           'On ambiguity, read the reported identifiers and update the intended one.',
         alternatives: ['records_create', 'records_update'],
@@ -416,7 +416,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         boundaries:
           'cascade to related data or clean up list memberships automatically.',
         constraints:
-          'Requires resource_type and record_id; irreversible once confirmed.',
+          'Requires resource_type and record_id; irreversible once confirmed. Custom resource slugs must be configured in this server.',
         recovery:
           'Confirm the target with records_get_details before deleting.',
         alternatives: ['list_entries_remove'],
@@ -509,14 +509,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         constraints:
           'Requires resource_type, record_id, title, and content; markdown formatting is opt-in via format.',
         recovery: 'Resolve the parent record identifier, then create again.',
-        alternatives: ['records_update', 'notes_list'],
+        alternatives: ['records_create', 'notes_list'],
       },
     },
     notes_list: {
       operation: operationOf({
         action: 'read',
-        resourceTypes: STANDARD_RESOURCES,
-        customObjectSlugs: true,
+        resourceTypes: ['companies', 'people', 'deals', 'records'],
+        customObjectSlugs: false,
         readOnly: true,
         destructive: false,
         idempotent: true,
@@ -526,7 +526,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         capability: 'List notes on a record with timestamps and body text.',
         boundaries: 'create, edit, or delete notes.',
         constraints:
-          'Requires resource_type and record_id; sorted by creation date; page cap 100.',
+          'Requires resource_type and record_id; sorted by creation date; page cap 100; custom resource slugs are rejected by tool validation; resource_type is passed as parent_object, so it must identify the note-bearing parent object.',
         recovery: 'Verify the record and its notes with records_get_details.',
         alternatives: ['records_search_by_content'],
       },
@@ -567,10 +567,10 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       }),
       guidance: {
         capability:
-          'Search with nested filter groups (for example deals by owner and stage).',
+          'Search object records with nested attribute filters; task, list, and note routes have restricted filtering.',
         boundaries: 'mutate records; use the write tools for that.',
         constraints:
-          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. sort_by and sort_order are ignored; scoring and caller-selected ordering are not provided.',
+          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Basic task and list routes ignore filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and do not combine the supplied filters or text query. sort_by and sort_order are ignored; scoring and caller-selected ordering are not provided. Custom resource slugs must be configured in this server.',
         recovery: 'If filters are rejected, discover valid attributes.',
         alternatives: ['records_search', 'list_entries_filter_advanced'],
       },
@@ -616,7 +616,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_search_by_timeframe: {
       operation: operationOf({
         action: 'search',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'records'],
         customObjectSlugs: true,
         readOnly: true,
         destructive: false,
@@ -624,10 +624,10 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         pagination: { kind: 'cursor', supported: true, cap: 100 },
       }),
       guidance: {
-        capability: 'Search by creation, update, or interaction timeframe.',
+        capability: 'Search object records by supported creation, modification, or interaction timestamps.',
         boundaries: 'change lifecycle state or schedule follow-ups.',
         constraints:
-          'Requires resource_type plus a timeframe or explicit date boundaries.',
+          'Requires resource_type plus a timeframe or explicit date boundaries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and do not combine the supplied filters or text query. Custom resource slugs must be configured in this server.',
         recovery: 'If the window is too restrictive, search without it.',
         alternatives: ['records_search', 'records_search_advanced'],
       },
@@ -636,7 +636,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       operation: operationOf({
         action: 'batch',
         resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
-        customObjectSlugs: true,
+        customObjectSlugs: false,
         readOnly: false,
         destructive: true,
         idempotent: false,
@@ -644,11 +644,11 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       }),
       guidance: {
         capability:
-          'Run create/update/delete operations concurrently with outcomes indexed by input; legacy operation_type also supports get and search.',
+          'Run create/update/delete operations concurrently with outcomes indexed by input; legacy operation_type also supports get and search; notes support create/delete, not update.',
         boundaries:
           'replay successful items automatically, or skip host approval guardrails.',
         constraints:
-          'Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; Legacy search with queries forwards limit/offset only for lists, records, tasks, and deals; companies and people ignore them. Legacy search without queries forwards limit/offset to records_search; neither format provides a cursor. Lists are supported only by legacy get/search.',
+          'Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; Legacy search with queries forwards limit/offset only for lists, records, tasks, and deals; companies and people ignore them. Legacy search without queries forwards limit/offset to records_search; neither format provides a cursor. Lists are supported only by legacy get/search. Notes support create/delete and legacy get; query-array searches reject notes, while search without queries uses bounded notes search. Custom resource slugs are rejected before execution.',
         recovery:
           'Inspect each item outcome before considering a retry; never re-run successful writes.',
         alternatives: ['records_batch_search', 'records_create'],
