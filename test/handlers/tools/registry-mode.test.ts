@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { findToolConfig } from '@/handlers/tools/registry.js';
 import { resolveToolName } from '@/config/tool-aliases.js';
 import { getToolsListPayload } from '@/utils/mcp-discovery.js';
@@ -90,5 +90,60 @@ describe('findToolConfig in search-only mode', () => {
   it('exposes the full phase-1 surface only in full mode', () => {
     process.env.ATTIO_MCP_TOOL_MODE = 'full';
     expect(getToolsListPayload().tools.length).toBeGreaterThanOrEqual(45);
+  });
+});
+
+describe('the retired DISABLE_UNIVERSAL_TOOLS flag', () => {
+  // The legacy registration branch is gone, so the flag is inert: absent,
+  // false, and true all advertise the same v2 catalogue (AE6).
+  const originalFlag = process.env.DISABLE_UNIVERSAL_TOOLS;
+
+  afterEach(() => {
+    if (originalFlag === undefined) {
+      delete process.env.DISABLE_UNIVERSAL_TOOLS;
+    } else {
+      process.env.DISABLE_UNIVERSAL_TOOLS = originalFlag;
+    }
+    vi.resetModules();
+  });
+
+  it('registers one v2 catalogue for every flag value', async () => {
+    const baseline = getToolsListPayload()
+      .tools.map((tool) => tool.name)
+      .sort();
+    expect(baseline.length).toBeGreaterThanOrEqual(45);
+
+    for (const value of ['false', 'true']) {
+      process.env.DISABLE_UNIVERSAL_TOOLS = value;
+      vi.resetModules();
+      const { getToolsListPayload: reloaded } =
+        await import('@/utils/mcp-discovery.js');
+      expect(
+        reloaded()
+          .tools.map((tool) => tool.name)
+          .sort(),
+        `DISABLE_UNIVERSAL_TOOLS=${value}`
+      ).toEqual(baseline);
+    }
+  });
+
+  it('cannot bring back a legacy-only tool', () => {
+    process.env.DISABLE_UNIVERSAL_TOOLS = 'true';
+    for (const name of [
+      'create-company',
+      'search-people',
+      'create-task',
+      'get-company-team',
+    ]) {
+      expect(findToolConfig(name), name).toBeUndefined();
+      expect(
+        findToolConfig(name, { enforceMode: false }),
+        name
+      ).toBeUndefined();
+    }
+    // The surviving routes are unaffected by the flag.
+    expect(findToolConfig('lists_list')).toBeDefined();
+    expect(findToolConfig('records_merge')).toBeDefined();
+    expect(findToolConfig('workspace_members_get')).toBeDefined();
   });
 });

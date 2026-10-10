@@ -49,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `bun run cleanup:test-data:lists` — dry-run/delete shortcut for the new lists resource
 - Unit coverage for the cleanup fetchers, creator filter, deleter endpoint routing, and the mass-deletion safety gate (`test/scripts/cleanup-resources.test.ts`, `test/scripts/cleanup-safety-gate.test.ts`)
 
+### Removed
+
+- Removed the legacy resource-specific tool surface; all deployments now register the v2 catalog. See the [migration guide](docs/MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022) for removed names, payload migration, and the obsolete flag (#1022)
+
 ## [1.7.0] - 2026-08-25
 
 **TL;DR for Users**: Safe deals-only `merge_records`, Cloudflare remote MCP sessions that no longer drop after an hour, and tenant/OAuth security hardening.

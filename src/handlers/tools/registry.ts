@@ -1,5 +1,13 @@
 /**
  * Tool registry module - handles tool registration mechanics and discovery
+ *
+ * The v2 registration surface is the only registration surface: universal
+ * operations, list containers, and workspace members. The deprecated
+ * `DISABLE_UNIVERSAL_TOOLS` branch and its resource-specific tool configs were
+ * retired with the v2 migration; no environment variable restores the legacy
+ * surface. Names that only existed there are absent from discovery and resolve
+ * to nothing, while supported prior-default names keep resolving through the
+ * call-only migration aliases in `@/config/tool-aliases.js`.
  */
 import { ResourceType } from '@/types/attio.js';
 import { ToolConfig } from '@/handlers/tool-types.js';
@@ -9,40 +17,26 @@ import { resolveToolName } from '@/config/tool-aliases.js';
 
 // Type for return values that can include special resource markers
 type ToolConfigResult = {
-  resourceType: ResourceType | 'UNIVERSAL' | 'GENERAL';
+  resourceType: ResourceType | 'UNIVERSAL';
   toolConfig: ToolConfig;
   toolType: string;
 };
 
+/**
+ * Registered definitions arrive either as a list or as a toolType-keyed map.
+ * The protocol-facing shape is validated at the discovery boundary, so the
+ * registry stores it structurally instead of asserting a handler shape.
+ */
+type RegisteredToolDefinition = Record<string, unknown>;
+export type RegisteredToolDefinitions =
+  | RegisteredToolDefinition[]
+  | Record<string, RegisteredToolDefinition>;
+
 // Import consolidated tool configurations from modular files
-import {
-  companyToolConfigs,
-  companyToolDefinitions,
-} from '@/handlers/tool-configs/companies/index.js';
-import {
-  peopleToolConfigs,
-  peopleToolDefinitions,
-} from '@/handlers/tool-configs/people/index.js';
-import {
-  dealToolConfigs,
-  dealToolDefinitions,
-} from '@/handlers/tool-configs/deals/index.js';
 import {
   listsToolConfigs,
   listsToolDefinitions,
 } from '@/handlers/tool-configs/lists.js';
-import {
-  tasksToolConfigs,
-  tasksToolDefinitions,
-} from '@/handlers/tool-configs/tasks.js';
-import {
-  recordToolConfigs,
-  recordToolDefinitions,
-} from '@/handlers/tool-configs/records/index.js';
-import {
-  generalToolConfigs,
-  generalToolDefinitions,
-} from '@/handlers/tool-configs/general/index.js';
 import {
   workspaceMembersToolConfigs,
   workspaceMembersToolDefinitions,
@@ -54,73 +48,49 @@ import {
   universalToolDefinitions,
 } from '@/handlers/tool-configs/universal/index.js';
 
-/**
- * Universal tool consolidation (Issue #352): Only expose universal tools
- * This replaces the legacy resource-specific tools with consolidated universal tools
- * that can handle all resource types (companies, people, records, tasks) through
- * a single, consistent interface.
- *
- * Legacy tools are kept for backward compatibility but not exposed by default.
- */
-const USE_UNIVERSAL_TOOLS_ONLY = process.env.DISABLE_UNIVERSAL_TOOLS !== 'true';
-
-// Issue #1022: Deprecation warning for legacy tools
-// Gate warning to avoid test noise (module-load side effect)
-if (!USE_UNIVERSAL_TOOLS_ONLY && process.env.NODE_ENV !== 'test') {
+// The v2 surface is the only registration surface, so the retired legacy flag
+// cannot restore anything. Warn once when it is still set so an operator sees
+// that the setting no longer changes the catalogue. Gate the warning against
+// test runs to keep module-load output quiet.
+if (
+  process.env.DISABLE_UNIVERSAL_TOOLS === 'true' &&
+  process.env.NODE_ENV !== 'test'
+) {
   createScopedLogger('tools', 'registry').warn(
-    'Legacy tools (DISABLE_UNIVERSAL_TOOLS=true) are deprecated and will be removed in v2.0.0 (Q1 2026). See docs/MIGRATION-GUIDE.md'
+    'DISABLE_UNIVERSAL_TOOLS is obsolete and has no effect: the v2 tool surface is the only registered surface. See docs/MIGRATION-GUIDE.md'
   );
 }
 
 /**
- * Consolidated tool configurations from modular files
+ * Consolidated tool configurations.
+ *
+ * Universal tools consolidate every record-shaped resource (companies, people,
+ * deals, records, tasks, custom objects) behind resource-first names, so the
+ * legacy per-resource configs are no longer registered (Issue #352
+ * consolidation, finalized by the v2 migration). Lists are relationship
+ * containers and stay exposed independently (Issue #470); workspace members
+ * stay exposed for user discovery (Issue #684).
  */
-export const TOOL_CONFIGS = USE_UNIVERSAL_TOOLS_ONLY
-  ? {
-      // Universal tools for consolidated operations (Issue #352)
-      UNIVERSAL: universalToolConfigs,
-      // Lists are relationship containers - always expose them (Issue #470)
-      [ResourceType.LISTS]: listsToolConfigs,
-      // Workspace members for user discovery (Issue #684)
-      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolConfigs,
-    }
-  : {
-      // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
-      [ResourceType.COMPANIES]: companyToolConfigs,
-      [ResourceType.PEOPLE]: peopleToolConfigs,
-      [ResourceType.DEALS]: dealToolConfigs,
-      [ResourceType.LISTS]: listsToolConfigs,
-      [ResourceType.TASKS]: tasksToolConfigs,
-      [ResourceType.RECORDS]: recordToolConfigs,
-      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolConfigs,
-      GENERAL: generalToolConfigs,
-      // Add other resource types as needed
-    };
+export const TOOL_CONFIGS: Record<string, Record<string, ToolConfig>> = {
+  // Universal tools for consolidated operations (Issue #352)
+  UNIVERSAL: universalToolConfigs,
+  // Lists are relationship containers - always expose them (Issue #470)
+  [ResourceType.LISTS]: listsToolConfigs,
+  // Workspace members for user discovery (Issue #684)
+  [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolConfigs,
+};
 
 /**
  * Consolidated tool definitions from modular files
  */
-export const TOOL_DEFINITIONS = USE_UNIVERSAL_TOOLS_ONLY
-  ? {
-      // Universal tools for consolidated operations (Issue #352)
-      UNIVERSAL: universalToolDefinitions,
-      // Lists are relationship containers - always expose them (Issue #470)
-      [ResourceType.LISTS]: listsToolDefinitions,
-      // Workspace members for user discovery (Issue #684)
-      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolDefinitions,
-    }
-  : {
-      // Legacy resource-specific tools (deprecated, use DISABLE_UNIVERSAL_TOOLS=true to enable)
-      [ResourceType.COMPANIES]: companyToolDefinitions,
-      [ResourceType.PEOPLE]: peopleToolDefinitions,
-      [ResourceType.DEALS]: dealToolDefinitions,
-      [ResourceType.LISTS]: listsToolDefinitions,
-      [ResourceType.TASKS]: tasksToolDefinitions,
-      [ResourceType.RECORDS]: recordToolDefinitions,
-      [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolDefinitions,
-      GENERAL: generalToolDefinitions,
-      // Add other resource types as needed
-    };
+export const TOOL_DEFINITIONS: Record<string, RegisteredToolDefinitions> = {
+  // Universal tools for consolidated operations (Issue #352)
+  UNIVERSAL: universalToolDefinitions,
+  // Lists are relationship containers - always expose them (Issue #470)
+  [ResourceType.LISTS]: listsToolDefinitions,
+  // Workspace members for user discovery (Issue #684)
+  [ResourceType.WORKSPACE_MEMBERS]: workspaceMembersToolDefinitions,
+};
 
 /**
  * Find the tool config for a given tool name
@@ -143,7 +113,9 @@ export function findToolConfig(
 
   const { name: canonicalToolName } = resolveToolName(toolName);
 
-  // Search in resource-specific tools first
+  // Search resource-scoped registrations that survived the v2 migration.
+  // Resource types with no registered configs resolve to nothing, so a
+  // legacy-only name can never reach a handler.
   for (const resourceType of Object.values(ResourceType)) {
     const resourceConfig = TOOL_CONFIGS[resourceType];
     if (!resourceConfig) {
@@ -153,46 +125,12 @@ export function findToolConfig(
       continue;
     }
 
-    // For debugging, log all available tools for a resource type
     if (debugMode) {
       const toolTypes = Object.keys(resourceConfig);
-      if (toolTypes.includes(canonicalToolName.replace(/-/g, ''))) {
-        log.info(
-          'Tool might be found under a different name. Available tool types',
-          { toolTypes }
-        );
-      }
-
-      // Specific logging for commonly problematic tools
-      const commonProblematicTools = [
-        'discover-company-attributes',
-        'get-company-basic-info',
-      ];
-      if (
-        commonProblematicTools.includes(canonicalToolName) &&
-        resourceType === ResourceType.COMPANIES
-      ) {
-        const toolTypeKey =
-          canonicalToolName === 'discover-company-attributes'
-            ? 'discoverAttributes'
-            : 'basicInfo';
-
-        // Use a type-safe way to check for existence
-        const hasToolType = Object.keys(resourceConfig).includes(toolTypeKey);
-        if (hasToolType) {
-          const config =
-            resourceConfig[toolTypeKey as keyof typeof resourceConfig];
-          log.info('Found config for legacy mapping', {
-            toolTypeKey,
-            name: (config as ToolConfig).name,
-            hasHandler: typeof (config as ToolConfig).handler === 'function',
-            hasFormatter:
-              typeof (config as ToolConfig).formatResult === 'function',
-          });
-        } else {
-          log.warn(`${toolTypeKey} not found in ${resourceType} configs`);
-        }
-      }
+      log.debug('Searching resource registrations', {
+        resourceType,
+        toolTypeCount: toolTypes.length,
+      });
     }
 
     for (const [toolType, config] of Object.entries(resourceConfig)) {
@@ -232,30 +170,6 @@ export function findToolConfig(
         if (options.enforceMode === false || isToolAllowed(canonicalToolName)) {
           return {
             resourceType: 'UNIVERSAL' as const,
-            toolConfig: config as ToolConfig,
-            toolType,
-          };
-        }
-        return undefined;
-      }
-    }
-  }
-
-  // Search in general tools if not found in resource-specific or universal tools
-  const generalConfig = TOOL_CONFIGS.GENERAL;
-  if (generalConfig) {
-    for (const [toolType, config] of Object.entries(generalConfig)) {
-      if (config && config.name === canonicalToolName) {
-        if (debugMode) {
-          log.info('Found general tool', {
-            toolName: canonicalToolName,
-            toolType,
-          });
-        }
-
-        if (options.enforceMode === false || isToolAllowed(canonicalToolName)) {
-          return {
-            resourceType: 'GENERAL' as const,
             toolConfig: config as ToolConfig,
             toolType,
           };

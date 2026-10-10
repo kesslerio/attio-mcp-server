@@ -170,10 +170,9 @@ existing host controls. Batch writes are never replayed after result encoding or
 companion formatting fails; uncertain completion requires readback before retry.
 
 Connector and list/member/diagnostic families are covered by the next boundary;
-see below. Deprecated resource-specific configurations enabled by
-`DISABLE_UNIVERSAL_TOOLS=true` may retain successful text contracts without
-output schemas; their boundary-owned failures use the shared structured error
-envelope and prose opt-out above.
+see below. Every registered tool now reaches the shared result boundary. For
+the removed registration surface, see the
+[legacy migration guide](../MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022).
 
 Verify deterministic contracts with
 `bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/handlers/tools/universal-output-schemas.test.ts test/api/universal-batch-results.test.ts test/api/retry-safety.test.ts`.
@@ -299,21 +298,25 @@ export enum UniversalResourceType {
 }
 ```
 
-### Step 2: Update Resource Type Mappings
+### Step 2: Accept the New Resource-Type Spellings
+
+Resource-type arguments come from the caller, so accepted spellings live in one
+shared map rather than per tool.
 
 ```typescript
-// src/handlers/tool-configs/universal/index.ts
-export const resourceTypeMappings: Record<string, string> = {
+// src/constants/universal.constants.ts
+export const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
   // Existing mappings...
 
-  // New resource type mappings
-  'create-project': 'projects',
-  'search-projects': 'projects',
-  'get-project-details': 'projects',
-  'create-deal': 'deals',
-  'search-deals': 'deals',
+  // New resource type and accepted spelling forms
+  project: UniversalResourceType.PROJECTS,
+  projects: UniversalResourceType.PROJECTS,
 };
 ```
+
+New record resources use the existing universal tools with `resource_type`
+(e.g. `records_search` with `resource_type: 'projects'`); adding a resource
+does not register new tool names or require a legacy-name routing table.
 
 ### Step 3: Implement Resource Handlers
 
@@ -1058,43 +1061,14 @@ instead of wrapping mutation handlers in a generic retry loop.
 
 ## Migration Utilities
 
-### Tool Mapping Utilities
+### Name Resolution
 
-```typescript
-// src/handlers/tool-configs/universal/migration-utils.ts
-export function getDeprecatedToolMappings(): Record<string, string> {
-  return deprecatedToolMappings;
-}
-
-export function getMigrationPath(deprecatedTool: string): {
-  universalTool: string;
-  resourceType: string;
-  additionalParams: Record<string, any>;
-} | null {
-  const universalTool = deprecatedToolMappings[deprecatedTool];
-  const resourceType = resourceTypeMappings[deprecatedTool];
-
-  if (!universalTool || !resourceType) return null;
-
-  const additionalParams: Record<string, any> = {};
-
-  // Add specific parameters based on tool type
-  const infoType = infoTypeMappings[deprecatedTool];
-  if (infoType) additionalParams.info_type = infoType;
-
-  const contentType = contentTypeMappings[deprecatedTool];
-  if (contentType) additionalParams.content_type = contentType;
-
-  const timeframeType = timeframeTypeMappings[deprecatedTool];
-  if (timeframeType) additionalParams.timeframe_type = timeframeType;
-
-  return {
-    universalTool,
-    resourceType,
-    additionalParams,
-  };
-}
-```
+`src/config/tool-aliases.ts` resolves call-only aliases using
+`TOOL_NAME_MIGRATION` in `src/constants/tool-names.ts`. See
+[Migration 1](../MIGRATION-GUIDE.md#migration-1-resource-first-tool-names)
+for the alias contract, and
+[Migration 2](../MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022)
+for removed resource-specific names and payload migration.
 
 ## Next Steps
 

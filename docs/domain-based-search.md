@@ -7,7 +7,9 @@ The Attio MCP server now includes enhanced company search functionality that aut
 ## Features
 
 ### Automatic Domain Detection
+
 The search system automatically detects and extracts domains from various input formats:
+
 - **Direct domains**: `example.com`
 - **URLs**: `https://example.com/path`
 - **Email addresses**: `user@example.com`
@@ -16,7 +18,9 @@ The search system automatically detects and extracts domains from various input 
 ### Enhanced Search Functions
 
 #### `searchCompanies(query, options?)`
+
 The main search function now includes domain prioritization:
+
 - When a domain is detected in the query, it searches by domain first
 - Domain matches are returned before name-based matches
 - Falls back to name-based search when no domain is found
@@ -24,42 +28,53 @@ The main search function now includes domain prioritization:
 
 ```typescript
 // Domain-based search (prioritized)
-const results = await searchCompanies("stripe.com");
+const results = await searchCompanies('stripe.com');
 
 // Name-based search (fallback)
-const results = await searchCompanies("Technology Solutions");
+const results = await searchCompanies('Technology Solutions');
 
 // Disable domain prioritization
-const results = await searchCompanies("stripe.com", { prioritizeDomains: false });
+const results = await searchCompanies('stripe.com', {
+  prioritizeDomains: false,
+});
 
 // Limit results and enable debug logging
-const results = await searchCompanies("stripe.com", { 
-  maxResults: 10, 
-  debug: true 
+const results = await searchCompanies('stripe.com', {
+  maxResults: 10,
+  debug: true,
 });
 ```
 
 **Search Options:**
+
 - `prioritizeDomains`: Enable/disable domain prioritization (default: `true`)
 - `maxResults`: Maximum number of results to return
 - `debug`: Enable debug logging (default: follows NODE_ENV)
 
 #### `searchCompaniesByDomain(domain)`
+
 Direct domain-only search for highest accuracy:
+
 ```typescript
-const results = await searchCompaniesByDomain("example.com");
+const results = await searchCompaniesByDomain('example.com');
 ```
 
 #### `smartSearchCompanies(query)`
+
 Intelligent search that handles complex queries with multiple domains:
+
 ```typescript
-const results = await smartSearchCompanies("Contact support@acme.com or visit stripe.com");
+const results = await smartSearchCompanies(
+  'Contact support@acme.com or visit stripe.com'
+);
 ```
 
 ### New MCP Tools
 
 #### `search-companies`
+
 Enhanced with domain prioritization:
+
 ```json
 {
   "name": "search-companies",
@@ -77,7 +92,9 @@ Enhanced with domain prioritization:
 ```
 
 #### `search-companies-by-domain`
+
 Direct domain search:
+
 ```json
 {
   "name": "search-companies-by-domain",
@@ -93,7 +110,9 @@ Direct domain search:
 ```
 
 #### `smart-search-companies`
+
 Multi-domain intelligent search:
+
 ```json
 {
   "name": "smart-search-companies",
@@ -111,16 +130,19 @@ Multi-domain intelligent search:
 ## Benefits
 
 ### Improved Accuracy
+
 - **Exact domain matching** reduces false positives
 - **Prioritized results** ensure most relevant companies appear first
 - **Fallback mechanism** maintains functionality for name-based searches
 
 ### Better User Experience
+
 - **Automatic detection** requires no special syntax
 - **Multiple input formats** supported (domains, URLs, emails)
 - **Consistent results** through domain normalization
 
 ### Enhanced CRM Operations
+
 - **Lead qualification** through accurate company identification
 - **Data enrichment** with precise company matching
 - **Contact management** with reliable company associations
@@ -128,45 +150,55 @@ Multi-domain intelligent search:
 ## Usage Examples
 
 ### Basic Domain Search
+
 ```typescript
 // Input: "stripe.com"
 // Returns: Companies with "stripe.com" in website field first
-const companies = await searchCompanies("stripe.com");
+const companies = await searchCompanies('stripe.com');
 ```
 
 ### Email-Based Search
+
 ```typescript
 // Input: "support@example.com"
 // Extracts: "example.com"
 // Returns: Companies with "example.com" domain
-const companies = await searchCompanies("support@example.com");
+const companies = await searchCompanies('support@example.com');
 ```
 
 ### Mixed Content Search
+
 ```typescript
 // Input: "Contact john@acme.com for Acme Corporation details"
 // Extracts: "acme.com"
 // Returns: Companies with "acme.com" domain first, then name matches
-const companies = await smartSearchCompanies("Contact john@acme.com for Acme Corporation details");
+const companies = await smartSearchCompanies(
+  'Contact john@acme.com for Acme Corporation details'
+);
 ```
 
 ### Complex Multi-Domain Search
+
 ```typescript
 // Input: "Visit https://stripe.com or email support@example.com"
 // Extracts: ["stripe.com", "example.com"]
 // Returns: Companies from both domains, prioritized by extraction order
-const companies = await smartSearchCompanies("Visit https://stripe.com or email support@example.com");
+const companies = await smartSearchCompanies(
+  'Visit https://stripe.com or email support@example.com'
+);
 ```
 
 ## Technical Implementation
 
 ### Domain Extraction
+
 - **URL parsing** with proper hostname extraction
 - **Email domain extraction** from email addresses
 - **Domain validation** using regex patterns
 - **Normalization** (lowercase, www removal)
 
 ### Search Prioritization
+
 1. **Domain detection** in query
 2. **Domain-based search** execution
 3. **Name-based search** for additional results
@@ -174,6 +206,7 @@ const companies = await smartSearchCompanies("Visit https://stripe.com or email 
 5. **Deduplication** by company ID
 
 ### Error Handling
+
 - **Graceful fallback** to name search on domain search failure
 - **Validation** of domain formats
 - **Logging** of domain extraction and search operations
@@ -181,17 +214,21 @@ const companies = await smartSearchCompanies("Visit https://stripe.com or email 
 ## Testing
 
 ### Unit Tests
+
 - Domain extraction utility functions
 - Validation and normalization logic
 - Edge case handling
 
 ### Integration Tests
+
 - Real API domain searches
 - Search prioritization verification
 - Tool configuration testing
 
 ### Manual Testing
+
 Run the manual test script:
+
 ```bash
 node test/manual/test-domain-based-company-search.js
 ```
@@ -204,7 +241,7 @@ The enhancement works automatically with existing configurations. No additional 
 
 - `src/utils/domain-utils.ts` - Domain extraction utilities
 - `src/objects/companies/search.ts` - Enhanced search functions
-- `src/handlers/tool-configs/companies/search.ts` - Tool configurations
+- `src/handlers/tool-configs/universal/core/search-operations.ts` - Tool configurations
 - `test/manual/test-domain-based-company-search.js` - Manual testing
 - `test/integration/domain-based-search.integration.test.ts` - Integration tests
 - `test/utils/domain-utils.test.ts` - Unit tests
