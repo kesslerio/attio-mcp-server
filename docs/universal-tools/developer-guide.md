@@ -470,10 +470,12 @@ The rules, and why they are shaped that way:
   name, or a manifest that does not cover every registered tool.
 - **Pagination states what the tool actually offers.** `kind: 'cursor'` means a
   sealed continuation token from this exact query; `offset` means a live view
-  with concurrent-write drift; `cap` is the documented page limit; `none` means
+  with concurrent-write drift. Conditional routes conservatively publish `supported: false`
+  and explain the supported cases in guidance; `cap` is the documented page limit; `none` means
   do not offer paging.
 - **Health stays light.** It projects `operations`, `annotations`, and
-  `guidance` and points schema documents at `capabilities_get`; the section set
+  `guidance` and points schema documents at `capabilities_get` in full mode
+  or `tools/list` in search-only mode; the section set
   is published in `capabilities.projection` rather than being silently dropped.
 
 ### Checklist For Adding A Tool

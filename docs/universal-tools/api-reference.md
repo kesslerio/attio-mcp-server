@@ -668,12 +668,12 @@ names and schemas can never disagree with the advertised surface.
         "readOnly": true,
         "destructive": false,
         "idempotent": true,
-        "pagination": { "kind": "cursor", "supported": true, "cap": 100 }
+        "pagination": { "kind": "cursor", "supported": false, "cap": 100 }
       },
       "guidance": {
         "capability": "Find records across any supported object type.",
         "boundaries": "create or modify records, or return more than one page per call.",
-        "constraints": "Max 100 results (default 10); pass the sealed next_cursor ...",
+        "constraints": "Continuation is conditional on route; defaults vary by resource ...",
         "recovery": "If attributes are unknown or a page is empty, discover searchable fields.",
         "alternatives": ["records_search_advanced", "records_get_details", "search"],
         "summary": "Find records across any supported object type. Never ..."
@@ -692,7 +692,7 @@ Reading the fields:
 | `operation.readOnly` | Whether the operation can change workspace state. Mixed batches are `false`. |
 | `operation.destructive` / `idempotent` | Whether a repeat is safe, and whether the operation is irreversible. |
 | `operation.authRequired` | `false` only for the static probes (`aaa-health-check`, `diagnostics_get`, `capabilities_get`). |
-| `operation.pagination` | `kind` is `none`, `offset`, `cursor`, or `page`; `cap` is the documented page limit. |
+| `operation.pagination` | `kind` is `none`, `offset`, `cursor`, or `page`; `cap` is the documented page limit. `supported: false` is conservative when support depends on the route; consult guidance and response pagination. |
 | `guidance` | Capability, boundaries, limits, recovery, and the catalog names that serve the same need. |
 
 Schema documents are carried as data, so the manifest stays finite even where a
@@ -702,8 +702,9 @@ tool's output schema describes the same envelope the manifest itself uses.
 `ATTIO_MCP_TOOL_MODE=search`, the permitted set is `search`, `fetch`, and
 `aaa-health-check`, and `aaa-health-check` returns that set as
 `data.capabilities`, projected to its operation sections with
-`projection.schemaSource: "capabilities_get"`. Names and facts are identical to
-the full manifest; only the schema documents stay on the discovery tool.
+`projection.schemaSource: "tools/list"`. Names and facts cover only the permitted
+set; schema documents come from `tools/list`. In full mode the schema source is
+`capabilities_get`, which accepts no selectors and publishes the complete manifest.
 
 **What it is not.** It publishes configured functionality, never what a
 particular credential may do, and it never lists workspace objects. Reads and

@@ -281,14 +281,11 @@ describe('static discovery projection', () => {
       publishesCredentialGrants: false,
     });
 
-    // A malformed selection is a validation failure, not a silent narrowing.
-    await expect(
-      (
-        capabilitiesGetConfig.handler as (
-          args: Record<string, unknown>
-        ) => Promise<unknown>
-      )({ names: ['not_a_registered_tool'] })
-    ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
+    const published = await capabilitiesGetConfig.handler();
+    expect(published).toEqual(manifest);
+    const descriptor = getToolsListPayload().tools.find((tool) => tool.name === 'capabilities_get')!;
+    expect(descriptor.inputSchema.properties).toEqual({});
+    expect(descriptor.inputSchema.additionalProperties).toBe(false);
     expect(
       executionErrorSchema.safeParse({
         error: { code: 'VALIDATION_ERROR', message: 'x', retryable: false },

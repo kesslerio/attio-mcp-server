@@ -190,14 +190,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'cursor', supported: true, cap: 100 },
+        pagination: { kind: 'cursor', supported: false, cap: 100 },
       }),
       guidance: {
         capability: 'Find records across any supported object type.',
         boundaries:
           'create or modify records, or return more than one page per call.',
         constraints:
-          'Max 100 results (default 10); pass the sealed next_cursor for this exact query and never mix cursor with offset.',
+          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset.',
         recovery:
           'If attributes are unknown or a page is empty, discover searchable fields.',
         alternatives: [
@@ -228,8 +228,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_get_attributes: {
       operation: operationOf({
         action: 'metadata',
-        resourceTypes: STANDARD_RESOURCES,
-        customObjectSlugs: true,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
+        customObjectSlugs: false,
         readOnly: true,
         destructive: false,
         idempotent: true,
@@ -245,7 +245,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_discover_attributes: {
       operation: operationOf({
         action: 'metadata',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
         customObjectSlugs: true,
         readOnly: true,
         destructive: false,
@@ -263,7 +263,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_get_attribute_options: {
       operation: operationOf({
         action: 'metadata',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
         customObjectSlugs: true,
         readOnly: true,
         destructive: false,
@@ -283,18 +283,18 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_get_info: {
       operation: operationOf({
         action: 'read',
-        resourceTypes: INTERACTION_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
         authRequired: true,
         readOnly: true,
         destructive: false,
         idempotent: true,
       }),
       guidance: {
-        capability: 'Read an enriched contact, business, or social subset.',
+        capability: 'Read the full record using its standard resource endpoint.',
         boundaries: 'search record lists or mutate data.',
         constraints:
-          'Requires resource_type, record_id, and info_type; enum-restricted.',
-        recovery: 'Fall back to records_get_details for the full payload.',
+          'Requires resource_type and record_id; no info_type selector is applied.',
+        recovery: 'Use records_get_details for enriched attribute formatting.',
         alternatives: ['records_get_details'],
       },
     },
@@ -340,7 +340,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_create: {
       operation: operationOf({
         action: 'write',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
         customObjectSlugs: true,
         readOnly: false,
         destructive: false,
@@ -366,7 +366,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_update: {
       operation: operationOf({
         action: 'write',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
         customObjectSlugs: true,
         readOnly: false,
         destructive: false,
@@ -405,7 +405,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_delete: {
       operation: operationOf({
         action: 'write',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
         customObjectSlugs: true,
         readOnly: false,
         destructive: true,
@@ -563,14 +563,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'cursor', supported: true, cap: 100 },
+        pagination: { kind: 'cursor', supported: false, cap: 100 },
       }),
       guidance: {
         capability:
           'Search with nested filter groups, scoring, and ordering (for example deals by owner and stage).',
         boundaries: 'mutate records; use the write tools for that.',
         constraints:
-          'Requires resource_type; supports filter groups and up to 100 items per page.',
+          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset.',
         recovery: 'If filters are rejected, discover valid attributes.',
         alternatives: ['records_search', 'list_entries_filter_advanced'],
       },
@@ -578,18 +578,18 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_search_by_relationship: {
       operation: operationOf({
         action: 'search',
-        resourceTypes: ['companies', 'people', 'lists', 'tasks', 'records'],
+        resourceTypes: ['companies', 'people', 'deals'],
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: 100 },
+        pagination: { kind: 'none', supported: false, cap: null },
       }),
       guidance: {
         capability:
-          'Search records anchored by a relationship (list, company, or people).',
+          'Find people by company, companies by person, or deals by company or person.',
         boundaries: 'change list memberships; use the list entry tools.',
         constraints:
-          'Requires resource_type and the related resource identifier; offset pages are a live view.',
+          'Requires relationship_type and source_id; task and list relationships are unsupported; limit and offset are ignored.',
         recovery: 'Resolve identifiers with records_search first.',
         alternatives: ['records_get_list_memberships', 'list_entries_filter'],
       },
@@ -597,18 +597,18 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_search_by_content: {
       operation: operationOf({
         action: 'search',
-        resourceTypes: STANDARD_RESOURCES,
-        customObjectSlugs: true,
+        resourceTypes: ['notes', 'people'],
+        customObjectSlugs: false,
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: 100 },
+        pagination: { kind: 'none', supported: false, cap: null },
       }),
       guidance: {
-        capability: 'Search inside notes, activity, and communication content.',
-        boundaries: 'modify note content or attachments.',
+        capability: 'Run the notes/notes company text-search route or people/activity last-month activity lookup.',
+        boundaries: 'search communication bodies or note text; notes/notes delegates to company record search; people/activity ignores search_query.',
         constraints:
-          'Requires resource_type and content_query; fields narrows the scope; results are a bounded view, not a stable page sequence.',
+          'Requires resource_type, content_type, and search_query; only notes/notes and people/activity are implemented; activity ignores limit and offset; no continuation cursor.',
         recovery: 'If results are too broad, use advanced filters instead.',
         alternatives: ['records_search_advanced', 'notes_list'],
       },
@@ -635,20 +635,20 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_batch: {
       operation: operationOf({
         action: 'batch',
-        resourceTypes: STANDARD_RESOURCES,
+        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
         customObjectSlugs: true,
         readOnly: false,
         destructive: true,
         idempotent: false,
-        pagination: { kind: 'offset', supported: true, cap: 100 },
+        pagination: { kind: 'none', supported: false, cap: null },
       }),
       guidance: {
         capability:
-          'Run an ordered set of create, update, delete, get, or search operations in one call.',
+          'Run create/update/delete operations concurrently with outcomes indexed by input; legacy operation_type also supports get and search.',
         boundaries:
           'replay successful items automatically, or skip host approval guardrails.',
         constraints:
-          'Mixed operations make the whole call non-read-only; up to 100 operations; every item is reported once and partial failures stay data.',
+          'Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; legacy search forwards limit/offset but provides no cursor. Lists are supported only by legacy get/search.',
         recovery:
           'Inspect each item outcome before considering a retry; never re-run successful writes.',
         alternatives: ['records_batch_search', 'records_create'],
@@ -661,14 +661,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         readOnly: true,
         destructive: false,
         idempotent: true,
-        pagination: { kind: 'offset', supported: true, cap: 100 },
+        pagination: { kind: 'offset', supported: false, cap: null },
       }),
       guidance: {
         capability:
           'Run several searches together and return grouped outcomes per query.',
         boundaries: 'mutate or import data; use records_batch for writes.',
         constraints:
-          'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported, not swallowed.',
+          'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded to bounded resource-specific searches; no continuation cursor or universal page cap is guaranteed.',
         recovery: 'Retry a failed query on its own with records_search.',
         alternatives: ['records_batch', 'records_search'],
       },
@@ -999,7 +999,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         capability: 'Read profile and access details for one member.',
         boundaries: 'update member information or permissions.',
         constraints:
-          'Requires a workspace_member_id taken from list or search results.',
+          'Requires a memberId taken from list or search results.',
         recovery: 'Confirm the identifier with workspace_members_list.',
         alternatives: ['workspace_members_list'],
       },
@@ -1060,15 +1060,27 @@ export function capabilityOperationFor(
 export function buildCapabilityManifest(
   tools: readonly Tool[]
 ): CapabilityManifest {
+  const permitted = new Set(tools.map((tool) => tool.name));
   const entries: CapabilityEntry[] = tools.map((tool) => {
     const authored = CAPABILITY_CATALOG[tool.name] as
       | CatalogOperation
       | undefined;
     const typed = tool as Tool & { annotations?: Record<string, unknown> };
-    const guidance = authored
+    const permittedGuidance = authored
       ? {
           ...authored.guidance,
-          summary: formatCapabilityGuidance(authored.guidance),
+          alternatives: authored.guidance.alternatives?.filter(
+            (name) => name === 'tools/list' || permitted.has(name)
+          ),
+          ...(tool.name === 'search' && !permitted.has('records_search')
+            ? { recovery: 'Refine the query and repeat search; full mode is required for attribute filtering and continuation.' }
+            : {}),
+        }
+      : null;
+    const guidance = permittedGuidance
+      ? {
+          ...permittedGuidance,
+          summary: formatCapabilityGuidance(permittedGuidance),
         }
       : null;
 
@@ -1099,41 +1111,12 @@ export function buildCapabilityManifest(
   };
 }
 
-/**
- * Input contract for `capabilities_get`.
- *
- * `names` narrows the projection to names the caller cares about; `include`
- * drops whole sections when a client only needs the operation table. Both are
- * selection aids, not size limits: a request that cannot serialize is reported
- * instead of silently trimmed.
- */
 export const capabilitiesGetInputSchema = {
   type: 'object' as const,
-  properties: {
-    names: {
-      type: 'array' as const,
-      items: { type: 'string' as const },
-      maxItems: 100,
-      description:
-        'Optional canonical tool names to include. Omit for the whole permitted catalog.',
-    },
-    include: {
-      type: 'array' as const,
-      items: {
-        type: 'string' as const,
-        enum: ['operations', 'schemas', 'guidance', 'annotations'] as const,
-      },
-      description:
-        'Sections to return. Defaults to every section of the manifest.',
-    },
-  },
+  properties: {},
   required: [] as const,
   additionalProperties: false,
-  examples: [
-    {},
-    { names: ['records_search', 'records_create'] },
-    { include: ['operations'] },
-  ],
+  examples: [{}],
 };
 
 /** MCP descriptor for the static discovery tool. */
@@ -1159,20 +1142,7 @@ export const capabilitiesGetToolDefinition = {
 export const capabilitiesGetConfig = {
   name: CAPABILITIES_TOOL_NAME,
   ...capabilitiesResultContract,
-  handler: async (args: Record<string, unknown> = {}) => {
-    const manifest = await readCapabilityManifest();
-    const names = Array.isArray(args?.names)
-      ? (args.names as unknown[]).filter(
-          (name): name is string => typeof name === 'string'
-        )
-      : null;
-    const include = Array.isArray(args?.include)
-      ? (args.include as unknown[]).filter(
-          (section): section is string => typeof section === 'string'
-        )
-      : null;
-    return projectManifestSections(manifest, { names, include });
-  },
+  handler: async () => readCapabilityManifest(),
   structuredOutput: (payload: unknown): Record<string, unknown> => ({
     data: payload as Record<string, unknown>,
   }),
@@ -1218,74 +1188,13 @@ export function healthCapabilityProjection(
   manifest: CapabilityManifest
 ): Record<string, unknown> {
   return {
-    ...projectManifestSections(manifest, {
-      include: [...HEALTH_CAPABILITY_SECTIONS],
-    }),
+    ...manifest,
+    tools: manifest.tools.map(({ inputSchema, outputSchema, ...entry }) => entry),
     projection: {
       sections: [...HEALTH_CAPABILITY_SECTIONS],
-      schemaSource: 'capabilities_get',
-      note: 'Health publishes the operation facts for the permitted set; input and output schema documents come from capabilities_get or tools/list.',
+      schemaSource: manifest.mode === 'search-only' ? 'tools/list' : CAPABILITIES_TOOL_NAME,
+      note: 'Health publishes the operation facts for the permitted set; input and output schema documents come from tools/list (or capabilities_get in full mode).',
     },
   };
 }
 
-/**
- * Narrow a manifest without touching its completeness: unknown names are
- * reported, never guessed, and dropping a section is explicit.
- */
-export function projectManifestSections(
-  manifest: CapabilityManifest,
-  options: { names?: string[] | null; include?: string[] | null }
-): Record<string, unknown> {
-  const includeAll = !options.include || options.include.length === 0;
-  const wants = (section: string) =>
-    includeAll || (options.include ?? []).includes(section);
-
-  let tools = [...manifest.tools];
-  if (options.names && options.names.length > 0) {
-    const requested = new Set(options.names);
-    const present = new Set(manifest.tools.map((entry) => entry.name));
-    const unknown = [...requested].filter((name) => !present.has(name));
-    if (unknown.length > 0) {
-      throw Object.assign(
-        new Error(`capabilities_get: unknown tool names ${unknown.join(', ')}`),
-        { code: 'VALIDATION_ERROR' }
-      );
-    }
-    tools = tools.filter((entry) => requested.has(entry.name));
-  }
-
-  const projected = tools.map((entry) => {
-    const out: Record<string, unknown> = {
-      name: entry.name,
-      description: entry.description,
-    };
-    if (wants('schemas') && entry.inputSchema) {
-      out.inputSchema = entry.inputSchema;
-    }
-    if (wants('schemas') && entry.outputSchema) {
-      out.outputSchema = entry.outputSchema;
-    }
-    if (wants('annotations')) {
-      out.annotations = entry.annotations;
-    }
-    if (wants('operations') && entry.operation) {
-      out.operation = entry.operation;
-    }
-    if (wants('guidance') && entry.guidance) {
-      out.guidance = entry.guidance;
-    }
-    if (entry.unannotated) {
-      out.unannotated = true;
-    }
-    return out;
-  });
-
-  return {
-    schemaVersion: manifest.schemaVersion,
-    mode: manifest.mode,
-    toolCount: projected.length,
-    authorization: manifest.authorization,
-    tools: projected,
-  };
-}

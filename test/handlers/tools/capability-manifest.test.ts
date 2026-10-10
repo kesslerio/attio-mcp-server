@@ -175,7 +175,7 @@ describe('capability manifest consistency', () => {
       // The one deliberate difference is declared, not silent: health keeps
       // the payload light and points schema documents at the discovery tool.
       expect(healthManifest.projection).toMatchObject({
-        schemaSource: 'capabilities_get',
+        schemaSource: mode === 'search' ? 'tools/list' : 'capabilities_get',
       });
       expect(
         healthManifest.tools.every((entry) => entry.inputSchema === undefined)
@@ -183,14 +183,37 @@ describe('capability manifest consistency', () => {
     }
   });
 
-  it('names alternatives that exist in the current catalog', () => {
-    const known = new Set([...Object.keys(CAPABILITY_CATALOG), 'tools/list']);
-    for (const [name, entry] of Object.entries(CAPABILITY_CATALOG)) {
-      for (const alternative of entry.guidance.alternatives ?? []) {
-        expect(known.has(alternative), `${name} -> ${alternative}`).toBe(true);
+  it('publishes only permitted selection pointers in both modes', () => {
+    for (const mode of ['full', 'search']) {
+      process.env.ATTIO_MCP_TOOL_MODE = mode;
+      const manifest = getCapabilityManifest();
+      const permitted = new Set([...manifest.tools.map((entry) => entry.name), 'tools/list']);
+      for (const entry of manifest.tools) {
+        for (const alternative of entry.guidance?.alternatives ?? []) {
+          expect(permitted.has(alternative), `${entry.name} -> ${alternative}`).toBe(true);
+        }
       }
     }
   });
+
+  it('publishes executable resource boundaries and conservative continuation', () => {
+    const entries = catalog();
+    for (const name of ['records_create', 'records_update', 'records_delete', 'records_batch']) {
+      expect(entries.get(name)!.operation!.resourceTypes).not.toContain('lists');
+    }
+    for (const name of ['records_get_attributes', 'records_discover_attributes']) {
+      expect(entries.get(name)!.operation!.resourceTypes).not.toContain('notes');
+    }
+    expect(entries.get('records_get_attributes')!.operation!.customObjectSlugs).toBe(false);
+    expect(entries.get('records_get_attribute_options')!.operation!.resourceTypes).not.toContain('lists');
+    expect(entries.get('records_get_info')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
+    expect(entries.get('records_search_by_relationship')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals']);
+    expect(entries.get('records_search_by_content')!.operation!.resourceTypes).toEqual(['notes', 'people']);
+    for (const name of ['records_search', 'records_search_advanced', 'records_search_by_relationship', 'records_search_by_content', 'records_batch', 'records_batch_search']) {
+      expect(entries.get(name)!.operation!.pagination.supported).toBe(false);
+    }
+  });
+
 });
 
 describe('operation semantics for tool selection', () => {
@@ -247,7 +270,7 @@ describe('operation semantics for tool selection', () => {
     const byName = catalog();
     expect(byName.get('records_search')!.operation!.pagination).toMatchObject({
       kind: 'cursor',
-      supported: true,
+      supported: false,
       cap: 100,
     });
     expect(byName.get('search')!.operation!.authRequired).toBe(true);
@@ -330,7 +353,7 @@ describe('operation semantics for tool selection', () => {
         entry.operation!.readOnly,
       'continuation-capable query'
     );
-    expect(continuable).toContain('records_search');
+    expect(continuable).toContain('records_search_by_timeframe');
 
     // The whole set is finite and each rule is a real filter, not a guess: a
     // client choosing from these fields never has to make a trial call.

@@ -250,7 +250,7 @@ The kinds of decision you can make from the entry alone:
 | "Patch a company's fields" | `action: "write"`, a single value in `resourceTypes`, and no `resource_type` property: `companies_update`. Scoped tools skip the resource_type the generic ones require. |
 | "Create a record in a custom object" | A write with `customObjectSlugs: true` that still takes `resource_type`: `records_create`, `records_update`, `records_delete`, `records_get_details`, and the search variants. |
 | "Add a note to a person" | `notes_create` with `resourceTypes` covering note-bearing objects; `notes_list` for the read side. |
-| "Keep paging this query" | `pagination.kind: "cursor"` with `supported: true`: `records_search`, `records_search_advanced`, `records_search_by_timeframe`, `notes_list`, `list_entries_list`. |
+| "Keep paging this query" | `pagination.kind: "cursor"` with `supported: true`: `records_search_by_timeframe`, `notes_list`, `list_entries_list`. Basic and advanced search declare conservative `supported: false`: cursor continuation is available on query/timeframe routes and empty-query object searches excluding tasks/lists/notes. Other text queries and basic tasks/lists/notes searches are bounded; inspect response `pagination.supported` before continuing. |
 | "Batch writes vs batch reads" | `records_batch` is `readOnly: false` (mixed writes), `records_batch_search` is `readOnly: true`. A client replays searches, not writes. |
 | "Anything that does not need a login" | `authRequired: false` appears only on `aaa-health-check`, `diagnostics_get`, and `capabilities_get`. |
 
@@ -261,8 +261,8 @@ Three things this does not give you, and the docs do not pretend otherwise:
   can still come back `UNAUTHENTICATED` or `PERMISSION_DENIED`.
 - It lists capabilities, not your data. Nothing in it tells you which objects
   exist in a workspace.
-- `guidance.alternatives` only names tools that exist right now, so following
-  one is never a dead end.
+- `guidance.alternatives` only names tools permitted in the current mode (or
+  `tools/list`); authorization still applies to calls.
 
 If the manifest and `tools/list` ever disagree, that is a bug worth reporting:
 both are projections of one registry, and the schema linter fails the build if
