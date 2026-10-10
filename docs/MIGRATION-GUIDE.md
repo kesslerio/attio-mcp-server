@@ -205,7 +205,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
   "tool": "records_create",
   "params": {
     "resource_type": "people",
-    "attributes": {
+    "record_data": {
       "name": "John Doe",
       "email": "john@example.com"
     }
@@ -235,7 +235,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
   "params": {
     "resource_type": "tasks",
     "record_id": "abc-123",
-    "attributes": {
+    "record_data": {
       "content": "Updated task description"
     }
   }
@@ -338,7 +338,7 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 | `company_id`         | `record_id`         | Unified identifier              |
 | `person_id`          | `record_id`         | Unified identifier              |
 | `task_id`            | `record_id`         | Unified identifier              |
-| Top-level attributes | `attributes` object | Nested structure                |
+| Top-level attributes | `record_data` object | Attribute map for create/update |
 | N/A                  | `resource_type`     | **Required** in universal tools |
 
 ### Attributes Nesting
@@ -352,12 +352,12 @@ Legacy tools accepted attributes at the top level:
 }
 ```
 
-Universal tools require attributes in an `attributes` object:
+Universal and focused company/deal create and update operations require `record_data` (an attribute map), plus the target identifiers required by the tool. `attributes` is not an accepted update field. Universal calls also require `resource_type`; focused tools fix the resource internally. For example, a universal create call uses:
 
 ```json
 {
   "resource_type": "companies",
-  "attributes": {
+  "record_data": {
     "name": "Acme Corp",
     "domain": "acme.com"
   }
@@ -375,13 +375,15 @@ npx attio-discover tools
 
 ### 2. Run Side-by-Side Tests
 
-Test the v2 tools with the data your saved client sends to verify identical results.
+Test the v2 tools with payloads migrated to each tool's current `inputSchema` and verify the expected results.
 
 ### 3. Switch to v2 Names
 
-For supported prior-default migration aliases in the alias table, switch to the canonical name and keep the arguments unchanged.
+Arguments stay unchanged only when replacing a supported prior-default migration alias from `TOOL_NAME_MIGRATION` in [src/constants/tool-names.ts](../src/constants/tool-names.ts), such as `create_record`, `get-lists`, or `create-list`, with its canonical name. These aliases rename calls without rewriting payloads; see the supported alias table above.
 
-For removed legacy resource-specific names, send the v2 tool with `resource_type` and its current payload shape: `record_data` for creates, `attributes` for updates, and identifier or operation fields required by that tool. Read `tools/list` and the [per-tool schemas](universal-tools/api-reference.md); renaming a removed tool does not convert its payload.
+Removed legacy resource-specific names have no migration aliases. Call the v2 universal tool with `resource_type` and its own payload fields, including the identifiers and operation fields required by that tool. Universal and focused company/deal create and update operations take `record_data` (an attribute map); `attributes` is not an accepted update field. Focused tools fix the resource internally. Each tool's `inputSchema` from `tools/list` or `capabilities_get` is authoritative; see also the [per-tool reference](universal-tools/api-reference.md). Renaming alone does not migrate a legacy payload.
+
+For example, replace `search-companies` with `records_search` and send `{ "resource_type": "companies", "query": "Acme" }`, or use the tool's `filters` field according to its schema. A bare `{ "query": "Acme" }` payload is missing `resource_type`.
 
 ### 4. Verify No Legacy Dependency
 

@@ -4,17 +4,23 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 
 ## Migration Overview
 
-> **v2.0.0**: the deprecated tools in the tables below were removed with the v2
-> surface. They are a from-to reference for saved clients, not a callable set,
-> and `DISABLE_UNIVERSAL_TOOLS` no longer registers them. If a client still
-> sends one of these removed names, send the v2 tool with `resource_type` and
-> the payload required by its current schema: use `record_data` for creates,
-> `attributes` for updates, and migrate identifier and operation fields as
-> required. Read `tools/list` and the [per-tool schemas](api-reference.md)
-> before migrating; renaming alone does not convert a legacy payload.
+> **v2.0.0**: the deprecated resource-specific tools in the tables below were
+> removed and have no migration aliases. The tables are historical from-to
+> references; `DISABLE_UNIVERSAL_TOOLS` cannot restore the removed tools.
+> Call the v2 universal tool with `resource_type` and its own payload fields,
+> including the identifiers and operation fields required by that tool.
+> Universal and focused company/deal create and update operations take
+> `record_data` (an attribute map); `attributes` is not an accepted update
+> field. Focused tools fix the resource internally. Each tool's `inputSchema`
+> from `tools/list` or `capabilities_get` is authoritative; see also the
+> [per-tool reference](api-reference.md). Renaming alone does not migrate a
+> legacy payload.
 >
-> Only supported prior-default migration aliases preserve arguments when
-> replaced by their canonical names; see the
+> Arguments stay unchanged only when replacing a supported prior-default
+> migration alias from `TOOL_NAME_MIGRATION` in
+> [src/constants/tool-names.ts](../../src/constants/tool-names.ts), such as
+> `create_record`, `get-lists`, or `create-list`, with its canonical name.
+> These aliases rename calls without rewriting payloads; see the
 > [supported alias table](../MIGRATION-GUIDE.md).
 
 ### What Changed?
@@ -377,7 +383,7 @@ await client.callTool('records_search', {
 
 1. Change tool name: `search-companies` → `records_search`
 2. Add parameter: `resource_type: 'companies'`
-3. Keep all other parameters the same
+3. Use the `query` or `filters` fields and optional parameters accepted by `records_search`'s current `inputSchema`; a bare `{ query }` payload is missing `resource_type`
 
 </td>
 </tr>
