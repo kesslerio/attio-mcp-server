@@ -541,7 +541,7 @@ await client.callTool('records.search_by_timeframe', {
   operation_type: 'create' | 'update' | 'delete' | 'search' | 'get', // Required
   records?: Array<object>,           // For create/update operations
   record_ids?: string[],             // For get/delete operations
-  query?: string,                    // For search operations (required, cannot be empty)
+  queries?: string[],                // Required for search operations
   limit?: number,                    // Max results (1-50, default: 10)
   offset?: number                    // Pagination offset (default: 0)
 }
