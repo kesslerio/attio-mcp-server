@@ -31,7 +31,7 @@ for companion prose formatting.
 
 ### 1. records.search
 
-**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups.
+**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups. Strategy-based records/custom-object routes ignore text query; tasks use it only in content mode. Companies, people, and deals ignore query when filters are supplied.
 
 **Consolidates**: `search-companies`, `search-people`, `list-records`, `list-tasks`
 
@@ -91,7 +91,6 @@ await client.callTool('records.search', {
 // Search people with filters
 await client.callTool('records.search', {
   resource_type: 'people',
-  query: 'john',
   filters: {
     and: [{ attribute: 'industry', condition: 'equals', value: 'Technology' }],
   },
@@ -360,7 +359,7 @@ await client.callTool('records.get_info', {
 
 ### 9. records.search_advanced
 
-**Description**: Nested attribute filtering for companies, people, deals, records, and configured custom objects. Basic task/list routes ignore filters; notes use only parent-object and parent-record filters, not nested groups. `sort_by` and `sort_order` are accepted but ignored; results use provider order. Timeframe routes reject modified/updated searches for people and companies and do not combine attribute filters or text queries.
+**Description**: Nested attribute filtering for companies, people, deals, records, and configured custom objects. Basic task/list routes ignore filters; notes use only parent-object and parent-record filters, not nested groups. `sort_by` and `sort_order` are accepted but ignored; results use provider order. Timeframe routes reject modified/updated searches for people and companies and do not combine attribute filters or text queries. On strategy-based routes, records and configured custom objects ignore text query; tasks use query only in content mode. Companies, people, and deals ignore query when filters are supplied.
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
@@ -385,7 +384,6 @@ await client.callTool('records.get_info', {
 // Advanced company search
 await client.callTool('records.search_advanced', {
   resource_type: 'companies',
-  query: 'technology',
   filters: {
     and: [
       { attribute: 'employee_count', condition: 'greater_than', value: 100 },
@@ -573,7 +571,7 @@ await client.callTool('records.batch', {
 await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'search',
-  query: 'technology startup',
+  queries: ['technology startup'],
   limit: 50,
 });
 ```

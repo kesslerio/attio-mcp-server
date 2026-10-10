@@ -26,6 +26,7 @@ await client.callTool('records.search', {
 await client.callTool('records.search', {
   resource_type: 'tasks',
   query: 'follow-up',
+  search_type: 'content',
 });
 ```
 
@@ -174,7 +175,7 @@ const overdueTasks = await client.callTool('records.search_by_timeframe', {
 const techCompanies = await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'search',
-  query: 'technology software',
+  queries: ['technology software'],
   limit: 50,
 });
 
@@ -246,8 +247,8 @@ The kinds of decision you can make from the entry alone:
 | "Patch a company's fields" | `action: "write"`, a single value in `resourceTypes`, and no `resource_type` property: `companies_update`. Scoped tools skip the resource_type the generic ones require. |
 | "Create a record in a custom object" | A write with `customObjectSlugs: true` that still takes `resource_type`: `records_create`, using a configured custom-object slug. |
 | "Add a note to a person" | `notes_create` with `resourceTypes` covering note-bearing objects; `notes_list` for the read side. Both require a standard resource slug; note updates are unsupported by `records_update` and `records_batch`. |
-| "Keep paging this query" | `pagination.kind: "cursor"` with `supported: true`: `records_search_by_timeframe`, `notes_list`, `list_entries_list`. Basic and advanced search declare conservative `supported: false`: cursor continuation is available on query/timeframe routes and empty-query object searches excluding tasks/lists/notes. Other text queries and basic tasks/lists/notes searches are bounded; inspect response `pagination.supported` before continuing. People/companies reject modified/updated timeframe searches; timeframe routes target object records and ignore additional attribute filters or text queries. |
-| "Batch writes vs batch reads" | `records_batch` is `readOnly: false` (mixed writes), `records_batch_search` is `readOnly: true`. Batch writes accept standard resource slugs only; notes support create/delete, not update, and lists require dedicated write tools. Batch search excludes notes; companies/people ignore limit/offset. Inspect per-input outcomes before retrying. |
+| "Keep paging this query" | `pagination.kind: "cursor"` with `supported: true`: `records_search_by_timeframe`, `notes_list`, `list_entries_list`. Basic and advanced search declare conservative `supported: false`: cursor continuation is available on query/timeframe routes and empty-query object searches excluding tasks/lists/notes. Other text queries and basic tasks/lists/notes searches are bounded; inspect response `pagination.supported` before continuing. People/companies reject modified/updated timeframe searches; timeframe routes target object records and ignore additional attribute filters or text queries. On strategy-based routes, records/configured custom objects ignore query, tasks use it only in content mode, and companies/people/deals ignore it when filters are supplied. |
+| "Batch writes vs batch reads" | `records_batch` is `readOnly: false` (mixed writes), `records_batch_search` is `readOnly: true`. Batch writes accept standard resource slugs only; note writes accept create and delete only, never update, and lists require dedicated write tools. Batch search excludes notes; companies/people ignore limit/offset. Query-array searches for records/tasks ignore query and can repeat the same results for distinct queries. Companies/people/deals ignore query when filters are supplied. Inspect per-input outcomes before retrying. |
 | "Anything that does not need a login" | `authRequired: false` appears only on `aaa-health-check`, `diagnostics_get`, and `capabilities_get`. |
 
 For nested attribute filters, select object-record searches for companies, people, deals, records, or configured custom objects. Basic task/list searches ignore filters; notes consume only parent-object and parent-record filters. Advanced search ignores `sort_by` and `sort_order`. Custom-object metadata discovery, option lookup, notes listing, and batch operations reject custom resource slugs.
