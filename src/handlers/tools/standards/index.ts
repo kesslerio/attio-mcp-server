@@ -49,6 +49,36 @@ export function formatToolDescription(
   return sentences.join(' ');
 }
 
+/**
+ * Structured selection guidance published by the capability manifest.
+ *
+ * `formatToolDescription` owns the sentence shape of a tool description, and
+ * `formatCapabilityGuidance` renders the same fields for a manifest entry, so
+ * one authored statement serves both surfaces instead of drifting apart.
+ */
+export interface CapabilityGuidance {
+  /** What the tool does, stated as the capability the caller can rely on. */
+  capability: string;
+  /** What the tool does not do, phrased as the things it must never do. */
+  boundaries: string;
+  /** Limits, required inputs, and caps that constrain the operation. */
+  constraints?: string;
+  /** What to do when the operation fails or returns an ambiguous result. */
+  recovery?: string;
+  /** Other tools in the current catalog that serve the same need. */
+  alternatives?: readonly string[];
+}
+
+/** Render guidance with the repository's canonical description shape. */
+export function formatCapabilityGuidance(guidance: CapabilityGuidance): string {
+  return formatToolDescription({
+    capability: guidance.capability,
+    boundaries: guidance.boundaries,
+    constraints: guidance.constraints,
+    recoveryHint: guidance.recovery,
+  });
+}
+
 export interface ErrorTemplateOptions {
   code: number;
   message: string;

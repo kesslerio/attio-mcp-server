@@ -32,6 +32,12 @@ import {
   smitheryDiagnosticsToolDefinition,
   smitheryDiagnosticsConfig,
 } from './smithery-diagnostics.js';
+import {
+  capabilitiesGetToolDefinition,
+  capabilitiesGetConfig,
+  healthCapabilityProjection,
+  readCapabilityManifest,
+} from './capabilities.js';
 
 /**
  * Simple no-auth health-check tool to support unauthenticated capability scanning
@@ -73,6 +79,10 @@ export const healthCheckConfig = {
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'production',
       needs_api_key: true,
+      // Health is the discovery surface a search-only client can reach without
+      // credentials, so it carries the same mode-filtered manifest the
+      // discovery tool publishes, projected to its operation sections (KTD8).
+      capabilities: healthCapabilityProjection(await readCapabilityManifest()),
     } as const;
 
     // The adapter owns the envelope; the handler returns the domain payload.
@@ -107,6 +117,7 @@ export const universalToolConfigs = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckConfig,
   diagnostics_get: smitheryDiagnosticsConfig,
+  capabilities_get: capabilitiesGetConfig,
   ...coreOperationsToolConfigs,
   ...advancedOperationsToolConfigs,
   records_batch_search: batchSearchConfig,
@@ -120,6 +131,7 @@ export const universalToolDefinitions = {
   // Ensure health-check is listed first alphabetically for best-guess scanners
   'aaa-health-check': healthCheckToolDefinition,
   diagnostics_get: smitheryDiagnosticsToolDefinition,
+  capabilities_get: capabilitiesGetToolDefinition,
   ...coreOperationsToolDefinitions,
   ...advancedOperationsToolDefinitions,
   records_batch_search: batchSearchToolDefinition,

@@ -216,6 +216,28 @@ For complete prompt documentation, see [docs/prompts/v1-catalog.md](./docs/promp
 - **Developer Mode Ready**: Every tool now publishes MCP safety annotations (`readOnlyHint`, `destructiveHint`) so OpenAI Developer Mode can auto-approve reads and request confirmation for writes.
 - **Full Tool Access (Default)**: The complete catalogue is exposed by default; use MCP `tools/list` for the current inventory. Do NOT set `ATTIO_MCP_TOOL_MODE` in Smithery configuration for full access.
 - **Search-Only Mode**: To restrict to read-only tools (`search`, `fetch`, `aaa-health-check`), explicitly configure `ATTIO_MCP_TOOL_MODE: 'search'` in Smithery dashboard when Developer Mode is unavailable.
+
+### Discovering What Tools Can Do (No Trial Calls)
+
+Tool selection is answerable from static metadata, so a client does not have to
+guess by calling things and reading the errors.
+
+- `capabilities_get` (full mode only) publishes the permitted capability
+  manifest: for every tool this server advertises, its input and output schemas
+  plus the operation facts — action, resource types, read-only/destructive/
+  idempotent flags, whether a credential is required, pagination style and cap,
+  and guidance on capability, boundaries, limits, and recovery.
+- `aaa-health-check` returns the same manifest for its permitted set, projected
+  to its operation sections, so a search-only client can see what it is allowed
+  to use without widening its allowlist. Schema documents come from
+  `capabilities_get` or `tools/list`; the health payload says so in
+  `capabilities.projection`.
+- Both are static: neither needs a credential nor calls Attio, and neither
+  echoes credentials into output or logs.
+
+A listed tool is configured, not granted. Authorization is still enforced on
+every call, so a manifest entry can still come back denied.
+
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
 
@@ -522,14 +544,14 @@ The server advertises one resource-first catalog. `search`, `fetch`, and `aaa-he
 
 Prior default-catalog names still call the same tool through v2.x. They are not listed in `tools/list`, they do not change arguments, and `MCP_DISABLE_TOOL_ALIASES=true` makes them fail. They are removable in v3.0.0. Names that were never that default catalog, including `search-records`, `create-record`, and `records_search_batch`, fail immediately.
 
-| Prior name | Canonical name |
-| --- | --- |
-| `search_records` | `records_search` |
-| `create_record` | `records_create` |
-| `get-lists` | `lists_list` |
-| `manage-list-entry` | `list_entries_manage` |
-| `get-workspace-member` | `workspace_members_get` |
-| `smithery_debug_config` | `diagnostics_get` |
+| Prior name              | Canonical name          |
+| ----------------------- | ----------------------- |
+| `search_records`        | `records_search`        |
+| `create_record`         | `records_create`        |
+| `get-lists`             | `lists_list`            |
+| `manage-list-entry`     | `list_entries_manage`   |
+| `get-workspace-member`  | `workspace_members_get` |
+| `smithery_debug_config` | `diagnostics_get`       |
 
 The full map is [MIGRATION-GUIDE.md](docs/MIGRATION-GUIDE.md) and `src/constants/tool-names.ts`.
 

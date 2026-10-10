@@ -26,6 +26,7 @@ await client.callTool('records.search', {
 await client.callTool('records.search', {
   resource_type: 'tasks',
   query: 'follow-up',
+  search_type: 'content',
 });
 ```
 
@@ -101,8 +102,6 @@ const decisionMakers = await client.callTool('records.search_advanced', {
       { attribute: 'title', condition: 'contains', value: 'Founder' },
     ],
   },
-  sort_by: 'last_interaction',
-  sort_order: 'desc',
 });
 
 // Create new contact
@@ -176,7 +175,7 @@ const overdueTasks = await client.callTool('records.search_by_timeframe', {
 const techCompanies = await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'search',
-  query: 'technology software',
+  queries: ['technology software'],
   limit: 50,
 });
 
@@ -212,8 +211,6 @@ const qualifiedLeads = await client.callTool('records.search_advanced', {
       { attribute: 'country', condition: 'equals', value: 'United States' },
     ],
   },
-  sort_by: 'created_at',
-  sort_order: 'desc',
   limit: 30,
 });
 
@@ -230,6 +227,45 @@ const targetContacts = await client.callTool('records.search_advanced', {
   limit: 40,
 });
 ```
+
+## Choosing Tools From Metadata, Not Trial Calls
+
+Before a model picks a tool, it can read what each one does. Two static
+surfaces answer it, and neither needs a credential nor calls Attio.
+
+- `tools/list` gives the names and input schemas of everything this server will
+  accept in the current mode.
+- `capabilities_get` (full mode) adds the operation facts per tool, so a client
+  can decide without executing anything. In search-only mode, `aaa-health-check`
+  returns the same permitted set as `data.capabilities`.
+
+The kinds of decision you can make from the entry alone:
+
+| Need                                       | How the manifest answers it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "Read one record I already have an id for" | An entry with `action: "read"`, `readOnly: true`, and a `record_id` property: `records_get_details`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| "Patch a company's fields"                 | `action: "write"`, a single value in `resourceTypes`, and no `resource_type` property: `companies_update`. Scoped tools skip the resource_type the generic ones require.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| "Create a record in a custom object"       | A write with `customObjectSlugs: true` that still takes `resource_type`: `records_create`, using a configured custom-object slug.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| "Add a note to a person"                   | `notes_create` with `resourceTypes` covering note-bearing objects; `notes_list` for the read side. Both require a standard resource slug; note updates are unsupported by `records_update` and `records_batch`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| "Keep paging this query"                   | `pagination.kind: "cursor"` with `supported: true`: `records_search_by_timeframe`, `notes_list`, `list_entries_list`. Basic and advanced search declare conservative `supported: false`: cursor continuation is available on query/timeframe routes and empty-query object searches excluding tasks/lists/notes. Other text queries and basic tasks/lists/notes searches are bounded; inspect response `pagination.supported` before continuing. People/companies reject modified/updated timeframe searches; timeframe routes target object records and ignore additional attribute filters or text queries. On strategy-based routes, records/configured custom objects ignore query, tasks use it only in content mode, and companies/people/deals ignore it when filters are supplied. |
+| "Batch writes vs batch reads"              | `records_batch` is `readOnly: false` (mixed writes), `records_batch_search` is `readOnly: true`. Batch writes accept standard resource slugs only; note writes accept create and delete only, never update, and lists require dedicated write tools. Batch search excludes notes; companies/people ignore limit/offset. Query-array searches for records/tasks ignore query and can repeat the same results for distinct queries. Companies/people/deals ignore query when filters are supplied. Inspect per-input outcomes before retrying.                                                                                                                                                                                                                                               |
+| "Anything that does not need a login"      | `authRequired: false` appears only on `aaa-health-check`, `diagnostics_get`, and `capabilities_get`.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+
+For nested attribute filters, select object-record searches for companies, people, deals, records, or configured custom objects. Basic task/list searches ignore filters; notes consume only parent-object and parent-record filters. Advanced search ignores `sort_by` and `sort_order`. Custom-object metadata discovery, option lookup, notes listing, and batch operations reject custom resource slugs.
+
+Three things this does not give you, and the docs do not pretend otherwise:
+
+- A listing is not a grant. The manifest describes what is configured; the
+  credential that reaches the server decides what is allowed, so a listed tool
+  can still come back `UNAUTHENTICATED` or `PERMISSION_DENIED`.
+- It lists capabilities, not your data. Nothing in it tells you which objects
+  exist in a workspace.
+- `guidance.alternatives` only names tools permitted in the current mode (or
+  `tools/list`); authorization still applies to calls.
+
+If the manifest and `tools/list` ever disagree, that is a bug worth reporting:
+both are projections of one registry, and the schema linter fails the build if
+someone writes the fact down twice.
 
 ## Best Practices
 

@@ -31,7 +31,7 @@ for companion prose formatting.
 
 ### 1. records.search
 
-**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups.
+**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups. Strategy-based records/custom-object routes ignore text query; tasks use it only in content mode. Companies, people, and deals ignore query when filters are supplied.
 
 **Consolidates**: `search-companies`, `search-people`, `list-records`, `list-tasks`
 
@@ -91,7 +91,6 @@ await client.callTool('records.search', {
 // Search people with filters
 await client.callTool('records.search', {
   resource_type: 'people',
-  query: 'john',
   filters: {
     and: [{ attribute: 'industry', condition: 'equals', value: 'Technology' }],
   },
@@ -360,7 +359,7 @@ await client.callTool('records.get_info', {
 
 ### 9. records.search_advanced
 
-**Description**: Complex searches with sorting and advanced filtering.
+**Description**: Nested attribute filtering for companies, people, deals, records, and configured custom objects. Basic task/list routes ignore filters; notes use only parent-object and parent-record filters, not nested groups. `sort_by` and `sort_order` are accepted but ignored; results use provider order. Timeframe routes reject modified/updated searches for people and companies and do not combine attribute filters or text queries. On strategy-based routes, records and configured custom objects ignore text query; tasks use query only in content mode. Companies, people, and deals ignore query when filters are supplied.
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
@@ -371,8 +370,8 @@ await client.callTool('records.get_info', {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
   query?: string,                    // Search query string
   filters?: object,                  // Advanced filter conditions
-  sort_by?: string,                  // Field to sort by
-  sort_order?: 'asc' | 'desc',      // Sort direction
+  sort_by?: string,                  // Accepted but ignored
+  sort_order?: 'asc' | 'desc',      // Accepted but ignored
   limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
   offset?: number,                   // Pagination offset (default: 0)
   cursor?: string                    // See Collection Continuation
@@ -382,17 +381,14 @@ await client.callTool('records.get_info', {
 **Examples**:
 
 ```typescript
-// Advanced company search with sorting
+// Advanced company search
 await client.callTool('records.search_advanced', {
   resource_type: 'companies',
-  query: 'technology',
   filters: {
     and: [
       { attribute: 'employee_count', condition: 'greater_than', value: 100 },
     ],
   },
-  sort_by: 'created_at',
-  sort_order: 'desc',
   limit: 25,
 });
 ```
@@ -545,7 +541,7 @@ await client.callTool('records.search_by_timeframe', {
   operation_type: 'create' | 'update' | 'delete' | 'search' | 'get', // Required
   records?: Array<object>,           // For create/update operations
   record_ids?: string[],             // For get/delete operations
-  query?: string,                    // For search operations (required, cannot be empty)
+  queries?: string[],                // Required for search operations
   limit?: number,                    // Max results (1-50, default: 10)
   offset?: number                    // Pagination offset (default: 0)
 }
@@ -575,7 +571,7 @@ await client.callTool('records.batch', {
 await client.callTool('records.batch', {
   resource_type: 'companies',
   operation_type: 'search',
-  query: 'technology startup',
+  queries: ['technology startup'],
   limit: 50,
 });
 ```
@@ -630,6 +626,97 @@ Continuation rules:
   your consumer needs stability.
 - Tokens carry no raw credentials or filter values — only keyed fingerprints —
   and a token issued under one tenant's credentials fails under another's.
+
+## Capability Discovery: `capabilities_get` (U7)
+
+The permitted capability manifest answers "what can this server do" without a
+trial call. It is a projection of the same registry `tools/list` reads, so the
+names and schemas can never disagree with the advertised surface.
+
+```json
+// tools/call capabilities_get -> structuredContent.data
+{
+  "schemaVersion": 1,
+  "mode": "full",
+  "toolCount": 46,
+  "authorization": {
+    "enforcedAt": "call-time",
+    "publishesCredentialGrants": false,
+    "note": "Entries describe configured functionality..."
+  },
+  "tools": [
+    {
+      "name": "records_search",
+      "description": "Search across companies, people, deals, tasks, and records. ...",
+      "inputSchema": { "type": "object", "properties": { "...": {} } },
+      "outputSchema": { "$schema": "http://json-schema.org/draft-07/schema#" },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "operation": {
+        "action": "search",
+        "resourceTypes": [
+          "companies",
+          "people",
+          "deals",
+          "tasks",
+          "lists",
+          "records",
+          "notes"
+        ],
+        "customObjectSlugs": true,
+        "authRequired": true,
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "pagination": { "kind": "cursor", "supported": false, "cap": 100 }
+      },
+      "guidance": {
+        "capability": "Find records across any supported object type.",
+        "boundaries": "create or modify records, or return more than one page per call.",
+        "constraints": "Continuation is conditional on route; defaults vary by resource ...",
+        "recovery": "If attributes are unknown or a page is empty, discover searchable fields.",
+        "alternatives": [
+          "records_search_advanced",
+          "records_get_details",
+          "search"
+        ],
+        "summary": "Find records across any supported object type. Never ..."
+      }
+    }
+  ]
+}
+```
+
+Reading the fields:
+
+| Field                                  | What a selector can rely on                                                                                                                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `operation.action`                     | `read`, `search`, `metadata`, `diagnostic`, `write`, `merge`, or `batch`.                                                                                                                            |
+| `operation.resourceTypes`              | Canonical object slugs. `customObjectSlugs: true` means discovered slugs such as `funds` are accepted.                                                                                               |
+| `operation.readOnly`                   | Whether the operation can change workspace state. Mixed batches are `false`.                                                                                                                         |
+| `operation.destructive` / `idempotent` | Whether a repeat is safe, and whether the operation is irreversible.                                                                                                                                 |
+| `operation.authRequired`               | `false` only for the static probes (`aaa-health-check`, `diagnostics_get`, `capabilities_get`).                                                                                                      |
+| `operation.pagination`                 | `kind` is `none`, `offset`, `cursor`, or `page`; `cap` is the documented page limit. `supported: false` is conservative when support depends on the route; consult guidance and response pagination. |
+| `guidance`                             | Capability, boundaries, limits, recovery, and the catalog names that serve the same need.                                                                                                            |
+
+Schema documents are carried as data, so the manifest stays finite even where a
+tool's output schema describes the same envelope the manifest itself uses.
+
+**Modes.** `capabilities_get` is advertised in full mode only. In
+`ATTIO_MCP_TOOL_MODE=search`, the permitted set is `search`, `fetch`, and
+`aaa-health-check`, and `aaa-health-check` returns that set as
+`data.capabilities`, projected to its operation sections with
+`projection.schemaSource: "tools/list"`. Names and facts cover only the permitted
+set; schema documents come from `tools/list`. In full mode the schema source is
+`capabilities_get`, which accepts no selectors and publishes the complete manifest.
+
+**What it is not.** It publishes configured functionality, never what a
+particular credential may do, and it never lists workspace objects. Reads and
+writes enforce authorization the same way whether or not a tool was advertised.
 
 ## Parameter Validation Rules
 

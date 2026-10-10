@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Tool capability discovery is now answerable without trial calls** — `capabilities_get` publishes the permitted capability manifest from the same registry `tools/list` reads: for every advertised tool, its input/output schemas plus action, supported resource types (including discovered custom-object slugs), read-only/destructive/idempotent flags, credential requirement, pagination kind and cap, and guidance on capability, boundaries, limits, and recovery. `aaa-health-check` returns the same permitted set for its mode, projected to its operation sections, so a search-only client can choose tools without widening its allowlist. Both surfaces are static: no Attio call, no credential, no credential material in output or logs. A listed tool is configured, not granted — authorization is still enforced on every call. See [capability discovery](docs/universal-tools/api-reference.md#capability-discovery-capabilities_get-u7)
+
 ### Fixed
 
 - **Stdio server no longer stays resident after the client closes stdin** — the performance tracker's cache-cleanup interval was registered as a ref'd timer, so an abandoned server kept its event loop open indefinitely and lingered as an orphan process; the interval now releases its hold on the loop while still firing on schedule. A client that never closes the pipe still leaves the server running (#1288)

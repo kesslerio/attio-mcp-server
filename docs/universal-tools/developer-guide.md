@@ -423,6 +423,76 @@ export function formatResourceType(
 }
 ```
 
+## Capability Metadata For A New Or Changed Tool
+
+Every advertised tool needs one authored capability entry, or discovery has to
+guess. That table is the only place operation semantics are written down.
+
+```typescript
+// src/handlers/tool-configs/universal/capabilities.ts
+export const CAPABILITY_CATALOG = {
+  records_duplicate: {
+    operation: {
+      action: 'write',
+      resourceTypes: ['companies', 'people'],
+      customObjectSlugs: false,
+      authRequired: true,
+      readOnly: false,
+      destructive: false,
+      idempotent: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+    },
+    guidance: {
+      capability: 'Copy one record into a new record of the same object type.',
+      boundaries: 'update either record, or copy attributes across objects.',
+      constraints: 'Requires resource_type and the source record_id.',
+      recovery: 'Confirm the source with records_get_details before copying.',
+      alternatives: ['records_create', 'records_get_details'],
+    },
+  },
+} as const;
+```
+
+The rules, and why they are shaped that way:
+
+- **The table keys are canonical names.** `tools/list` and the manifest both
+  come from the registry, so a tool with no entry is reported as `unannotated`
+  rather than described by a name match. Regex inference was removed on
+  purpose: a tool named `records_batch_search` that only searches must not be
+  assumed to write.
+- **The table does not duplicate names, descriptions, or schemas.** Those are
+  copied from the descriptor, so there is no second catalog that can drift.
+  `formatCapabilityGuidance` renders guidance in the same sentence shape
+  `formatToolDescription` uses for descriptions.
+- **Annotations must agree.** If a descriptor publishes `destructiveHint`, its
+  value has to equal the entry's `destructive` flag. `bun run lint:tools` fails
+  on a mismatch, a missing entry, an orphan entry, an invented `alternatives`
+  name, or a manifest that does not cover every registered tool.
+- **Pagination states what the tool actually offers.** `kind: 'cursor'` means a
+  sealed continuation token from this exact query; `offset` means a live view
+  with concurrent-write drift. Conditional routes conservatively publish `supported: false`
+  and explain the supported cases in guidance; `cap` is the documented page limit; `none` means
+  do not offer paging.
+- **Health stays light.** It projects `operations`, `annotations`, and
+  `guidance` and points schema documents at `capabilities_get` in full mode
+  or `tools/list` in search-only mode; the section set
+  is published in `capabilities.projection` rather than being silently dropped.
+
+### Checklist For Adding A Tool
+
+1. Register the descriptor and config (name, input schema, `outputSchema` /
+   `resultSchema` from the shared result contract).
+2. Add the canonical name to `TOOL_NAME_MIGRATION` (no `previous` unless it is
+   genuinely a renamed prior default).
+3. Author the `CAPABILITY_CATALOG` entry above.
+4. Run `bun run lint:tools`, then
+   `bun run test:single test/handlers/tools/capability-manifest.test.ts
+test/utils/mcp-discovery.test.ts`.
+
+`scripts/tool-schema-lint.ts` checks registry, schema, annotation, and manifest
+consistency together, so a missing capability entry fails the same gate as a
+missing schema.
+
 ## Extending Universal Operations
 
 ### Adding New Operation Types
@@ -519,9 +589,9 @@ export const duplicateRecordConfig: UniversalToolConfig = {
 export const coreOperationsToolConfigs = {
   'records.search': searchRecordsConfig,
   'records.get_details': getRecordDetailsConfig,
-  'records_create': createRecordConfig,
-  'records_update': updateRecordConfig,
-  'records_delete': deleteRecordConfig,
+  records_create: createRecordConfig,
+  records_update: updateRecordConfig,
+  records_delete: deleteRecordConfig,
   'duplicate-record': duplicateRecordConfig, // New tool
   'records.get_attributes': getAttributesConfig,
   'records.discover_attributes': discoverAttributesConfig,

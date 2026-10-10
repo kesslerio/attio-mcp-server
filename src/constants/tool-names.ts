@@ -105,6 +105,9 @@ export const TOOL_NAME_MIGRATION = [
   { canonical: 'aaa-health-check' },
   { canonical: 'search' },
   { canonical: 'fetch' },
+  // New in the v2 static-discovery surface (U7/KTD8): no prior default name,
+  // so it has no migration alias.
+  { canonical: 'capabilities_get' },
 ] as const satisfies readonly ToolNameMigrationEntry[];
 
 /**
@@ -198,6 +201,7 @@ export const TOOL_NAMES = {
   AAA_HEALTH_CHECK: canonicalName('aaa-health-check'),
   SEARCH: canonicalName('search'),
   FETCH: canonicalName('fetch'),
+  CAPABILITIES_GET: canonicalName('capabilities_get'),
 } as const;
 
 export type ToolName = (typeof TOOL_NAMES)[keyof typeof TOOL_NAMES];

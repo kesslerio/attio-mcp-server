@@ -428,6 +428,85 @@ export const workspaceMemberResultContract = resultContract(
 );
 
 // Health and static diagnostics stay credential-free and secret-free (KTD5).
+/**
+ * Capability manifest data contract (KTD8).
+ *
+ * A manifest entry carries JSON Schema documents as plain data instead of
+ * expanding them, so a manifest that describes itself stays finite and can
+ * never recurse. `z.json()` keeps the document open without a second schema
+ * catalog, which is exactly the point of the projection.
+ */
+const jsonSchemaDocument = z.record(z.string(), z.json());
+
+const capabilityEntrySchema = z.strictObject({
+  name: identifier,
+  description: z.string(),
+  inputSchema: jsonSchemaDocument.optional(),
+  outputSchema: jsonSchemaDocument.optional(),
+  annotations: jsonSchemaDocument.optional(),
+  operation: z
+    .strictObject({
+      action: z.enum([
+        'read',
+        'search',
+        'metadata',
+        'diagnostic',
+        'write',
+        'merge',
+        'batch',
+      ]),
+      resourceTypes: z.array(z.string()),
+      customObjectSlugs: z.boolean(),
+      authRequired: z.boolean(),
+      readOnly: z.boolean(),
+      destructive: z.boolean(),
+      idempotent: z.boolean(),
+      pagination: z.strictObject({
+        kind: z.enum(['none', 'offset', 'cursor', 'page']),
+        supported: z.boolean(),
+        cap: z.number().int().nullish(),
+      }),
+    })
+    .optional(),
+  guidance: z
+    .strictObject({
+      capability: z.string().min(1),
+      boundaries: z.string().min(1),
+      constraints: z.string().optional(),
+      recovery: z.string().optional(),
+      alternatives: z.array(z.string()).optional(),
+      summary: z.string().min(1),
+    })
+    .optional(),
+  unannotated: z.literal(true).optional(),
+});
+
+export const capabilityManifestDataSchema = z.strictObject({
+  schemaVersion: z.number().int().positive(),
+  mode: z.enum(['full', 'search-only']),
+  toolCount: z.number().int().nonnegative(),
+  authorization: z.strictObject({
+    enforcedAt: z.literal('call-time'),
+    // The manifest describes configured functionality only; it can never
+    // carry what the credential that arrives happens to allow.
+    publishesCredentialGrants: z.literal(false),
+    note: z.string().min(1),
+  }),
+  // Present when a surface publishes an explicit section projection (health).
+  projection: z
+    .strictObject({
+      sections: z.array(z.string().min(1)).min(1),
+      schemaSource: z.string().min(1),
+      note: z.string().min(1),
+    })
+    .optional(),
+  tools: z.array(capabilityEntrySchema),
+});
+
+export const capabilitiesResultContract = resultContract(
+  singular(capabilityManifestDataSchema)
+);
+
 export const healthDataSchema = z.strictObject({
   ok: z.literal(true),
   name: identifier,
@@ -435,6 +514,9 @@ export const healthDataSchema = z.strictObject({
   timestamp: z.string(),
   needs_api_key: z.boolean(),
   echo: z.string().optional(),
+  // Same manifest the discovery tool publishes, projected for clients that
+  // can only reach the credential-free health surface (KTD8).
+  capabilities: capabilityManifestDataSchema.optional(),
 });
 
 export const healthResultContract = resultContract(singular(healthDataSchema));

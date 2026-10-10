@@ -56,6 +56,9 @@ export const smitheryDiagnosticsToolDefinition = {
   annotations: {
     readOnlyHint: true,
     idempotentHint: true,
+    // Explicit rather than absent: the capability manifest projects this
+    // descriptor's semantics, and it must never have to infer them.
+    destructiveHint: false,
   },
 };
 

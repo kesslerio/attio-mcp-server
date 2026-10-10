@@ -100,12 +100,10 @@ export const getDetailedInfoDefinition = {
   name: 'records_get_info',
   description: formatToolDescription({
     capability:
-      'Retrieve enriched info subsets (contact, business, social) for a record.',
+      'Retrieve the full record using its standard resource endpoint.',
     boundaries: 'search lists of records or mutate data.',
-    constraints:
-      'Requires resource_type, record_id, and info_type (contact|business|social).',
-    recoveryHint:
-      'Use records_get_details if you need the full record payload.',
+    constraints: 'Requires resource_type and record_id.',
+    recoveryHint: 'Use records_get_details for enriched attribute formatting.',
   }),
   inputSchema: getDetailedInfoSchema,
   annotations: {
