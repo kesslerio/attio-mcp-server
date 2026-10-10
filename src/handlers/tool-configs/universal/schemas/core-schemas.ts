@@ -2,7 +2,7 @@ import {
   resourceTypeProperty,
   paginationProperties,
   cursorProperty,
-} from './common/properties.js';
+} from '@/handlers/tool-configs/universal/schemas/common/properties.js';
 
 export const searchRecordsSchema = {
   type: 'object' as const,
@@ -62,12 +62,14 @@ export const searchRecordsSchema = {
     match_type: {
       type: 'string' as const,
       enum: ['exact', 'partial', 'fuzzy'] as const,
-      description: 'String matching',
+      description:
+        'Exact or partial matching for content queries only; fuzzy matching is unsupported.',
     },
     sort: {
       type: 'string' as const,
       enum: ['relevance', 'created', 'modified', 'name'] as const,
-      description: 'Sort order',
+      description:
+        'Only relevance for strategy-based content queries is supported; other explicit sort values are rejected.',
     },
     // Date range filtering parameters
     date_from: {

@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 describe('OpenAiCompatibilityService.search', () => {
-  it('aggregates results across resource types', async () => {
+  it('returns supported company results without synthetic sort or match controls', async () => {
     const searchSpy = vi
       .spyOn(UniversalSearchService, 'searchRecords')
       .mockImplementation(async ({ resource_type }) => {
@@ -63,21 +63,22 @@ describe('OpenAiCompatibilityService.search', () => {
 
     const results = await OpenAiCompatibilityService.search({
       query: 'acme',
-      type: 'all',
+      type: 'companies',
       limit: 5,
     });
 
     expect(searchSpy).toHaveBeenCalled();
-    expect(results).toHaveLength(2);
+    expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject({
       id: 'companies:company-1',
       title: 'Acme Inc.',
       url: 'https://api.attio.com/v2/objects/companies/records/company-1',
     });
-    expect(results[1]).toMatchObject({
-      id: 'people:person-1',
-      title: 'Wile E. Coyote',
-    });
+    expect(searchSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ resource_type: 'companies', query: 'acme' })
+    );
+    expect(searchSpy.mock.calls[0][0]).not.toHaveProperty('sort');
+    expect(searchSpy.mock.calls[0][0]).not.toHaveProperty('match_type');
   });
 
   it('validates required query', async () => {

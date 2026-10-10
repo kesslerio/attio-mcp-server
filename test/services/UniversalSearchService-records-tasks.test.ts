@@ -54,7 +54,6 @@ describe('UniversalSearchService - records/tasks', () => {
     vi.mocked(getLazyAttioClient).mockReturnValue({ post } as any);
     const result = await UniversalSearchService.searchRecords({
       resource_type: UniversalResourceType.RECORDS,
-      query: 'R',
     });
     expect(result).toEqual(mockResults);
     expect(post).toHaveBeenCalledExactlyOnceWith(
@@ -80,7 +79,6 @@ describe('UniversalSearchService - records/tasks', () => {
 
     const result = await UniversalSearchService.searchRecords({
       resource_type: UniversalResourceType.TASKS,
-      query: 'foo',
     });
     expect(result).toEqual(converted);
   });

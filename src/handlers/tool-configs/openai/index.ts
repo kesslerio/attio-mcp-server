@@ -33,7 +33,8 @@ const searchInputSchema = {
     type: {
       type: 'string' as const,
       enum: ['companies', 'people', 'lists', 'tasks', 'all'] as const,
-      description: 'Optional resource filter (defaults to all).',
+      description:
+        'Select companies, people, or lists. tasks and all (including omitted type) are unsupported.',
     },
     limit: {
       type: 'integer' as const,
@@ -149,7 +150,8 @@ export const openAiToolDefinitions = {
           'Run the lightweight compatibility search used by connector clients such as ChatGPT.',
         boundaries:
           'handle complex filters, batch queries, or rich record payloads.',
-        constraints: 'Requires a query string; limit caps at 25 results.',
+        constraints:
+          'Requires a query string and type=companies, people, or lists; limit caps at 25 results. Task text queries and type=all (including the omitted-type default) are unsupported and fail before upstream work.',
         recovery:
           'Refine the query and repeat search; attribute filtering and continuation require full-mode record search tools.',
         alternatives: ['fetch', 'records_search'],

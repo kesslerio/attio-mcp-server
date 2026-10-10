@@ -1,3 +1,5 @@
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
+import { validateSearchInput } from '@/services/search/search-input-validation.js';
 import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 import { decodeMutationResult } from '@/api/operations/mutation-result.js';
 /**
@@ -450,6 +452,19 @@ export async function universalBatchSearch(
       });
 
       return result;
+    }
+
+    // The optimized path does not consume filters; reject ignored combinations
+    // at the same validation owner before starting any upstream batch work.
+    for (const query of queries) {
+      validateSearchInput({ resource_type: resourceType, query, filters });
+    }
+    if (filters != null) {
+      throw new UniversalValidationError(
+        'Optimized company and people batch searches do not support filters. Use records_search_advanced.',
+        undefined,
+        { field: 'filters' }
+      );
     }
 
     // For companies and people, use the existing optimized batch API

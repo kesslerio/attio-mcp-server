@@ -324,3 +324,37 @@ describe('static discovery projection', () => {
     expect(advertised).toEqual(canonical);
   });
 });
+
+describe('truthful search discovery', () => {
+  it.each(['full', 'search'])(
+    'keeps tool and manifest restrictions aligned in %s mode',
+    (mode) => {
+      process.env.ATTIO_MCP_TOOL_MODE = mode;
+      const tools = getToolsListPayload().tools;
+      const manifest = getCapabilityManifest();
+      for (const name of [
+        'records_search_by_content',
+        'records_update',
+        'companies_update',
+        'deals_update',
+      ]) {
+        const tool = tools.find((item) => item.name === name);
+        const entry = manifest.tools.find((item) => item.name === name);
+        expect(Boolean(entry)).toBe(Boolean(tool));
+        if (!tool || !entry) continue;
+        if (name === 'records_search_by_content') {
+          expect(tool.description).toContain(
+            'All combinations currently return a nonretryable validation error'
+          );
+          expect(entry.operation.resourceTypes).toEqual([]);
+          expect(entry.guidance.constraints).toContain(
+            'All combinations currently return a nonretryable validation error'
+          );
+        } else {
+          expect(tool.annotations?.destructiveHint).toBe(true);
+          expect(entry.operation.destructive).toBe(true);
+        }
+      }
+    }
+  );
+});

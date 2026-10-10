@@ -688,6 +688,30 @@ export function validateUniversalToolParams(
     );
   }
   const sanitizedParams = sanitizedValue as SanitizedObject;
+  if (
+    ['records_search_by_timeframe', 'records_search_by_relationship'].includes(
+      resolvedName
+    )
+  ) {
+    for (const field of [
+      'query',
+      'filters',
+      'sort',
+      'sort_by',
+      'sort_order',
+      'fields',
+      'match_type',
+    ]) {
+      if (sanitizedParams[field] != null) {
+        throw new UniversalValidationError(
+          `${resolvedName} does not support additional ${field}.`,
+          ErrorType.USER_ERROR,
+          { field }
+        );
+      }
+    }
+  }
+
   validatePaginationParams(sanitizedParams);
   validateIdFields(sanitizedParams);
   if (sanitizedParams.resource_type) {

@@ -1,3 +1,4 @@
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { extractResourceTypeFromFormatArgs } from '@/handlers/tool-configs/universal/core/utils.js';
 import { batchSearchResultContract } from '@/handlers/tools/result-schemas.js';
 import { normalizeBatch } from '@/handlers/tool-configs/universal/read-result-adapters.js';
@@ -50,6 +51,25 @@ export const batchSearchConfig = {
         'records_batch_search',
         params
       );
+
+      for (const field of [
+        'query',
+        'filters',
+        'sort',
+        'sort_by',
+        'sort_order',
+        'search_type',
+        'fields',
+        'match_type',
+      ]) {
+        if (sanitizedParams[field] != null) {
+          throw new UniversalValidationError(
+            `records_batch_search does not support ${field}; use records_search for supported individual controls.`,
+            undefined,
+            { field }
+          );
+        }
+      }
 
       const { resource_type, queries, limit, offset } = sanitizedParams;
 

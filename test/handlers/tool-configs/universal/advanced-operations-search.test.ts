@@ -47,7 +47,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
 
       const params: any = {
         resource_type: UniversalResourceType.COMPANIES,
-        query: 'technology',
         filters: [
           {
             attribute: { slug: 'industry' },
@@ -55,8 +54,6 @@ describe('Universal Advanced Operations - Search Tests', () => {
             value: 'Technology',
           },
         ],
-        sort_by: 'name',
-        sort_order: 'asc',
         limit: 20,
       };
 

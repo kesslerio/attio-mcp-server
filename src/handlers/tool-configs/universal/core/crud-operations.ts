@@ -356,13 +356,13 @@ export const updateRecordDefinition = defineOperationTool({
       resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records'],
       customObjectSlugs: true,
       readOnly: false,
-      destructive: false,
+      destructive: true,
       idempotent: true,
     },
     guidance: {
       capability:
         'Patch fields on one existing company, person, deal, task, record, or configured custom object. Prefer companies_update or deals_update for common company/deal writes.',
-      boundaries: 'create records, delete data, or manage list memberships.',
+      boundaries: 'create records, delete records, or manage list memberships.',
       constraints:
         'May require explicit user approval from the host. Requires resource_type, record_id, and record_data; partial updates are validated against schema; notes and lists cannot be updated here. Custom resource slugs must be configured in this server.',
       recovery: 'Inspect current values first, then retry the same patch.',

@@ -389,7 +389,7 @@ describe('capability manifest consistency', () => {
     ).toEqual(['companies', 'people', 'deals']);
     expect(
       entries.get('records_search_by_content')!.operation!.resourceTypes
-    ).toEqual(['notes', 'people']);
+    ).toEqual([]);
     expect(
       entries.get('records_batch_search')!.operation!.resourceTypes
     ).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);

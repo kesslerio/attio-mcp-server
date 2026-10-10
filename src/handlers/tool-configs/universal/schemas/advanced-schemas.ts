@@ -2,14 +2,14 @@ import {
   resourceTypeProperty,
   paginationProperties,
   cursorProperty,
-} from './common/properties.js';
+} from '@/handlers/tool-configs/universal/schemas/common/properties.js';
 import {
   UniversalResourceType,
   RelationshipType,
   ContentSearchType,
   TimeframeType,
   BatchOperationType,
-} from '../types.js';
+} from '@/handlers/tool-configs/universal/types.js';
 
 export const getDetailedInfoSchema = {
   type: 'object' as const,
@@ -66,13 +66,13 @@ Also accepted aliases: eq, greater_than, greater_than_or_equals, less_than, less
     },
     sort_by: {
       type: 'string' as const,
-      description: 'Field to sort results by',
+      description: 'Unsupported; omit sort_by. Explicit values are rejected.',
     },
     sort_order: {
       type: 'string' as const,
       enum: ['asc', 'desc'],
-      default: 'asc',
-      description: 'Sort order',
+      description:
+        'Unsupported; omit sort_order. Explicit values are rejected.',
     },
     ...paginationProperties,
     cursor: cursorProperty,

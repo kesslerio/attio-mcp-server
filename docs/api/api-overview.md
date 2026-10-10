@@ -52,7 +52,7 @@ Claude can interact with Attio using **41 fully implemented tools** provided by 
 
 - **`records_search_advanced`** - Complex filtering with multiple conditions
 - **`records_search_by_relationship`** - Cross-resource relationship searches
-- **`records_search_by_content`** - Content-based searches (notes, activity)
+- **`records_search_by_content`** - Discoverable compatibility name; note/activity/interaction body search returns a nonretryable validation error
 - **`records_search_by_timeframe`** - Time-based searches with date ranges
 - **`records_batch`** - Bulk operations for multiple records
 - **`records_batch_search`** - Bulk search operations

@@ -381,7 +381,10 @@ describe('structured tool protocol', () => {
       vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
       const result = await client.callTool({
         name: 'records_search',
-        arguments: { resource_type: 'notes' },
+        arguments: {
+          resource_type: 'notes',
+          filters: { parent_object: 'companies' },
+        },
       });
       expect(result).toMatchObject({
         isError: false,
@@ -429,7 +432,12 @@ describe('structured tool protocol', () => {
         );
         const result = await client.callTool({
           name: 'records_search',
-          arguments: { resource_type: resourceType },
+          arguments: {
+            resource_type: resourceType,
+            ...(resourceType === 'notes'
+              ? { filters: { parent_object: 'companies' } }
+              : {}),
+          },
         });
         expect(result).toMatchObject({
           isError: true,
@@ -443,7 +451,12 @@ describe('structured tool protocol', () => {
       );
       const empty = await client.callTool({
         name: 'records_search',
-        arguments: { resource_type: resourceType },
+        arguments: {
+          resource_type: resourceType,
+          ...(resourceType === 'notes'
+            ? { filters: { parent_object: 'companies' } }
+            : {}),
+        },
       });
       expect(empty).toMatchObject({
         isError: false,
@@ -466,7 +479,12 @@ describe('structured tool protocol', () => {
       vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(strategy);
       const result = await client.callTool({
         name: 'records_search',
-        arguments: { resource_type: resourceType },
+        arguments: {
+          resource_type: resourceType,
+          ...(resourceType === 'notes'
+            ? { filters: { parent_object: 'companies' } }
+            : {}),
+        },
       });
       expect(result).toMatchObject({
         isError: true,
@@ -665,7 +683,7 @@ describe('structured tool protocol', () => {
       for (const [name, args] of [
         ['records_search', { resource_type: resourceType }],
         ['records_get_details', { resource_type: resourceType, record_id: id }],
-        ['search', { type: resourceType, query: 'Company' }],
+        ['search', { type: 'people', query: 'Company' }],
         ['fetch', { id: `${resourceType}:${id}` }],
       ] as const) {
         clearAllCaches();
@@ -717,7 +735,7 @@ describe('structured tool protocol', () => {
             'records_get_details',
             { resource_type: resourceType, record_id: id },
           ],
-          ['search', { type: resourceType, query: 'Company' }],
+          ['search', { type: 'people', query: 'Company' }],
           ['fetch', { id: `${resourceType}:${id}` }],
         ] as const) {
           const result = await client.callTool({ name, arguments: args });
@@ -731,7 +749,12 @@ describe('structured tool protocol', () => {
       api.post.mockResolvedValue({ data: { data: [] } });
       const empty = await client.callTool({
         name: 'records_search',
-        arguments: { resource_type: resourceType },
+        arguments: {
+          resource_type: resourceType,
+          ...(resourceType === 'notes'
+            ? { filters: { parent_object: 'companies' } }
+            : {}),
+        },
       });
       expect(empty).toMatchObject({
         isError: false,
@@ -739,7 +762,7 @@ describe('structured tool protocol', () => {
       });
       const connector = await client.callTool({
         name: 'search',
-        arguments: { type: resourceType, query: 'Company' },
+        arguments: { type: 'people', query: 'Company' },
       });
       expect(connector.isError).toBe(false);
       expect(JSON.parse(connector.content[0].text as string)).toEqual({
@@ -949,7 +972,12 @@ describe('structured tool protocol', () => {
         api.post.mockReset().mockResolvedValue({ data: payload });
         const result = await client.callTool({
           name: 'records_search',
-          arguments: { resource_type: resourceType },
+          arguments: {
+            resource_type: resourceType,
+            ...(resourceType === 'notes'
+              ? { filters: { parent_object: 'companies' } }
+              : {}),
+          },
         });
         expect(result).toMatchObject({
           isError: true,
@@ -965,7 +993,12 @@ describe('structured tool protocol', () => {
       expect(
         await client.callTool({
           name: 'records_search',
-          arguments: { resource_type: resourceType },
+          arguments: {
+            resource_type: resourceType,
+            ...(resourceType === 'notes'
+              ? { filters: { parent_object: 'companies' } }
+              : {}),
+          },
         })
       ).toMatchObject({
         isError: false,
