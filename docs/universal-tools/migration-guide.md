@@ -1,31 +1,18 @@
 # Universal Tools Migration Guide
 
-This guide helps you migrate from deprecated resource-specific tools to the new universal tool system. The universal tools consolidate 40+ individual tools into 13 powerful operations while maintaining full functionality.
+This guide provides historical from-to references and examples for migrating removed resource-specific tools to universal operations.
 
 ## Migration Overview
 
-> **v2.0.0**: the deprecated resource-specific tools in the tables below were
-> removed and have no migration aliases. The tables are historical from-to
-> references; `DISABLE_UNIVERSAL_TOOLS` cannot restore the removed tools.
-> Call the v2 universal tool with `resource_type` and its own payload fields,
-> including the identifiers and operation fields required by that tool.
-> Universal and focused company/deal create and update operations take
-> `record_data` (an attribute map); `attributes` is not an accepted update
-> field. Focused tools fix the resource internally. Each tool's `inputSchema`
-> from `tools/list` or `capabilities_get` is authoritative; see also the
-> [per-tool reference](api-reference.md). Renaming alone does not migrate a
-> legacy payload.
->
-> Arguments stay unchanged only when replacing a supported prior-default
-> migration alias from `TOOL_NAME_MIGRATION` in
-> [src/constants/tool-names.ts](../../src/constants/tool-names.ts), such as
-> `create_record`, `get-lists`, or `create-list`, with its canonical name.
-> These aliases rename calls without rewriting payloads; see the
-> [supported alias table](../MIGRATION-GUIDE.md).
+> The tables below are historical from-to references for removed tools. Follow
+> [Migration 2](../MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022)
+> for the removal status, required payload migration, and authoritative schema
+> discovery. For supported prior-default aliases, see
+> [Migration 1](../MIGRATION-GUIDE.md#migration-1-resource-first-tool-names).
 
 ### What Changed?
 
-- **Tool Count**: Reduced from 40+ tools to 13 universal operations (68% reduction)
+- **Tool Surface**: Consolidated universal operations replace the removed resource-specific registrations
 - **Parameter Structure**: Added `resource_type` parameter to specify target resource
 - **Naming**: Simplified tool names (e.g., `search-companies` → `records_search`)
 - **Date Operators**: Updated for Attio API compatibility
@@ -44,9 +31,9 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 | ----------------------------------- | -------------------------------- | ------------- | ---------------------------------------- |
 | `search-companies`                  | `records_search`                 | `companies`   | -                                        |
 | `get-company-details`               | `records_get_details`            | `companies`   | -                                        |
-| `create-company`                    | `records_create`                  | `companies`   | -                                        |
-| `update-company`                    | `records_update`                  | `companies`   | -                                        |
-| `delete-company`                    | `records_delete`                  | `companies`   | -                                        |
+| `create-company`                    | `records_create`                 | `companies`   | -                                        |
+| `update-company`                    | `records_update`                 | `companies`   | -                                        |
+| `delete-company`                    | `records_delete`                 | `companies`   | -                                        |
 | `get-company-attributes`            | `records_get_attributes`         | `companies`   | -                                        |
 | `discover-company-attributes`       | `records_discover_attributes`    | `companies`   | -                                        |
 | `get-company-basic-info`            | `records_get_info`               | `companies`   | `info_type: 'basic'`                     |
@@ -63,7 +50,7 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 | ------------------------------------ | -------------------------------- | ------------- | ---------------------------------------- |
 | `search-people`                      | `records_search`                 | `people`      | -                                        |
 | `get-person-details`                 | `records_get_details`            | `people`      | -                                        |
-| `create-person`                      | `records_create`                  | `people`      | -                                        |
+| `create-person`                      | `records_create`                 | `people`      | -                                        |
 | `records.search_advanced-people`     | `records_search_advanced`        | `people`      | -                                        |
 | `search-people-by-company`           | `records_search_by_relationship` | `people`      | `relationship_type: 'company_to_people'` |
 | `search-people-by-activity`          | `records_search_by_content`      | `people`      | `content_type: 'activity'`               |
@@ -76,10 +63,10 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 
 | Deprecated Tool        | Universal Tool        | Resource Type | Additional Parameters      |
 | ---------------------- | --------------------- | ------------- | -------------------------- |
-| `create-record`        | `records_create`       | `records`     | Already universal          |
+| `create-record`        | `records_create`      | `records`     | Already universal          |
 | `get-record`           | `records_get_details` | `records`     | -                          |
-| `update-record`        | `records_update`       | `records`     | Already universal          |
-| `delete-record`        | `records_delete`       | `records`     | Already universal          |
+| `update-record`        | `records_update`      | `records`     | Already universal          |
+| `delete-record`        | `records_delete`      | `records`     | Already universal          |
 | `list-records`         | `records_search`      | `records`     | -                          |
 | `batch-create-records` | `records_batch`       | `records`     | `operation_type: 'create'` |
 | `batch-update-records` | `records_batch`       | `records`     | `operation_type: 'update'` |
@@ -88,9 +75,9 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 
 | Deprecated Tool | Universal Tool   | Resource Type | Additional Parameters |
 | --------------- | ---------------- | ------------- | --------------------- |
-| `create-task`   | `records_create`  | `tasks`       | -                     |
-| `update-task`   | `records_update`  | `tasks`       | -                     |
-| `delete-task`   | `records_delete`  | `tasks`       | -                     |
+| `create-task`   | `records_create` | `tasks`       | -                     |
+| `update-task`   | `records_update` | `tasks`       | -                     |
+| `delete-task`   | `records_delete` | `tasks`       | -                     |
 | `list-tasks`    | `records_search` | `tasks`       | -                     |
 
 ### Batch Tools → Universal Equivalents
@@ -896,27 +883,9 @@ Only these date presets are valid:
 
 ## Migration Automation
 
-### Using getMigrationParams Utility
-
-The universal tools system includes a utility function to help with migration:
-
-```typescript
-import {
-  getMigrationParams,
-  getUniversalEquivalent,
-} from './universal/index.js';
-
-// Get the universal tool equivalent
-const universalTool = getUniversalEquivalent('search-companies');
-// Returns: 'records_search'
-
-// Get migration parameters
-const newParams = getMigrationParams('search-companies', {
-  query: 'tech startup',
-  limit: 10,
-});
-// Returns: { resource_type: 'companies', query: 'tech startup', limit: 10 }
-```
+The former `getMigrationParams` and `getUniversalEquivalent` helpers were
+removed. Use the [migration procedure](../MIGRATION-GUIDE.md#testing-your-migration)
+to update saved calls against each tool's current schema.
 
 ## Validation and Testing
 

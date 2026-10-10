@@ -170,10 +170,9 @@ existing host controls. Batch writes are never replayed after result encoding or
 companion formatting fails; uncertain completion requires readback before retry.
 
 Connector and list/member/diagnostic families are covered by the next boundary;
-see below. The deprecated resource-specific configurations that
-`DISABLE_UNIVERSAL_TOOLS=true` used to register were removed with the v2
-surface, so every registered tool now reaches the shared result boundary; their
-boundary-owned failures use the structured error envelope and prose opt-out above.
+see below. Every registered tool now reaches the shared result boundary. For
+the removed registration surface, see the
+[legacy migration guide](../MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022).
 
 Verify deterministic contracts with
 `bun run test:single test/handlers/tools/result-contract.test.ts test/handlers/tools/structured-protocol.test.ts test/handlers/tools/structured-writes-protocol.test.ts test/handlers/tools/universal-output-schemas.test.ts test/api/universal-batch-results.test.ts test/api/retry-safety.test.ts`.
@@ -315,9 +314,9 @@ export const RESOURCE_TYPE_MAPPINGS: Record<string, UniversalResourceType> = {
 };
 ```
 
-Tool names themselves use `resource_verb` snake case (`projects_search`,
-`projects_get_details`, `projects_create`) and reach the handler through the
-single universal dispatcher; there is no per-legacy-name routing table to update.
+New record resources use the existing universal tools with `resource_type`
+(e.g. `records_search` with `resource_type: 'projects'`); adding a resource
+does not register new tool names or require a legacy-name routing table.
 
 ### Step 3: Implement Resource Handlers
 
@@ -1064,23 +1063,12 @@ instead of wrapping mutation handlers in a generic retry loop.
 
 ### Name Resolution
 
-Legacy name handling is one resolver, not a mapping table. A prior default name
-resolves to its canonical tool before the mode filter runs, and nothing else.
-
-```typescript
-// src/config/tool-aliases.ts
-import { resolveToolName } from '@/config/tool-aliases.js';
-
-resolveToolName('create_record').name; // -> 'records_create'
-resolveToolName('get-lists').name; // -> 'lists_list'
-resolveToolName('create-company').name; // -> 'create-company' (removed; resolves to nothing)
-```
-
-The alias pairs live in `src/constants/tool-names.ts` (`TOOL_NAME_MIGRATION`),
-and names dropped rather than aliased are listed in
-`REMOVED_PRE_V2_TOOL_ALIASES`. An alias renames only: it never supplies a
-`resource_type` or rewrites a payload, so there is no migration-parameter
-helper to call.
+`src/config/tool-aliases.ts` resolves call-only aliases using
+`TOOL_NAME_MIGRATION` in `src/constants/tool-names.ts`. See
+[Migration 1](../MIGRATION-GUIDE.md#migration-1-resource-first-tool-names)
+for the alias contract, and
+[Migration 2](../MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022)
+for removed resource-specific names and payload migration.
 
 ## Next Steps
 

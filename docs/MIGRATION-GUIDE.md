@@ -33,50 +33,50 @@ The map below is the only migration map. It is defined in `src/constants/tool-na
 
 ### Prior name to canonical name
 
-| Prior name (call-only until v3.0.0) | Canonical name |
-| --- | --- |
-| `search_records` | `records_search` |
-| `get_record_details` | `records_get_details` |
-| `create_record` | `records_create` |
-| `update_record` | `records_update` |
-| `upsert_record` | `records_upsert` |
-| `delete_record` | `records_delete` |
-| `merge_records` | `records_merge` |
-| `create_company` | `companies_create` |
-| `update_company` | `companies_update` |
-| `create_deal` | `deals_create` |
-| `update_deal` | `deals_update` |
-| `get_record_attributes` | `records_get_attributes` |
-| `discover_record_attributes` | `records_discover_attributes` |
-| `get_record_attribute_options` | `records_get_attribute_options` |
-| `get_record_info` | `records_get_info` |
-| `get_record_interactions` | `records_get_interactions` |
-| `create_note` | `notes_create` |
-| `list_notes` | `notes_list` |
-| `search_records_advanced` | `records_search_advanced` |
-| `search_records_by_relationship` | `records_search_by_relationship` |
-| `search_records_by_content` | `records_search_by_content` |
-| `search_records_by_timeframe` | `records_search_by_timeframe` |
-| `batch_records` | `records_batch` |
-| `batch_search_records` | `records_batch_search` |
-| `get-lists` | `lists_list` |
-| `get-record-list-memberships` | `records_get_list_memberships` |
-| `get-list-details` | `lists_get` |
-| `get-list-entries` | `list_entries_list` |
-| `filter-list-entries` | `list_entries_filter` |
-| `advanced-filter-list-entries` | `list_entries_filter_advanced` |
-| `add-record-to-list` | `list_entries_add` |
-| `remove-record-from-list` | `list_entries_remove` |
-| `update-list-entry` | `list_entries_update` |
-| `manage-list-entry` | `list_entries_manage` |
-| `filter-list-entries-by-parent` | `list_entries_filter_by_parent` |
-| `filter-list-entries-by-parent-id` | `list_entries_filter_by_parent_id` |
-| `create-list` | `lists_create` |
-| `update-list-configuration` | `lists_update_configuration` |
-| `list-workspace-members` | `workspace_members_list` |
-| `search-workspace-members` | `workspace_members_search` |
-| `get-workspace-member` | `workspace_members_get` |
-| `smithery_debug_config` | `diagnostics_get` |
+| Prior name (call-only until v3.0.0) | Canonical name                     |
+| ----------------------------------- | ---------------------------------- |
+| `search_records`                    | `records_search`                   |
+| `get_record_details`                | `records_get_details`              |
+| `create_record`                     | `records_create`                   |
+| `update_record`                     | `records_update`                   |
+| `upsert_record`                     | `records_upsert`                   |
+| `delete_record`                     | `records_delete`                   |
+| `merge_records`                     | `records_merge`                    |
+| `create_company`                    | `companies_create`                 |
+| `update_company`                    | `companies_update`                 |
+| `create_deal`                       | `deals_create`                     |
+| `update_deal`                       | `deals_update`                     |
+| `get_record_attributes`             | `records_get_attributes`           |
+| `discover_record_attributes`        | `records_discover_attributes`      |
+| `get_record_attribute_options`      | `records_get_attribute_options`    |
+| `get_record_info`                   | `records_get_info`                 |
+| `get_record_interactions`           | `records_get_interactions`         |
+| `create_note`                       | `notes_create`                     |
+| `list_notes`                        | `notes_list`                       |
+| `search_records_advanced`           | `records_search_advanced`          |
+| `search_records_by_relationship`    | `records_search_by_relationship`   |
+| `search_records_by_content`         | `records_search_by_content`        |
+| `search_records_by_timeframe`       | `records_search_by_timeframe`      |
+| `batch_records`                     | `records_batch`                    |
+| `batch_search_records`              | `records_batch_search`             |
+| `get-lists`                         | `lists_list`                       |
+| `get-record-list-memberships`       | `records_get_list_memberships`     |
+| `get-list-details`                  | `lists_get`                        |
+| `get-list-entries`                  | `list_entries_list`                |
+| `filter-list-entries`               | `list_entries_filter`              |
+| `advanced-filter-list-entries`      | `list_entries_filter_advanced`     |
+| `add-record-to-list`                | `list_entries_add`                 |
+| `remove-record-from-list`           | `list_entries_remove`              |
+| `update-list-entry`                 | `list_entries_update`              |
+| `manage-list-entry`                 | `list_entries_manage`              |
+| `filter-list-entries-by-parent`     | `list_entries_filter_by_parent`    |
+| `filter-list-entries-by-parent-id`  | `list_entries_filter_by_parent_id` |
+| `create-list`                       | `lists_create`                     |
+| `update-list-configuration`         | `lists_update_configuration`       |
+| `list-workspace-members`            | `workspace_members_list`           |
+| `search-workspace-members`          | `workspace_members_search`         |
+| `get-workspace-member`              | `workspace_members_get`            |
+| `smithery_debug_config`             | `diagnostics_get`                  |
 
 ### Examples
 
@@ -91,7 +91,10 @@ The prior name `search_records` calls the same tool with the same arguments. `se
 Create:
 
 ```json
-{ "tool": "records_create", "params": { "resource_type": "people", "record_data": {} } }
+{
+  "tool": "records_create",
+  "params": { "resource_type": "people", "record_data": {} }
+}
 ```
 
 `create_record` is the call-only alias. `create-record` fails.
@@ -111,12 +114,12 @@ Create:
 
 ### Overview
 
-Legacy resource-specific tools (86 tools) are being consolidated into universal tools (20 tools) for better consistency, maintainability, and user experience.
+Legacy resource-specific tools have been removed. Universal operations now handle record-shaped resources; list and workspace-member tools remain registered independently. Discover the current catalog and schemas with `tools/list` or `capabilities_get`.
 
 ### Why Universal Tools?
 
 - **Consistency**: Single API for all resource types
-- **Simplicity**: 65% reduction in tool count (86 → 20 tools)
+- **Simplicity**: Consolidated operations replace separate tools for each record resource
 - **Maintainability**: One implementation, fewer edge cases
 - **Better Error Messages**: Standardized error handling across resources
 
@@ -135,9 +138,9 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ### Core Universal Tools
 
-| Operation           | Universal Tool               | Legacy Equivalents                                   |
-| ------------------- | ---------------------------- | ---------------------------------------------------- |
-| Search records      | `records_search`             | `search-companies`, `search-people`, `list-tasks`    |
+| Operation           | Universal Tool                | Legacy Equivalents                                   |
+| ------------------- | ----------------------------- | ---------------------------------------------------- |
+| Search records      | `records_search`              | `search-companies`, `search-people`, `list-tasks`    |
 | Get details         | `records_get_details`         | `get-company-details`, `get-person-details`          |
 | Create record       | `records_create`              | `create-company`, `create-person`, `create-task`     |
 | Update record       | `records_update`              | `update-company`, `update-task`                      |
@@ -270,23 +273,23 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 ## Complete Mapping Table
 
-> **Note**: This mapping table may lag behind code changes. Use tool discovery output or the alias definitions in `src/constants/tool-names.ts` (`TOOL_NAME_MIGRATION`) as the authoritative reference.
+> These are historical from-to mappings, not supported aliases. Use each tool's live `inputSchema` for its payload. Supported prior-default aliases are a separate contract; see [Migration 1](#migration-1-resource-first-tool-names).
 
 ### Company Tools
 
 | Legacy Tool                   | Universal Tool                   | Resource Type |
 | ----------------------------- | -------------------------------- | ------------- |
 | `search-companies`            | `records_search`                 | `companies`   |
-| `get-company-details`         | `records_get_details`             | `companies`   |
-| `create-company`              | `records_create`                  | `companies`   |
-| `update-company`              | `records_update`                  | `companies`   |
-| `delete-company`              | `records_delete`                  | `companies`   |
-| `get-company-attributes`      | `records_get_attributes`          | `companies`   |
-| `discover-company-attributes` | `records_discover_attributes`     | `companies`   |
-| `get-company-basic-info`      | `records_get_info`                | `companies`   |
-| `get-company-contact-info`    | `records_get_info`                | `companies`   |
-| `get-company-business-info`   | `records_get_info`                | `companies`   |
-| `get-company-social-info`     | `records_get_info`                | `companies`   |
+| `get-company-details`         | `records_get_details`            | `companies`   |
+| `create-company`              | `records_create`                 | `companies`   |
+| `update-company`              | `records_update`                 | `companies`   |
+| `delete-company`              | `records_delete`                 | `companies`   |
+| `get-company-attributes`      | `records_get_attributes`         | `companies`   |
+| `discover-company-attributes` | `records_discover_attributes`    | `companies`   |
+| `get-company-basic-info`      | `records_get_info`               | `companies`   |
+| `get-company-contact-info`    | `records_get_info`               | `companies`   |
+| `get-company-business-info`   | `records_get_info`               | `companies`   |
+| `get-company-social-info`     | `records_get_info`               | `companies`   |
 | `advanced-search-companies`   | `records_search_advanced`        | `companies`   |
 | `search-companies-by-notes`   | `records_search_by_content`      | `companies`   |
 | `search-companies-by-people`  | `records_search_by_relationship` | `companies`   |
@@ -301,8 +304,8 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 | Legacy Tool                          | Universal Tool                   | Resource Type |
 | ------------------------------------ | -------------------------------- | ------------- |
 | `search-people`                      | `records_search`                 | `people`      |
-| `get-person-details`                 | `records_get_details`             | `people`      |
-| `create-person`                      | `records_create`                  | `people`      |
+| `get-person-details`                 | `records_get_details`            | `people`      |
+| `create-person`                      | `records_create`                 | `people`      |
 | `advanced-search-people`             | `records_search_advanced`        | `people`      |
 | `search-people-by-company`           | `records_search_by_relationship` | `people`      |
 | `search-people-by-activity`          | `records_search_by_content`      | `people`      |
@@ -315,31 +318,31 @@ Legacy resource-specific tools (86 tools) are being consolidated into universal 
 
 | Legacy Tool   | Universal Tool   | Resource Type |
 | ------------- | ---------------- | ------------- |
-| `create-task` | `records_create`  | `tasks`       |
-| `update-task` | `records_update`  | `tasks`       |
-| `delete-task` | `records_delete`  | `tasks`       |
+| `create-task` | `records_create` | `tasks`       |
+| `update-task` | `records_update` | `tasks`       |
+| `delete-task` | `records_delete` | `tasks`       |
 | `list-tasks`  | `records_search` | `tasks`       |
 
 ### Record Tools
 
-| Legacy Tool            | Universal Tool       | Resource Type |
-| ---------------------- | -------------------- | ------------- |
+| Legacy Tool            | Universal Tool        | Resource Type |
+| ---------------------- | --------------------- | ------------- |
 | `get-record`           | `records_get_details` | (any)         |
-| `list-records`         | `records_search`     | (any)         |
-| `batch-create-records` | `records_batch`      | (any)         |
-| `batch-update-records` | `records_batch`      | (any)         |
+| `list-records`         | `records_search`      | (any)         |
+| `batch-create-records` | `records_batch`       | (any)         |
+| `batch-update-records` | `records_batch`       | (any)         |
 
 ## Parameter Transformations
 
 ### Common Parameter Changes
 
-| Legacy Parameter     | Universal Parameter | Notes                           |
-| -------------------- | ------------------- | ------------------------------- |
-| `company_id`         | `record_id`         | Unified identifier              |
-| `person_id`          | `record_id`         | Unified identifier              |
-| `task_id`            | `record_id`         | Unified identifier              |
+| Legacy Parameter     | Universal Parameter  | Notes                           |
+| -------------------- | -------------------- | ------------------------------- |
+| `company_id`         | `record_id`          | Unified identifier              |
+| `person_id`          | `record_id`          | Unified identifier              |
+| `task_id`            | `record_id`          | Unified identifier              |
 | Top-level attributes | `record_data` object | Attribute map for create/update |
-| N/A                  | `resource_type`     | **Required** in universal tools |
+| N/A                  | `resource_type`      | **Required** in universal tools |
 
 ### Attributes Nesting
 
@@ -373,15 +376,15 @@ Universal and focused company/deal create and update operations require `record_
 npx attio-discover tools
 ```
 
-### 2. Run Side-by-Side Tests
+### 2. Check Migrated Calls
 
 Test the v2 tools with payloads migrated to each tool's current `inputSchema` and verify the expected results.
 
 ### 3. Switch to v2 Names
 
-Arguments stay unchanged only when replacing a supported prior-default migration alias from `TOOL_NAME_MIGRATION` in [src/constants/tool-names.ts](../src/constants/tool-names.ts), such as `create_record`, `get-lists`, or `create-list`, with its canonical name. These aliases rename calls without rewriting payloads; see the supported alias table above.
+For supported prior-default aliases such as `create_record`, `get-lists`, and `create-list`, follow [Migration 1](#migration-1-resource-first-tool-names); its alias contract does not apply to removed resource-specific names.
 
-Removed legacy resource-specific names have no migration aliases. Call the v2 universal tool with `resource_type` and its own payload fields, including the identifiers and operation fields required by that tool. Universal and focused company/deal create and update operations take `record_data` (an attribute map); `attributes` is not an accepted update field. Focused tools fix the resource internally. Each tool's `inputSchema` from `tools/list` or `capabilities_get` is authoritative; see also the [per-tool reference](universal-tools/api-reference.md). Renaming alone does not migrate a legacy payload.
+Removed legacy resource-specific names have no migration aliases. Call the v2 universal tool with `resource_type` and its own payload fields, including the identifiers and operation fields required by that tool. For create/update payloads, see [Attributes Nesting](#attributes-nesting). Each tool's `inputSchema` from `tools/list` or `capabilities_get` is authoritative; see also the [per-tool reference](universal-tools/api-reference.md). Renaming alone does not migrate a legacy payload.
 
 For example, replace `search-companies` with `records_search` and send `{ "resource_type": "companies", "query": "Acme" }`, or use the tool's `filters` field according to its schema. A bare `{ "query": "Acme" }` payload is missing `resource_type`.
 
@@ -392,7 +395,7 @@ Set `MCP_DISABLE_TOOL_ALIASES=true` and run your application. It must keep worki
 ## Need Help?
 
 - **Documentation**: See `test/legacy/README.md` for test examples
-- **Tool Aliases**: Automatic aliasing available via `MCP_DISABLE_TOOL_ALIASES=false`
+- **Tool Aliases**: See [Migration 1](#migration-1-resource-first-tool-names) for supported prior-default names
 - **Issues**: Report migration issues at https://github.com/kesslerio/attio-mcp-server/issues
 
 ## Related Documentation
