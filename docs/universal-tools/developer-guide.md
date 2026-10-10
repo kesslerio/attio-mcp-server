@@ -487,7 +487,7 @@ The rules, and why they are shaped that way:
 3. Author the `CAPABILITY_CATALOG` entry above.
 4. Run `bun run lint:tools`, then
    `bun run test:single test/handlers/tools/capability-manifest.test.ts
-   test/utils/mcp-discovery.test.ts`.
+test/utils/mcp-discovery.test.ts`.
 
 `scripts/tool-schema-lint.ts` checks registry, schema, annotation, and manifest
 consistency together, so a missing capability entry fails the same gate as a
@@ -589,9 +589,9 @@ export const duplicateRecordConfig: UniversalToolConfig = {
 export const coreOperationsToolConfigs = {
   'records.search': searchRecordsConfig,
   'records.get_details': getRecordDetailsConfig,
-  'records_create': createRecordConfig,
-  'records_update': updateRecordConfig,
-  'records_delete': deleteRecordConfig,
+  records_create: createRecordConfig,
+  records_update: updateRecordConfig,
+  records_delete: deleteRecordConfig,
   'duplicate-record': duplicateRecordConfig, // New tool
   'records.get_attributes': getAttributesConfig,
   'records.discover_attributes': discoverAttributesConfig,

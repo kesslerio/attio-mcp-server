@@ -237,6 +237,7 @@ guess by calling things and reading the errors.
 
 A listed tool is configured, not granted. Authorization is still enforced on
 every call, so a manifest entry can still come back denied.
+
 - **Detailed Guide**: See [docs/chatgpt-developer-mode.md](./docs/chatgpt-developer-mode.md) for environment variables, approval flows, and validation tips.
 - **User Documentation**: See the [ChatGPT Developer Mode docs](./docs/chatgpt-developer-mode.md) for a complete walkthrough of approval flows and setup instructions.
 
@@ -543,14 +544,14 @@ The server advertises one resource-first catalog. `search`, `fetch`, and `aaa-he
 
 Prior default-catalog names still call the same tool through v2.x. They are not listed in `tools/list`, they do not change arguments, and `MCP_DISABLE_TOOL_ALIASES=true` makes them fail. They are removable in v3.0.0. Names that were never that default catalog, including `search-records`, `create-record`, and `records_search_batch`, fail immediately.
 
-| Prior name | Canonical name |
-| --- | --- |
-| `search_records` | `records_search` |
-| `create_record` | `records_create` |
-| `get-lists` | `lists_list` |
-| `manage-list-entry` | `list_entries_manage` |
-| `get-workspace-member` | `workspace_members_get` |
-| `smithery_debug_config` | `diagnostics_get` |
+| Prior name              | Canonical name          |
+| ----------------------- | ----------------------- |
+| `search_records`        | `records_search`        |
+| `create_record`         | `records_create`        |
+| `get-lists`             | `lists_list`            |
+| `manage-list-entry`     | `list_entries_manage`   |
+| `get-workspace-member`  | `workspace_members_get` |
+| `smithery_debug_config` | `diagnostics_get`       |
 
 The full map is [MIGRATION-GUIDE.md](docs/MIGRATION-GUIDE.md) and `src/constants/tool-names.ts`.
 

@@ -102,10 +102,8 @@ export const getDetailedInfoDefinition = {
     capability:
       'Retrieve the full record using its standard resource endpoint.',
     boundaries: 'search lists of records or mutate data.',
-    constraints:
-      'Requires resource_type and record_id.',
-    recoveryHint:
-      'Use records_get_details for enriched attribute formatting.',
+    constraints: 'Requires resource_type and record_id.',
+    recoveryHint: 'Use records_get_details for enriched attribute formatting.',
   }),
   inputSchema: getDetailedInfoSchema,
   annotations: {

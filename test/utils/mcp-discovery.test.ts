@@ -254,7 +254,6 @@ describe('static discovery projection', () => {
       toolsListBytes: 262253,
       manifestBytesCeiling: 1_600_000,
     };
-    // eslint-disable-next-line no-console
     console.info(
       `capability-manifest-baseline bytes=${bytes} tools=${manifest.toolCount} latency_us=${latencyUs.toFixed(0)}`
     );
@@ -283,7 +282,9 @@ describe('static discovery projection', () => {
 
     const published = await capabilitiesGetConfig.handler();
     expect(published).toEqual(manifest);
-    const descriptor = getToolsListPayload().tools.find((tool) => tool.name === 'capabilities_get')!;
+    const descriptor = getToolsListPayload().tools.find(
+      (tool) => tool.name === 'capabilities_get'
+    )!;
     expect(descriptor.inputSchema.properties).toEqual({});
     expect(descriptor.inputSchema.additionalProperties).toBe(false);
     expect(

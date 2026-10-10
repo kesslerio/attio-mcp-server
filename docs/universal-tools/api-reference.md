@@ -658,7 +658,15 @@ names and schemas can never disagree with the advertised surface.
       },
       "operation": {
         "action": "search",
-        "resourceTypes": ["companies", "people", "deals", "tasks", "lists", "records", "notes"],
+        "resourceTypes": [
+          "companies",
+          "people",
+          "deals",
+          "tasks",
+          "lists",
+          "records",
+          "notes"
+        ],
         "customObjectSlugs": true,
         "authRequired": true,
         "readOnly": true,
@@ -671,7 +679,11 @@ names and schemas can never disagree with the advertised surface.
         "boundaries": "create or modify records, or return more than one page per call.",
         "constraints": "Continuation is conditional on route; defaults vary by resource ...",
         "recovery": "If attributes are unknown or a page is empty, discover searchable fields.",
-        "alternatives": ["records_search_advanced", "records_get_details", "search"],
+        "alternatives": [
+          "records_search_advanced",
+          "records_get_details",
+          "search"
+        ],
         "summary": "Find records across any supported object type. Never ..."
       }
     }
@@ -681,15 +693,15 @@ names and schemas can never disagree with the advertised surface.
 
 Reading the fields:
 
-| Field | What a selector can rely on |
-| --- | --- |
-| `operation.action` | `read`, `search`, `metadata`, `diagnostic`, `write`, `merge`, or `batch`. |
-| `operation.resourceTypes` | Canonical object slugs. `customObjectSlugs: true` means discovered slugs such as `funds` are accepted. |
-| `operation.readOnly` | Whether the operation can change workspace state. Mixed batches are `false`. |
-| `operation.destructive` / `idempotent` | Whether a repeat is safe, and whether the operation is irreversible. |
-| `operation.authRequired` | `false` only for the static probes (`aaa-health-check`, `diagnostics_get`, `capabilities_get`). |
-| `operation.pagination` | `kind` is `none`, `offset`, `cursor`, or `page`; `cap` is the documented page limit. `supported: false` is conservative when support depends on the route; consult guidance and response pagination. |
-| `guidance` | Capability, boundaries, limits, recovery, and the catalog names that serve the same need. |
+| Field                                  | What a selector can rely on                                                                                                                                                                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `operation.action`                     | `read`, `search`, `metadata`, `diagnostic`, `write`, `merge`, or `batch`.                                                                                                                            |
+| `operation.resourceTypes`              | Canonical object slugs. `customObjectSlugs: true` means discovered slugs such as `funds` are accepted.                                                                                               |
+| `operation.readOnly`                   | Whether the operation can change workspace state. Mixed batches are `false`.                                                                                                                         |
+| `operation.destructive` / `idempotent` | Whether a repeat is safe, and whether the operation is irreversible.                                                                                                                                 |
+| `operation.authRequired`               | `false` only for the static probes (`aaa-health-check`, `diagnostics_get`, `capabilities_get`).                                                                                                      |
+| `operation.pagination`                 | `kind` is `none`, `offset`, `cursor`, or `page`; `cap` is the documented page limit. `supported: false` is conservative when support depends on the route; consult guidance and response pagination. |
+| `guidance`                             | Capability, boundaries, limits, recovery, and the catalog names that serve the same need.                                                                                                            |
 
 Schema documents are carried as data, so the manifest stays finite even where a
 tool's output schema describes the same envelope the manifest itself uses.

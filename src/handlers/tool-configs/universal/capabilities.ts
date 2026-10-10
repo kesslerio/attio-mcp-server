@@ -228,7 +228,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_get_attributes: {
       operation: operationOf({
         action: 'metadata',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'lists',
+          'records',
+        ],
         customObjectSlugs: false,
         readOnly: true,
         destructive: false,
@@ -245,16 +252,25 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_discover_attributes: {
       operation: operationOf({
         action: 'metadata',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'lists',
+          'records',
+        ],
         customObjectSlugs: false,
         readOnly: true,
         destructive: false,
         idempotent: true,
       }),
       guidance: {
-        capability: 'Discover standard and custom attributes for a standard resource type.',
+        capability:
+          'Discover standard and custom attributes for a standard resource type.',
         boundaries: 'alter schema, create fields, or read record values.',
-        constraints: 'Requires resource_type; categories selects subsets; custom resource slugs and notes are rejected by tool validation.',
+        constraints:
+          'Requires resource_type; categories selects subsets; custom resource slugs and notes are rejected by tool validation.',
         recovery:
           'For select or status fields, list valid values before writing.',
         alternatives: ['records_get_attribute_options'],
@@ -274,7 +290,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
           'List valid options for select, multi-select, and status attributes.',
         boundaries:
           'return options for text, number, or other non-option types.',
-        constraints: 'Requires a standard object resource_type and the attribute slug or ID; lists are rejected and custom resource slugs are rejected by tool validation; notes have no object-attribute endpoint.',
+        constraints:
+          'Requires a standard object resource_type and the attribute slug or ID; lists are rejected and custom resource slugs are rejected by tool validation; notes have no object-attribute endpoint.',
         recovery:
           'Discover option-based attributes, then retry with that slug.',
         alternatives: ['records_discover_attributes'],
@@ -283,14 +300,22 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_get_info: {
       operation: operationOf({
         action: 'read',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'lists',
+          'records',
+        ],
         authRequired: true,
         readOnly: true,
         destructive: false,
         idempotent: true,
       }),
       guidance: {
-        capability: 'Read the full record using its standard resource endpoint.',
+        capability:
+          'Read the full record using its standard resource endpoint.',
         boundaries: 'search record lists or mutate data.',
         constraints:
           'Requires resource_type and record_id; no info_type selector is applied.',
@@ -312,7 +337,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         boundaries:
           'return email bodies, activity feeds, or note text; Attio exposes only system-generated interaction attributes.',
         constraints: 'Requires resource_type people or companies.',
-        recovery: 'Confirm the record exists; people/activity searches cover last-month activity only, while company activity content is unsupported.',
+        recovery:
+          'Confirm the record exists; people/activity searches cover last-month activity only, while company activity content is unsupported.',
         alternatives: ['records_search_by_content', 'records_get_details'],
       },
     },
@@ -340,7 +366,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_create: {
       operation: operationOf({
         action: 'write',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'records',
+          'notes',
+        ],
         customObjectSlugs: true,
         readOnly: false,
         destructive: false,
@@ -373,7 +406,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         idempotent: true,
       }),
       guidance: {
-        capability: 'Patch fields on one existing company, person, deal, task, record, or configured custom object.',
+        capability:
+          'Patch fields on one existing company, person, deal, task, record, or configured custom object.',
         boundaries: 'create records, delete data, or manage list memberships.',
         constraints:
           'Requires resource_type, record_id, and record_data; partial updates are validated against schema; notes and lists cannot be updated here. Custom resource slugs must be configured in this server.',
@@ -405,7 +439,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_delete: {
       operation: operationOf({
         action: 'write',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'records',
+          'notes',
+        ],
         customObjectSlugs: true,
         readOnly: false,
         destructive: true,
@@ -605,8 +646,10 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         pagination: { kind: 'none', supported: false, cap: null },
       }),
       guidance: {
-        capability: 'Run the notes/notes company text-search route or people/activity last-month activity lookup.',
-        boundaries: 'search communication bodies or note text; notes/notes delegates to company record search; people/activity ignores search_query.',
+        capability:
+          'Run the notes/notes company text-search route or people/activity last-month activity lookup.',
+        boundaries:
+          'search communication bodies or note text; notes/notes delegates to company record search; people/activity ignores search_query.',
         constraints:
           'Requires resource_type, content_type, and search_query; only notes/notes and people/activity are implemented; activity ignores limit and offset; no continuation cursor.',
         recovery: 'If results are too broad, use advanced filters instead.',
@@ -624,7 +667,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
         pagination: { kind: 'cursor', supported: true, cap: 100 },
       }),
       guidance: {
-        capability: 'Search object records by supported creation, modification, or interaction timestamps.',
+        capability:
+          'Search object records by supported creation, modification, or interaction timestamps.',
         boundaries: 'change lifecycle state or schedule follow-ups.',
         constraints:
           'Requires resource_type plus a timeframe or explicit date boundaries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and do not combine the supplied filters or text query. Custom resource slugs must be configured in this server.',
@@ -635,7 +679,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_batch: {
       operation: operationOf({
         action: 'batch',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records', 'notes'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'records',
+          'notes',
+        ],
         customObjectSlugs: false,
         readOnly: false,
         destructive: true,
@@ -657,7 +708,14 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
     records_batch_search: {
       operation: operationOf({
         action: 'batch',
-        resourceTypes: ['companies', 'people', 'deals', 'tasks', 'lists', 'records'],
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'lists',
+          'records',
+        ],
         readOnly: true,
         destructive: false,
         idempotent: true,
@@ -837,7 +895,8 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       guidance: {
         capability: 'Filter list entries with nested filter groups.',
         boundaries: 'mutate entries or search across multiple lists.',
-        constraints: 'Requires listId and a filters structure. Offset-only live view; no continuation cursor.',
+        constraints:
+          'Requires listId and a filters structure. Offset-only live view; no continuation cursor.',
         recovery: 'Falling back to single-attribute filtering is cheaper.',
         alternatives: ['list_entries_filter', 'list_entries_list'],
       },
@@ -998,8 +1057,7 @@ export const CAPABILITY_CATALOG: Readonly<Record<string, CatalogOperation>> =
       guidance: {
         capability: 'Read profile and access details for one member.',
         boundaries: 'update member information or permissions.',
-        constraints:
-          'Requires a memberId taken from list or search results.',
+        constraints: 'Requires a memberId taken from list or search results.',
         recovery: 'Confirm the identifier with workspace_members_list.',
         alternatives: ['workspace_members_list'],
       },
@@ -1073,7 +1131,10 @@ export function buildCapabilityManifest(
             (name) => name === 'tools/list' || permitted.has(name)
           ),
           ...(tool.name === 'search' && !permitted.has('records_search')
-            ? { recovery: 'Refine the query and repeat search; full mode is required for attribute filtering and continuation.' }
+            ? {
+                recovery:
+                  'Refine the query and repeat search; full mode is required for attribute filtering and continuation.',
+              }
             : {}),
         }
       : null;
@@ -1189,12 +1250,15 @@ export function healthCapabilityProjection(
 ): Record<string, unknown> {
   return {
     ...manifest,
-    tools: manifest.tools.map(({ inputSchema, outputSchema, ...entry }) => entry),
+    tools: manifest.tools.map(
+      ({ inputSchema: _inputSchema, outputSchema: _outputSchema, ...entry }) =>
+        entry
+    ),
     projection: {
       sections: [...HEALTH_CAPABILITY_SECTIONS],
-      schemaSource: manifest.mode === 'search-only' ? 'tools/list' : CAPABILITIES_TOOL_NAME,
+      schemaSource:
+        manifest.mode === 'search-only' ? 'tools/list' : CAPABILITIES_TOOL_NAME,
       note: 'Health publishes the operation facts for the permitted set; input and output schema documents come from tools/list (or capabilities_get in full mode).',
     },
   };
 }
-

@@ -187,10 +187,16 @@ describe('capability manifest consistency', () => {
     for (const mode of ['full', 'search']) {
       process.env.ATTIO_MCP_TOOL_MODE = mode;
       const manifest = getCapabilityManifest();
-      const permitted = new Set([...manifest.tools.map((entry) => entry.name), 'tools/list']);
+      const permitted = new Set([
+        ...manifest.tools.map((entry) => entry.name),
+        'tools/list',
+      ]);
       for (const entry of manifest.tools) {
         for (const alternative of entry.guidance?.alternatives ?? []) {
-          expect(permitted.has(alternative), `${entry.name} -> ${alternative}`).toBe(true);
+          expect(
+            permitted.has(alternative),
+            `${entry.name} -> ${alternative}`
+          ).toBe(true);
         }
       }
     }
@@ -198,32 +204,87 @@ describe('capability manifest consistency', () => {
 
   it('publishes executable resource boundaries and conservative continuation', () => {
     const entries = catalog();
-    for (const name of ['records_create', 'records_update', 'records_delete', 'records_batch']) {
-      expect(entries.get(name)!.operation!.resourceTypes).not.toContain('lists');
+    for (const name of [
+      'records_create',
+      'records_update',
+      'records_delete',
+      'records_batch',
+    ]) {
+      expect(entries.get(name)!.operation!.resourceTypes).not.toContain(
+        'lists'
+      );
     }
-    for (const name of ['records_get_attributes', 'records_discover_attributes']) {
-      expect(entries.get(name)!.operation!.resourceTypes).not.toContain('notes');
+    for (const name of [
+      'records_get_attributes',
+      'records_discover_attributes',
+    ]) {
+      expect(entries.get(name)!.operation!.resourceTypes).not.toContain(
+        'notes'
+      );
     }
-    expect(entries.get('records_get_attributes')!.operation!.customObjectSlugs).toBe(false);
-    for (const name of ['records_discover_attributes', 'records_get_attribute_options', 'notes_list', 'records_batch']) {
+    expect(
+      entries.get('records_get_attributes')!.operation!.customObjectSlugs
+    ).toBe(false);
+    for (const name of [
+      'records_discover_attributes',
+      'records_get_attribute_options',
+      'notes_list',
+      'records_batch',
+    ]) {
       expect(entries.get(name)!.operation!.customObjectSlugs).toBe(false);
     }
-    expect(entries.get('records_update')!.operation!.resourceTypes).not.toContain('notes');
-    expect(entries.get('records_search_by_timeframe')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'records']);
+    expect(
+      entries.get('records_update')!.operation!.resourceTypes
+    ).not.toContain('notes');
+    expect(
+      entries.get('records_search_by_timeframe')!.operation!.resourceTypes
+    ).toEqual(['companies', 'people', 'deals', 'records']);
     for (const name of ['notes_create', 'notes_list']) {
-      expect(entries.get(name)!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'records']);
+      expect(entries.get(name)!.operation!.resourceTypes).toEqual([
+        'companies',
+        'people',
+        'deals',
+        'records',
+      ]);
     }
-    expect(entries.get('notes_create')!.guidance!.alternatives).not.toContain('records_update');
-    expect(entries.get('records_get_attribute_options')!.operation!.resourceTypes).not.toContain('lists');
-    expect(entries.get('records_get_info')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
-    expect(entries.get('records_search_by_relationship')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals']);
-    expect(entries.get('records_search_by_content')!.operation!.resourceTypes).toEqual(['notes', 'people']);
-    expect(entries.get('records_batch_search')!.operation!.resourceTypes).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
-    for (const name of ['records_search', 'records_search_advanced', 'records_search_by_relationship', 'records_search_by_content', 'records_batch', 'records_batch_search', 'list_entries_filter', 'list_entries_filter_advanced', 'list_entries_filter_by_parent', 'list_entries_filter_by_parent_id']) {
+    expect(entries.get('notes_create')!.guidance!.alternatives).not.toContain(
+      'records_update'
+    );
+    expect(
+      entries.get('records_get_attribute_options')!.operation!.resourceTypes
+    ).not.toContain('lists');
+    expect(entries.get('records_get_info')!.operation!.resourceTypes).toEqual([
+      'companies',
+      'people',
+      'deals',
+      'tasks',
+      'lists',
+      'records',
+    ]);
+    expect(
+      entries.get('records_search_by_relationship')!.operation!.resourceTypes
+    ).toEqual(['companies', 'people', 'deals']);
+    expect(
+      entries.get('records_search_by_content')!.operation!.resourceTypes
+    ).toEqual(['notes', 'people']);
+    expect(
+      entries.get('records_batch_search')!.operation!.resourceTypes
+    ).toEqual(['companies', 'people', 'deals', 'tasks', 'lists', 'records']);
+    for (const name of [
+      'records_search',
+      'records_search_advanced',
+      'records_search_by_relationship',
+      'records_search_by_content',
+      'records_batch',
+      'records_batch_search',
+      'list_entries_filter',
+      'list_entries_filter_advanced',
+      'list_entries_filter_by_parent',
+      'list_entries_filter_by_parent_id',
+    ]) {
       expect(entries.get(name)!.operation!.pagination.supported).toBe(false);
     }
   });
-
 });
 
 describe('operation semantics for tool selection', () => {
