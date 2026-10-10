@@ -631,6 +631,84 @@ Continuation rules:
 - Tokens carry no raw credentials or filter values — only keyed fingerprints —
   and a token issued under one tenant's credentials fails under another's.
 
+## Capability Discovery: `capabilities_get` (U7)
+
+The permitted capability manifest answers "what can this server do" without a
+trial call. It is a projection of the same registry `tools/list` reads, so the
+names and schemas can never disagree with the advertised surface.
+
+```json
+// tools/call capabilities_get -> structuredContent.data
+{
+  "schemaVersion": 1,
+  "mode": "full",
+  "toolCount": 46,
+  "authorization": {
+    "enforcedAt": "call-time",
+    "publishesCredentialGrants": false,
+    "note": "Entries describe configured functionality..."
+  },
+  "tools": [
+    {
+      "name": "records_search",
+      "description": "Search across companies, people, deals, tasks, and records. ...",
+      "inputSchema": { "type": "object", "properties": { "...": {} } },
+      "outputSchema": { "$schema": "http://json-schema.org/draft-07/schema#" },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "operation": {
+        "action": "search",
+        "resourceTypes": ["companies", "people", "deals", "tasks", "lists", "records", "notes"],
+        "customObjectSlugs": true,
+        "authRequired": true,
+        "readOnly": true,
+        "destructive": false,
+        "idempotent": true,
+        "pagination": { "kind": "cursor", "supported": true, "cap": 100 }
+      },
+      "guidance": {
+        "capability": "Find records across any supported object type.",
+        "boundaries": "create or modify records, or return more than one page per call.",
+        "constraints": "Max 100 results (default 10); pass the sealed next_cursor ...",
+        "recovery": "If attributes are unknown or a page is empty, discover searchable fields.",
+        "alternatives": ["records_search_advanced", "records_get_details", "search"],
+        "summary": "Find records across any supported object type. Never ..."
+      }
+    }
+  ]
+}
+```
+
+Reading the fields:
+
+| Field | What a selector can rely on |
+| --- | --- |
+| `operation.action` | `read`, `search`, `metadata`, `diagnostic`, `write`, `merge`, or `batch`. |
+| `operation.resourceTypes` | Canonical object slugs. `customObjectSlugs: true` means discovered slugs such as `funds` are accepted. |
+| `operation.readOnly` | Whether the operation can change workspace state. Mixed batches are `false`. |
+| `operation.destructive` / `idempotent` | Whether a repeat is safe, and whether the operation is irreversible. |
+| `operation.authRequired` | `false` only for the static probes (`aaa-health-check`, `diagnostics_get`, `capabilities_get`). |
+| `operation.pagination` | `kind` is `none`, `offset`, `cursor`, or `page`; `cap` is the documented page limit. |
+| `guidance` | Capability, boundaries, limits, recovery, and the catalog names that serve the same need. |
+
+Schema documents are carried as data, so the manifest stays finite even where a
+tool's output schema describes the same envelope the manifest itself uses.
+
+**Modes.** `capabilities_get` is advertised in full mode only. In
+`ATTIO_MCP_TOOL_MODE=search`, the permitted set is `search`, `fetch`, and
+`aaa-health-check`, and `aaa-health-check` returns that set as
+`data.capabilities`, projected to its operation sections with
+`projection.schemaSource: "capabilities_get"`. Names and facts are identical to
+the full manifest; only the schema documents stay on the discovery tool.
+
+**What it is not.** It publishes configured functionality, never what a
+particular credential may do, and it never lists workspace objects. Reads and
+writes enforce authorization the same way whether or not a tool was advertised.
+
 ## Parameter Validation Rules
 
 ### Required Parameters

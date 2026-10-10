@@ -12,6 +12,52 @@ import { ListEntryFilters } from '@/api/operations/index.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import type { z } from 'zod';
 
+/**
+ * What an operation does to a resource, as published for tool selection.
+ *
+ * Values are declared deliberately: a client choosing a tool reads this
+ before calling it, so it must not be inferred from a name match.
+ */
+export type ToolOperationAction =
+  | 'read'
+  | 'search'
+  | 'metadata'
+  | 'diagnostic'
+  | 'write'
+  | 'merge'
+  | 'batch';
+
+/** Continuation style the operation publishes. `none` means not paginated. */
+export type ToolPaginationKind = 'none' | 'offset' | 'cursor' | 'page';
+
+/**
+ * Static operation contract for one tool, authored once per canonical name.
+ * `universal/capabilities.ts` owns the table; the registry projection and the
+ * capability manifest both read it, so no surface keeps its own copy.
+ */
+export interface ToolOperationMetadata {
+  action: ToolOperationAction;
+  /** Canonical object slugs the operation addresses (`'custom-object'` marks
+   * discovered custom-object slugs, which the input schema leaves unenumed). */
+  resourceTypes: readonly string[];
+  /** True when arbitrary custom-object slugs are accepted for this operation. */
+  customObjectSlugs: boolean;
+  /** True when the operation needs a valid Attio credential to do its work. */
+  authRequired: boolean;
+  /** Read-only operations never mutate workspace state. */
+  readOnly: boolean;
+  /** Destructive operations remove or overwrite data that cannot be undone. */
+  destructive: boolean;
+  /** Idempotent operations are safe to repeat with the same arguments. */
+  idempotent: boolean;
+  /** Continuation the operation publishes, with its result cap when bounded. */
+  pagination: {
+    kind: ToolPaginationKind;
+    supported: boolean;
+    cap: number | null;
+  };
+}
+
 // Base tool configuration interface
 export interface ToolConfig {
   name: string;

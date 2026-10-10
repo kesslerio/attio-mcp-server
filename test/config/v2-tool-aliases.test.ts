@@ -95,7 +95,8 @@ describe('v2 tool name migration', () => {
   it('keeps canonical names unique and resolves each previous name once', () => {
     const canonical = canonicalToolNames();
     expect(new Set(canonical).size).toBe(canonical.length);
-    expect(canonical).toHaveLength(45);
+    // 45 migrated tools plus the static discovery tool added by U7.
+    expect(canonical).toHaveLength(46);
 
     const aliases = migrationAliasMap();
     expect(aliases.size).toBe(42);

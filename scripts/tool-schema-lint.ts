@@ -1,8 +1,22 @@
 #!/usr/bin/env node
 
+/**
+ * Tool catalog lint (U7).
+ *
+ * Two jobs:
+ * 1. Per-descriptor shape: name, description, and input-schema rules.
+ * 2. Catalog consistency: the registry, the published annotations, and the
+ *    authored capability manifest must describe one surface, so nobody has to
+ *    keep a second catalog in prose or in code.
+ */
 import process from 'node:process';
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
 import { findAdvertisedNameViolations } from '@/constants/tool-names.js';
+import {
+  CAPABILITY_CATALOG,
+  CAPABILITY_MANIFEST_VERSION,
+  buildCapabilityManifest,
+} from '@/handlers/tool-configs/universal/capabilities.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 
 interface Violation {
@@ -147,6 +161,136 @@ function validateTool(tool: Tool): Violation[] {
   return violations;
 }
 
+/**
+ * Registry / annotation / manifest agreement (KTD8).
+ *
+ * The manifest is a projection, so a divergence means someone wrote the fact
+ * down twice. Each rule below names the fact and where the two copies drifted.
+ */
+function validateCapabilityConsistency(tools: Tool[]): Violation[] {
+  const violations: Violation[] = [];
+  const registered = new Set(tools.map((tool) => tool.name));
+
+  for (const tool of tools) {
+    if (!tool.name) continue;
+    const entry = (
+      CAPABILITY_CATALOG as Record<
+        string,
+        (typeof CAPABILITY_CATALOG)[string] | undefined
+      >
+    )[tool.name];
+
+    if (!entry) {
+      violations.push({
+        tool: tool.name,
+        code: 'capability.missing',
+        message:
+          'Registered tool has no authored operation metadata; discovery would have to guess its capability',
+        severity: 'error',
+      });
+      continue;
+    }
+
+    const { operation } = entry;
+    const annotations = (tool as { annotations?: Record<string, unknown> })
+      .annotations;
+    const pairs: Array<[keyof typeof annotations | string, unknown, unknown]> =
+      [
+        ['readOnlyHint', annotations?.readOnlyHint, operation.readOnly],
+        [
+          'destructiveHint',
+          annotations?.destructiveHint,
+          operation.destructive,
+        ],
+        ['idempotentHint', annotations?.idempotentHint, operation.idempotent],
+      ];
+    for (const [key, declared, published] of pairs) {
+      if (declared !== undefined && declared !== published) {
+        violations.push({
+          tool: tool.name,
+          code: 'capability.annotation_mismatch',
+          message: `Descriptor annotation ${String(key)}=${String(
+            declared
+          )} disagrees with manifest operation metadata ${String(published)}`,
+          severity: 'error',
+        });
+      }
+    }
+
+    if (
+      !entry.guidance.capability.trim() ||
+      !entry.guidance.boundaries.trim()
+    ) {
+      violations.push({
+        tool: tool.name,
+        code: 'capability.guidance_incomplete',
+        message:
+          'Capability guidance needs at least a capability and a boundaries statement',
+        severity: 'error',
+      });
+    }
+
+    for (const alternative of entry.guidance.alternatives ?? []) {
+      // Pointers must exist now, not in a remembered catalog.
+      const known =
+        registered.has(alternative) ||
+        Object.prototype.hasOwnProperty.call(CAPABILITY_CATALOG, alternative) ||
+        alternative === 'tools/list';
+      if (!known) {
+        violations.push({
+          tool: tool.name,
+          code: 'capability.alternative_unknown',
+          message: `Guidance names ${alternative}, which is not in the current catalog`,
+          severity: 'error',
+        });
+      }
+    }
+  }
+
+  // An entry that no longer has a descriptor is a second catalog's leftover.
+  for (const name of Object.keys(CAPABILITY_CATALOG)) {
+    if (!registered.has(name)) {
+      violations.push({
+        tool: name,
+        code: 'capability.orphan',
+        message:
+          'Capability entry exists for a tool the registry does not advertise',
+        severity: 'error',
+      });
+    }
+  }
+
+  // The projection must be buildable and must not silently drop tools.
+  const manifest = buildCapabilityManifest(tools);
+  if (manifest.schemaVersion !== CAPABILITY_MANIFEST_VERSION) {
+    violations.push({
+      tool: '(manifest)',
+      code: 'capability.version',
+      message: `Manifest version ${manifest.schemaVersion} does not match the published constant`,
+      severity: 'error',
+    });
+  }
+  if (manifest.tools.length !== tools.length) {
+    violations.push({
+      tool: '(manifest)',
+      code: 'capability.incomplete',
+      message: `Manifest covers ${manifest.tools.length} of ${tools.length} registered tools`,
+      severity: 'error',
+    });
+  }
+  if (manifest.tools.some((entry) => entry.unannotated)) {
+    violations.push({
+      tool: '(manifest)',
+      code: 'capability.unannotated',
+      message:
+        'Manifest contains an unannotated tool, which means discovery fell back to guessing',
+      severity: 'error',
+    });
+  }
+
+  return violations;
+}
+
 function isStrict(): boolean {
   const mode = process.env.MCP_TOOL_LINT_MODE;
   if (!mode) return false;
@@ -163,7 +307,8 @@ function main(): void {
     ...findAdvertisedNameViolations(tools).map((violation) => ({
       ...violation,
       severity: 'error' as const,
-    }))
+    })),
+    ...validateCapabilityConsistency(tools)
   );
 
   const errors = violations.filter((v) => v.severity === 'error');

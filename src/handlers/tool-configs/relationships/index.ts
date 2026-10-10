@@ -415,6 +415,8 @@ export const relationshipToolDefinitions = [
   },
   {
     name: 'get-person-companies',
+    // Authored rather than inferred: discovery publishes these hints directly.
+    annotations: { readOnlyHint: true, idempotentHint: true },
     description:
       'Get all companies that a person is associated with, with bidirectional consistency validation. Shows warnings for inconsistent relationships.',
     inputSchema: {
@@ -430,6 +432,7 @@ export const relationshipToolDefinitions = [
   },
   {
     name: 'get-company-team',
+    annotations: { readOnlyHint: true, idempotentHint: true },
     description:
       'Get all team members (people) associated with a company, with bidirectional consistency validation. Shows warnings for inconsistent relationships.',
     inputSchema: {

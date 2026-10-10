@@ -231,6 +231,43 @@ const targetContacts = await client.callTool('records.search_advanced', {
 });
 ```
 
+## Choosing Tools From Metadata, Not Trial Calls
+
+Before a model picks a tool, it can read what each one does. Two static
+surfaces answer it, and neither needs a credential nor calls Attio.
+
+- `tools/list` gives the names and input schemas of everything this server will
+  accept in the current mode.
+- `capabilities_get` (full mode) adds the operation facts per tool, so a client
+can decide without executing anything. In search-only mode, `aaa-health-check`
+returns the same permitted set as `data.capabilities`.
+
+The kinds of decision you can make from the entry alone:
+
+| Need | How the manifest answers it |
+| --- | --- |
+| "Read one record I already have an id for" | An entry with `action: "read"`, `readOnly: true`, and a `record_id` property: `records_get_details`. |
+| "Patch a company's fields" | `action: "write"`, a single value in `resourceTypes`, and no `resource_type` property: `companies_update`. Scoped tools skip the resource_type the generic ones require. |
+| "Create a record in a custom object" | A write with `customObjectSlugs: true` that still takes `resource_type`: `records_create`, `records_update`, `records_delete`, `records_get_details`, and the search variants. |
+| "Add a note to a person" | `notes_create` with `resourceTypes` covering note-bearing objects; `notes_list` for the read side. |
+| "Keep paging this query" | `pagination.kind: "cursor"` with `supported: true`: `records_search`, `records_search_advanced`, `records_search_by_timeframe`, `notes_list`, `list_entries_list`. |
+| "Batch writes vs batch reads" | `records_batch` is `readOnly: false` (mixed writes), `records_batch_search` is `readOnly: true`. A client replays searches, not writes. |
+| "Anything that does not need a login" | `authRequired: false` appears only on `aaa-health-check`, `diagnostics_get`, and `capabilities_get`. |
+
+Three things this does not give you, and the docs do not pretend otherwise:
+
+- A listing is not a grant. The manifest describes what is configured; the
+  credential that reaches the server decides what is allowed, so a listed tool
+  can still come back `UNAUTHENTICATED` or `PERMISSION_DENIED`.
+- It lists capabilities, not your data. Nothing in it tells you which objects
+  exist in a workspace.
+- `guidance.alternatives` only names tools that exist right now, so following
+  one is never a dead end.
+
+If the manifest and `tools/list` ever disagree, that is a bug worth reporting:
+both are projections of one registry, and the schema linter fails the build if
+someone writes the fact down twice.
+
 ## Best Practices
 
 ### 1. Resource Type Selection
