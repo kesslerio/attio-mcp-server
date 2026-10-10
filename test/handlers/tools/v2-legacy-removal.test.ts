@@ -353,8 +353,10 @@ describe('v2 legacy surface removal', () => {
         'tasks.js',
         'resource-specific-tools.js',
       ]) {
-        expect(existsSync(join(output, 'handlers/tool-configs', module)), module)
-          .toBe(false);
+        expect(
+          existsSync(join(output, 'handlers/tool-configs', module)),
+          module
+        ).toBe(false);
       }
     } finally {
       rmSync(output, { recursive: true, force: true });
