@@ -379,7 +379,9 @@ Test the v2 tools with the data your saved client sends to verify identical resu
 
 ### 3. Switch to v2 Names
 
-Point the client at the canonical names above and keep the arguments unchanged; supported prior names still resolve through the call-only aliases.
+For supported prior-default migration aliases in the alias table, switch to the canonical name and keep the arguments unchanged.
+
+For removed legacy resource-specific names, send the v2 tool with `resource_type` and its current payload shape: `record_data` for creates, `attributes` for updates, and identifier or operation fields required by that tool. Read `tools/list` and the [per-tool schemas](universal-tools/api-reference.md); renaming a removed tool does not convert its payload.
 
 ### 4. Verify No Legacy Dependency
 

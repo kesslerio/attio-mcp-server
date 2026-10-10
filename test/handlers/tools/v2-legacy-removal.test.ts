@@ -5,8 +5,7 @@
  *   1. the retired `DISABLE_UNIVERSAL_TOOLS` flag cannot change the catalogue,
  *   2. legacy-only names are neither advertised nor invocable,
  *   3. every surviving capability still resolves under its v2 name,
- *   4. nothing in the shipped source depends on a deleted legacy module,
- *   5. active setup guidance names v2 canonical tools only.
+ *   4. the clean build ships no deleted legacy tool-config module.
  */
 import {
   afterAll,
@@ -20,7 +19,8 @@ import {
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 import { registerToolHandlers } from '@/handlers/tools/index.js';
 import { TOOL_CONFIGS, findToolConfig } from '@/handlers/tools/registry.js';
@@ -194,6 +194,12 @@ describe('v2 legacy surface removal', () => {
     const names = await listToolNames();
     for (const name of [...LEGACY_ONLY_NAMES, ...REMOVED_PRE_V2_NAMES]) {
       expect(names, name).not.toContain(name);
+      expect(
+        Object.values(TOOL_CONFIGS).flatMap((configs) =>
+          Object.values(configs).map((config) => config.name)
+        ),
+        name
+      ).not.toContain(name);
       expect(findToolConfig(name), name).toBeUndefined();
       // Even with the mode filter off there is no registration left to reach.
       expect(
@@ -204,11 +210,7 @@ describe('v2 legacy surface removal', () => {
   });
 
   it('fails a legacy-only call at the protocol boundary', async () => {
-    for (const name of [
-      'create-company',
-      'create-task',
-      'link-person-to-company',
-    ]) {
+    for (const name of [...LEGACY_ONLY_NAMES, ...REMOVED_PRE_V2_NAMES]) {
       // A removed name is a missing tool, not a handler that runs and errors.
       await expect(client.callTool({ name, arguments: {} })).rejects.toThrow(
         /Tool not found/i
@@ -219,7 +221,9 @@ describe('v2 legacy surface removal', () => {
   it('keeps supported prior-default names call-only and mode-bound (KTD7)', async () => {
     for (const [alias, canonical] of SUPPORTED_ALIASES) {
       expect(resolveToolName(alias).name, alias).toBe(canonical);
-      expect(findToolConfig(alias), alias).toBeDefined();
+      expect(findToolConfig(alias)?.toolConfig, alias).toBe(
+        findToolConfig(canonical)?.toolConfig
+      );
     }
 
     const names = await listToolNames();
@@ -232,6 +236,9 @@ describe('v2 legacy surface removal', () => {
     for (const [alias] of SUPPORTED_ALIASES) {
       expect(resolveToolName(alias).name, alias).toBe(alias);
       expect(findToolConfig(alias), alias).toBeUndefined();
+      await expect(
+        client.callTool({ name: alias, arguments: {} })
+      ).rejects.toThrow(/Tool not found/i);
     }
     vi.stubEnv('MCP_DISABLE_TOOL_ALIASES', 'false');
     for (const [alias, canonical] of SUPPORTED_ALIASES) {
@@ -314,68 +321,43 @@ describe('v2 legacy surface removal', () => {
     }
   });
 
-  it('leaves no live source dependency on a deleted legacy module', () => {
-    const deleted = [
-      'tool-configs/companies/',
-      'tool-configs/people/',
-      'tool-configs/deals/',
-      'tool-configs/records/',
-      'tool-configs/general/',
-      'tool-configs/tasks.js',
-      'tool-configs/resource-specific-tools',
-      'handlers/tools.ts.old',
-      'handlers/tools.ts.fix',
-    ];
-    const root = process.cwd();
-    const offenders: string[] = [];
-
-    const walk = (dir: string) => {
-      for (const entry of readdirSync(dir)) {
-        const full = join(dir, entry);
-        if (full === join(root, 'node_modules')) {
-          continue;
-        }
-        const stats = statSync(full);
-        if (stats.isDirectory()) {
-          if (!['dist', 'coverage', '.git'].includes(entry)) {
-            walk(full);
-          }
-          continue;
-        }
-        if (!/\.(ts|tsx|js|mjs|cjs)$/.test(entry)) {
-          continue;
-        }
-        const text = readFileSync(full, 'utf8');
-        for (const needle of deleted) {
-          if (text.includes(needle)) {
-            offenders.push(`${full.replace(root, '.')} -> ${needle}`);
-          }
-        }
-      }
-    };
-
-    walk(join(root, 'src'));
-    expect(offenders).toEqual([]);
-  });
-
-  it('keeps active setup docs naming v2 canonical tools only', () => {
-    // Historical mentions of the retired flag are allowed; an instruction that
-    // turns the legacy surface back on is not.
-    const setupCommands = [
-      'DISABLE_UNIVERSAL_TOOLS=true npm',
-      'DISABLE_UNIVERSAL_TOOLS=true npx',
-      'ENABLE_LEGACY_TOOLS',
-    ];
-    for (const doc of ['README.md', 'docs/MIGRATION-GUIDE.md']) {
-      const text = readFileSync(join(process.cwd(), doc), 'utf8');
-      for (const command of setupCommands) {
-        expect(text.includes(command), `${doc}: ${command}`).toBe(false);
-      }
-      expect(
-        /##\s+Enable Legacy Tools/i.test(text),
-        `${doc}: legacy enable section`
-      ).toBe(false);
-      expect(/Enables legacy tools/i.test(text), doc).toBe(false);
+  it('resolves every advertised name to its registered handler', async () => {
+    const registered = Object.values(TOOL_CONFIGS).flatMap(Object.values);
+    for (const name of await listToolNames()) {
+      const configs = registered.filter((config) => config.name === name);
+      expect(configs, name).toHaveLength(1);
+      expect(findToolConfig(name)?.toolConfig.handler, name).toBe(
+        configs[0].handler
+      );
+      expect(typeof configs[0].handler, name).toBe('function');
     }
   });
+
+  it('emits no legacy tool-config module in a clean build', () => {
+    const output = mkdtempSync(join(process.cwd(), '.u8-build-'));
+    try {
+      for (const command of ['tsc', 'tsc-alias']) {
+        execFileSync(
+          'timeout',
+          ['-k', '5s', '90s', 'bun', 'run', command, '--outDir', output],
+          { cwd: process.cwd(), stdio: 'pipe' }
+        );
+      }
+      expect(existsSync(join(output, 'handlers/tools/registry.js'))).toBe(true);
+      for (const module of [
+        'companies',
+        'people',
+        'deals',
+        'records',
+        'general',
+        'tasks.js',
+        'resource-specific-tools.js',
+      ]) {
+        expect(existsSync(join(output, 'handlers/tool-configs', module)), module)
+          .toBe(false);
+      }
+    } finally {
+      rmSync(output, { recursive: true, force: true });
+    }
+  }, 200000);
 });

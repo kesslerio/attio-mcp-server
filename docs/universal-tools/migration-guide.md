@@ -7,8 +7,15 @@ This guide helps you migrate from deprecated resource-specific tools to the new 
 > **v2.0.0**: the deprecated tools in the tables below were removed with the v2
 > surface. They are a from-to reference for saved clients, not a callable set,
 > and `DISABLE_UNIVERSAL_TOOLS` no longer registers them. If a client still
-> sends one of these names, switch it to the universal tool and keep the
-> arguments as they are.
+> sends one of these removed names, send the v2 tool with `resource_type` and
+> the payload required by its current schema: use `record_data` for creates,
+> `attributes` for updates, and migrate identifier and operation fields as
+> required. Read `tools/list` and the [per-tool schemas](api-reference.md)
+> before migrating; renaming alone does not convert a legacy payload.
+>
+> Only supported prior-default migration aliases preserve arguments when
+> replaced by their canonical names; see the
+> [supported alias table](../MIGRATION-GUIDE.md).
 
 ### What Changed?
 
