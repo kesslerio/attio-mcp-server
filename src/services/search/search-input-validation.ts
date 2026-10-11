@@ -6,6 +6,27 @@ import {
 } from '@/handlers/tool-configs/universal/types.js';
 import type { SearchRoutingParams } from '@/services/search/SearchCoordinator.js';
 
+export function validateConnectorSearchControls(params: unknown): void {
+  if (!params || typeof params !== 'object') return;
+  for (const field of [
+    'filters',
+    'sort',
+    'sort_by',
+    'sort_order',
+    'search_type',
+    'fields',
+    'match_type',
+  ]) {
+    if (Object.hasOwn(params, field)) {
+      throw new UniversalValidationError(
+        `${field} is not supported by connector search. Omit it or use records_search.`,
+        undefined,
+        { field }
+      );
+    }
+  }
+}
+
 /** Reject options the selected route would otherwise silently discard. */
 export function validateSearchInput(params: SearchRoutingParams): void {
   const {
@@ -121,14 +142,10 @@ export function validateSearchInput(params: SearchRoutingParams): void {
         'Text query is not supported for this resource and search_type.'
       );
     }
-    if (
-      !objectStrategy &&
-      !nonObject &&
-      filters?.list_membership !== undefined
-    ) {
+    if (!nonObject && filters?.list_membership !== undefined) {
       reject(
         'filters',
-        'list_membership is not supported for generic records or custom objects.'
+        'list_membership is not supported for object-record searches.'
       );
     }
   }

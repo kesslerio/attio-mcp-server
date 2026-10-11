@@ -54,7 +54,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **Notes**: Create and list operations for all record types
 - **Records**: Universal CRUD operations across all resource types
 - **Batch Operations**: Create, Update, Delete with chunking and error handling
-- **Content Search**: Universal search capabilities across notes, tasks, and lists
+- **Content Search**: See the [supported-input matrix](docs/universal-tools/api-reference.md#supported-search-inputs) for resource-specific limits
 - **Relationship Navigation**: Bidirectional company↔person↔deal relationships
 - **Advanced Filtering**: Sophisticated query capabilities with intelligent field mapping
 

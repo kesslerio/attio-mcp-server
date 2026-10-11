@@ -14,6 +14,8 @@ import { searchRecordsConfig } from '@/handlers/tool-configs/universal/core/sear
 import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 
 import { CompanySearchStrategy } from '@/services/search-strategies/CompanySearchStrategy.js';
+import { PeopleSearchStrategy } from '@/services/search-strategies/PeopleSearchStrategy.js';
+import { DealSearchStrategy } from '@/services/search-strategies/DealSearchStrategy.js';
 import { CompanyMockFactory } from '@test/utils/mock-factories/CompanyMockFactory.js';
 import { PersonMockFactory } from '@test/utils/mock-factories/PersonMockFactory.js';
 import { ListMockFactory } from '@test/utils/mock-factories/ListMockFactory.js';
@@ -24,6 +26,7 @@ import {
 import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
 import { universalBatchSearch } from '@/api/operations/batch.js';
 import { executeToolRequest } from '@/handlers/tools/dispatcher/core.js';
+import * as attioClient from '@/api/attio-client.js';
 
 const filters = {
   filters: [
@@ -32,6 +35,7 @@ const filters = {
 };
 
 beforeEach(() => {
+  vi.spyOn(attioClient, 'getAttioClient').mockClear();
   vi.spyOn(StrategyFactory, 'getStrategy').mockResolvedValue(undefined);
   vi.spyOn(QueryApiService, 'searchByTimeframe').mockResolvedValue({
     data: [],
@@ -43,6 +47,169 @@ afterEach(() => {
 });
 
 describe('search arguments are honored or rejected before upstream work', () => {
+  it.each([
+    ['filters', filters],
+    ['sort', 'relevance'],
+    ['sort_by', 'name'],
+    ['sort_order', 'desc'],
+    ['search_type', 'basic'],
+    ['fields', []],
+    ['match_type', 'partial'],
+  ])(
+    'rejects supplied connector %s before it can be stripped',
+    async (field, value) => {
+      vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'search');
+      for (const type of ['companies', 'people', 'lists'] as const) {
+        const args = { type, query: 'Acme', [field]: value };
+        const result = await executeToolRequest({
+          method: 'tools/call',
+          params: { name: 'search', arguments: args },
+        });
+        expect(result).toMatchObject({
+          isError: true,
+          structuredContent: {
+            error: { code: 'VALIDATION_ERROR', retryable: false },
+          },
+        });
+        await expect(
+          OpenAiCompatibilityService.search(args)
+        ).rejects.toMatchObject({
+          name: 'UniversalValidationError',
+          field,
+        });
+      }
+      expect(StrategyFactory.getStrategy).not.toHaveBeenCalled();
+      expect(QueryApiService.searchByTimeframe).not.toHaveBeenCalled();
+      expect(attioClient.getAttioClient).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([R.COMPANIES, R.PEOPLE, R.LISTS])(
+    'preserves supported connector queries for %s without supplied controls',
+    async (resource) => {
+      vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'search');
+      const acme = CompanyMockFactory.create({ name: 'Acme' });
+      const globex = CompanyMockFactory.create({ name: 'Globex' });
+      const upstream = vi.fn(async (input) =>
+        input.query === 'Acme' ? [acme] : [globex]
+      );
+      vi.mocked(StrategyFactory.getStrategy).mockResolvedValue({
+        search: upstream,
+        getResourceType: () => resource,
+        supportsAdvancedFiltering: () => true,
+        supportsQuerySearch: () => true,
+      });
+      for (const [query, record] of [
+        ['Acme', acme],
+        ['Globex', globex],
+      ] as const) {
+        const result = await executeToolRequest({
+          method: 'tools/call',
+          params: {
+            name: 'search',
+            arguments: { type: resource, query, limit: 5 },
+          },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(result.structuredContent).toMatchObject({
+          data: [{ id: `${resource}:${record.id.record_id}` }],
+          pagination: { supported: false },
+        });
+        expect(upstream).toHaveBeenLastCalledWith(
+          expect.objectContaining({ query, limit: 5 })
+        );
+      }
+    }
+  );
+
+  it.each([R.COMPANIES, R.PEOPLE, R.DEALS, R.RECORDS])(
+    'rejects ignored membership filters through universal wrappers for %s',
+    async (resource_type) => {
+      vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'full');
+      for (const name of [
+        'records_search',
+        'search_records',
+        'records_search_advanced',
+        'search_records_advanced',
+      ]) {
+        const result = await executeToolRequest({
+          method: 'tools/call',
+          params: {
+            name,
+            arguments: {
+              resource_type,
+              filters: {
+                filters: [],
+                list_membership: '88709359-01f6-478b-ba66-c07347891b6f',
+              },
+            },
+          },
+        });
+        expect(result).toMatchObject({
+          isError: true,
+          structuredContent: {
+            error: { code: 'VALIDATION_ERROR', retryable: false },
+          },
+        });
+      }
+      expect(StrategyFactory.getStrategy).not.toHaveBeenCalled();
+      expect(QueryApiService.searchByTimeframe).not.toHaveBeenCalled();
+      expect(attioClient.getAttioClient).not.toHaveBeenCalled();
+    }
+  );
+
+  it('rejects custom-object membership at the shared coordinator boundary', async () => {
+    await expect(
+      SearchCoordinator.executeSearch({
+        resource_type: 'funds' as R,
+        filters: { list_membership: '88709359-01f6-478b-ba66-c07347891b6f' },
+      })
+    ).rejects.toMatchObject({
+      name: 'UniversalValidationError',
+      field: 'filters',
+    });
+    expect(StrategyFactory.getStrategy).not.toHaveBeenCalled();
+    expect(attioClient.getAttioClient).not.toHaveBeenCalled();
+  });
+
+  it.each([CompanySearchStrategy, PeopleSearchStrategy, DealSearchStrategy])(
+    'preserves supported attribute filters through both wrappers with %s',
+    async (Strategy) => {
+      const acme = CompanyMockFactory.create({ name: 'Acme' });
+      const globex = CompanyMockFactory.create({ name: 'Globex' });
+      const upstream = vi.fn(async (input: Record<string, unknown>) =>
+        (input.filters as { value: string }[])[0].value === 'Acme'
+          ? [acme]
+          : [globex]
+      );
+      const strategy = new Strategy({
+        advancedSearchFunction: upstream,
+        paginatedSearchFunction: async (input) => ({
+          results: await upstream(input),
+        }),
+      });
+      vi.mocked(StrategyFactory.getStrategy).mockResolvedValue(strategy);
+      for (const config of [searchRecordsConfig, advancedSearchConfig]) {
+        for (const [value, expected] of [
+          ['Acme', acme],
+          ['Globex', globex],
+        ] as const) {
+          const inputFilters = {
+            filters: [
+              { attribute: { slug: 'name' }, condition: 'equals', value },
+            ],
+          };
+          const result = await config.handler({
+            resource_type: strategy.getResourceType() as R,
+            filters: inputFilters,
+          });
+          expect(result).toMatchObject({ data: [expected] });
+          expect(upstream.mock.calls.at(-1)?.[0]).toEqual(inputFilters);
+        }
+      }
+    }
+  );
+
   it.each([
     { resource_type: R.COMPANIES, sort_by: 'name' },
     { resource_type: R.PEOPLE, sort_order: 'asc' },

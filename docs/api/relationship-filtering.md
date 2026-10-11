@@ -9,7 +9,7 @@ Relationship-based filtering makes it possible to:
 - Find people based on attributes of their associated companies
 - Find companies based on attributes of their associated people
 - Find records that belong to specific lists
-- Find records that have notes containing specific text
+- For note-content search limitations, see the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs)
 
 ## People-Company Relationship Filtering
 
@@ -81,29 +81,7 @@ This finds all companies that have employees in the specified list.
 
 ## Note Content Filtering
 
-### Finding People by Note Content
-
-You can search for people who have notes containing specific text:
-
-```json
-{
-  "searchText": "follow up next quarter"
-}
-```
-
-This finds all people who have notes containing the phrase "follow up next quarter".
-
-### Finding Companies by Note Content
-
-Similarly, you can search for companies that have notes containing specific text:
-
-```json
-{
-  "searchText": "potential partnership"
-}
-```
-
-This finds all companies that have notes containing the phrase "potential partnership".
+See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for note-content search limitations and alternatives.
 
 ## Examples
 
@@ -151,32 +129,24 @@ This finds all companies that have notes containing the phrase "potential partne
 }
 ```
 
-### Example 3: Find all companies with notes mentioning acquisition
-
-```json
-{
-  "searchText": "acquisition"
-}
-```
-
 ## Tool Reference
 
 ### People Relationship Tools
 
-| Tool Name | Description |
-|-----------|-------------|
-| `search-people-by-company` | Search for people based on attributes of their associated companies |
-| `search-people-by-company-list` | Search for people who work at companies in a specific list |
-| `search-people-by-notes` | Search for people that have notes containing specific text |
+| Tool Name                       | Description                                                                                        |
+| ------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `search-people-by-company`      | Search for people based on attributes of their associated companies                                |
+| `search-people-by-company-list` | Search for people who work at companies in a specific list                                         |
+| `search-people-by-notes`        | See [note-content search limitations](../universal-tools/api-reference.md#supported-search-inputs) |
 
 ### Company Relationship Tools
 
-| Tool Name | Description |
-|-----------|-------------|
-| `search-companies-by-people` | Search for companies based on attributes of their associated people |
-| `search-companies-by-people-list` | Search for companies that have employees in a specific list |
-| `search-companies-by-notes` | Search for companies that have notes containing specific text |
+| Tool Name                         | Description                                                                                        |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `search-companies-by-people`      | Search for companies based on attributes of their associated people                                |
+| `search-companies-by-people-list` | Search for companies that have employees in a specific list                                        |
+| `search-companies-by-notes`       | See [note-content search limitations](../universal-tools/api-reference.md#supported-search-inputs) |
 
 ## Combining Filters
 
-You can combine relationship-based filters with other filtering capabilities to create more powerful and targeted queries. For example, you can combine date-based filtering with relationship filtering to find records created within a specific time range that also have specific relationships.
+See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) before combining relationship searches with query or filter controls.

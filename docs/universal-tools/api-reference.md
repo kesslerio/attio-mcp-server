@@ -28,7 +28,7 @@ Unsupported inputs return a nonretryable `VALIDATION_ERROR` before an Attio requ
 
 | Route                                         | Supported inputs                                                                                                           | Rejected inputs                                                                                                             |
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Companies, people, deals                      | Text query **or** attribute filters; content mode searches record attributes                                               | Text query combined with filters                                                                                            |
+| Companies, people, deals                      | Text query **or** attribute filters; content mode searches record attributes                                               | Text query combined with filters; `list_membership` filter                                                                  |
 | Generic records and configured custom objects | Attribute filters and empty-query listing                                                                                  | Nonempty text query; `list_membership` filter                                                                               |
 | Lists                                         | Text query; bounded content-mode filtering                                                                                 | Attribute filters                                                                                                           |
 | Tasks                                         | Listing; bounded text filtering with `search_type=content`                                                                 | Basic text query; attribute filters                                                                                         |
@@ -37,7 +37,7 @@ Unsupported inputs return a nonretryable `VALIDATION_ERROR` before an Attio requ
 | `records_search_by_content`                   | No supported combinations currently                                                                                        | Every note/activity/interaction body search; use `notes_list` for a known record or `records_get_interactions` for metadata |
 | `records_batch_search`                        | `resource_type`, `queries`; `limit`/`offset` only apply to lists, records, tasks, and deals                                | Additional filter/sort controls; nonempty basic task or generic-record queries fail per item                                |
 
-The connector `search` defaults to companies, people, and lists; `type=all` selects the same three supported text-search resources. Use `type=companies`, `people`, or `lists` to narrow coverage. Each result identifies its resource type in `metadata.resource_type`. Tasks are excluded from `all`; explicit task text queries fail validation before any upstream work.
+The connector `search` defaults to companies, people, and lists; `type=all` selects the same three supported text-search resources. Use `type=companies`, `people`, or `lists` to narrow coverage. Each result identifies its resource type in `metadata.resource_type`. Tasks are excluded from `all`; explicit task text queries fail validation before any upstream work. Explicit `filters`, `sort`, `sort_by`, `sort_order`, `search_type`, `fields`, and `match_type` are rejected; use `records_search` for supported universal controls.
 
 `sort_by` and `sort_order` are unsupported and must be omitted. Explicit `sort` is supported only as `relevance` for strategy-based content queries; other requested ordering fails rather than returning provider order. `fields` and exact/partial `match_type` apply only to those content queries; fuzzy matching is unsupported. Omitted controls retain existing defaults. Record attribute content search is not CRM note-body search.
 
@@ -53,7 +53,7 @@ These expanded references retain the full input, boundary, and recovery details 
 
 Run the lightweight compatibility search used by connector clients such as ChatGPT.
 
-Never handle complex filters, batch queries, or rich record payloads.
+Never accept filters, sorting, search_type, fields, match_type, batch queries, or rich record payloads.
 
 Requires a query string; omitted type or type=all searches companies, people, and lists. Select one of those types to narrow coverage; tasks are excluded from all and explicit task text queries fail before upstream work. Results identify their resource_type in metadata; limit caps at 25 results across the selected resources.
 
@@ -101,7 +101,7 @@ Find records across any supported object type.
 
 Never create or modify records, or return more than one page per call.
 
-Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.
+Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects; list_membership is rejected for all object-record searches. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.
 
 If attributes are unknown or a page is empty, discover searchable fields.
 
@@ -152,19 +152,7 @@ for companion prose formatting.
 
 **Consolidates**: `search-companies`, `search-people`, `list-records`, `list-tasks`
 
-**Schema**:
-
-```typescript
-{
-  resource_type: 'companies' | 'people' | 'records' | 'deals' | 'tasks' | '<custom_object_slug>', // Required
-  query?: string,                    // Smart query string (names, emails, phones, domains)
-  filters?: object,                  // Advanced filter conditions
-  search_type?: 'basic' | 'content', // Search type (default: 'basic')
-  limit?: number,                    // Max results (1-100; record-query defaults vary)
-  offset?: number,                   // Pagination offset (default: 0)
-  cursor?: string                    // See Collection Continuation
-}
-```
+**Schema**: Read the callable descriptor from `tools/list` or `capabilities_get`; see [supported search inputs](#supported-search-inputs) for valid combinations.
 
 For `fields`, `match_type`, and `sort`, see [Supported search inputs](#supported-search-inputs). The runtime schema in `tools/list` is authoritative; accepting a value in the schema does not make it executable on every route.
 
@@ -479,20 +467,7 @@ await client.callTool('records.get_info', {
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
-**Schema**:
-
-```typescript
-{
-  resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
-  query?: string,                    // Search query string
-  filters?: object,                  // Advanced filter conditions
-  sort_by?: string,                  // Unsupported; omit
-  sort_order?: 'asc' | 'desc',      // Unsupported; omit
-  limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
-  offset?: number,                   // Pagination offset (default: 0)
-  cursor?: string                    // See Collection Continuation
-}
-```
+**Schema**: Read the callable descriptor from `tools/list` or `capabilities_get`; see [supported search inputs](#supported-search-inputs) for valid combinations.
 
 **Examples**:
 
@@ -809,7 +784,7 @@ writes enforce authorization the same way whether or not a tool was advertised.
 - All tools require `resource_type`
 - Record operations require `record_id`
 - Create/update operations require `record_data`
-- Content searches require non-empty `search_query`
+- Search requirements depend on the route; see [supported search inputs](#supported-search-inputs)
 
 ### Date Operators ⚠️
 
@@ -863,9 +838,7 @@ Use correct operators for date filtering:
 
 ### Query Requirements
 
-- Search queries **cannot be empty strings**
-- Use meaningful search terms
-- Content searches require specific, non-generic queries
+See [supported search inputs](#supported-search-inputs) for query requirements and empty-query listing support.
 
 ## Error Handling
 
