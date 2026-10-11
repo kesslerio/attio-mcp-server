@@ -120,9 +120,28 @@ Claude references Attio resources using the following URI format:
 - Companies: `attio://companies/{company_id}`
 - People: `attio://people/{person_id}`
 - Lists: `attio://lists/{list_id}`
-- Notes: `attio://notes/{note_id}`
 
 These URIs serve as persistent identifiers for records across conversations.
+
+`resources/read` preserves the requested URI in its JSON contents. Malformed or
+unsupported URIs return a protocol invalid-params error (`-32602`). A missing
+resource returns the legacy resource-not-found protocol error (`-32002`);
+access failures and upstream outages return a sanitized internal protocol error
+(`-32603`). These are JSON-RPC errors, not tool `content`/`isError` results.
+Resource errors do not include upstream response bodies or credentials.
+
+`resources/list` currently queries companies, people, and lists. Every fetch must
+succeed before it returns a catalog. Company and person queries are bounded to
+20 records each: if either page is full, completeness is unproven and discovery
+returns a protocol error instead of a partial catalog. Lists must carry confirmed
+exhaustion from the list operation. A genuinely empty catalog still returns
+`resources: []`. Discovery cursors, including an empty cursor, are unsupported
+and rejected before an upstream request; no `nextCursor` is fabricated.
+
+When discovery cannot establish a complete catalog, use `records_search` and
+`lists_list` to find identifiers, then read an authorized URI directly. A listing
+failure does not disable direct reads. This policy does not provide static,
+CRM-independent resource discovery.
 
 ## Security Considerations
 
