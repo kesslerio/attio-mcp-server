@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { upsertResultContract } from '@/handlers/tools/result-schemas.js';
 import {
   UniversalToolConfig,
@@ -9,7 +10,6 @@ import {
 } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { createErrorResult } from '@/utils/error-handler.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import {
   UniversalUpsertService,
   type UpsertResult,
@@ -116,22 +116,30 @@ export const upsertRecordConfig: UniversalToolConfig<
     result as unknown as Record<string, unknown>,
 };
 
-export const upsertRecordDefinition = {
+export const upsertRecordDefinition = defineOperationTool({
   name: 'records_upsert',
-  description: formatToolDescription({
-    capability:
-      'Idempotently create-or-update one Attio record by exact-matching a unique attribute (email for people, domains for companies, or any unique slug), preventing duplicate records during enrichment and sync',
-    boundaries:
-      'update more than one record, match on partial or fuzzy values, or create a record with a caller-provided record_id',
-    constraints:
-      'Requires resource_type, match { attribute, value }, and values; record_id optionally targets an existing record; multiple matches abort without writing; dry_run previews without writing',
-    requiresApproval: true,
-    recoveryHint:
-      'On an ambiguous-match error, inspect the reported record ids with records_get_details and update the intended one with records_update; call records_discover_attributes if the match attribute slug is unknown.',
-  }),
-  inputSchema: upsertRecordSchema,
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['people', 'companies', 'deals'],
+      customObjectSlugs: true,
+      readOnly: false,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability:
+        'Create or update one record by exact match on a unique attribute.',
+      boundaries:
+        'match fuzzily, touch more than one record, or accept a caller-supplied record_id as the match key.',
+      constraints:
+        'May require explicit user approval from the host. Requires resource_type, match {attribute,value} and values; multiple matches abort without writing; dry_run previews. Custom resource slugs must be configured in this server.',
+      recovery:
+        'On ambiguity, read the reported identifiers and update the intended one.',
+      alternatives: ['records_create', 'records_update'],
+    },
   },
-};
+  inputSchema: upsertRecordSchema,
+});

@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import {
   recordWriteResultContract,
   recordSearchResultContract,
@@ -17,7 +18,6 @@ import {
   handleUniversalGetNotesPage,
 } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { ErrorService } from '@/services/ErrorService.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { extractNoteFields } from '@/handlers/tool-configs/universal/core/utils/note-formatters.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import { createErrorResult } from '@/utils/error-handler.js';
@@ -232,35 +232,52 @@ export const listNotesConfig: UniversalToolConfig<
   },
 };
 
-export const createNoteDefinition = {
+export const createNoteDefinition = defineOperationTool({
   name: 'notes_create',
-  description: formatToolDescription({
-    capability:
-      'Create note for companies, people, or deals with full markdown support.',
-    boundaries: 'update or delete notes; creates only.',
-    requiresApproval: true,
-    constraints:
-      'Requires resource_type, record_id, title, content. Set format="markdown" for rich formatting: headings (# ## ###), lists (- or 1.), nested bullets (2-space indent), bold (**text**), code blocks. Use \\n for line breaks.',
-    recoveryHint: 'If record not found, use records_search first.',
-  }),
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['companies', 'people', 'deals', 'records'],
+      authRequired: true,
+      readOnly: false,
+      destructive: false,
+      idempotent: false,
+    },
+    guidance: {
+      capability: 'Create a note attached to a record, with markdown.',
+      boundaries: 'update or delete existing notes; this tool creates only.',
+      constraints:
+        'May require explicit user approval from the host. Requires resource_type, record_id, title, and content; markdown formatting is opt-in via format.',
+      recovery: 'Resolve the parent record identifier, then create again.',
+      alternatives: ['records_create', 'notes_list'],
+    },
+  },
   inputSchema: createNoteSchema,
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-  },
-};
+});
 
-export const listNotesDefinition = {
+export const listNotesDefinition = defineOperationTool({
   name: 'notes_list',
-  description: formatToolDescription({
-    capability: 'Retrieve notes for a record with timestamps.',
-    boundaries: 'create or modify notes; read-only.',
-    constraints: 'Requires resource_type, record_id; sorted by creation date.',
-    recoveryHint: 'If empty, verify record has notes with records_get_details.',
-  }),
-  inputSchema: listNotesSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      action: 'read',
+      resourceTypes: ['companies', 'people', 'deals', 'records'],
+      customObjectSlugs: false,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+      pagination: { kind: 'cursor', supported: true, cap: 100 },
+    },
+    guidance: {
+      capability: 'List notes on a record with timestamps and body text.',
+      boundaries: 'create, edit, or delete notes.',
+      constraints:
+        'Requires resource_type and record_id; sorted by creation date; page cap 100; custom resource slugs are rejected by tool validation; resource_type is passed as parent_object, so it must identify the note-bearing parent object.',
+      recovery: 'Verify the record and its notes with records_get_details.',
+      alternatives: ['records_search_by_content'],
+    },
   },
-};
+  inputSchema: listNotesSchema,
+});

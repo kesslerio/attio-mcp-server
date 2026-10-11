@@ -9,6 +9,12 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { createServer as createHttpServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { randomUUID } from 'node:crypto';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+
 import { Server } from '@modelcontextprotocol/server';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { registerToolHandlers } from '@/handlers/tools/index.js';
@@ -16,11 +22,9 @@ import { findToolConfig } from '@/handlers/tools/registry.js';
 import {
   getToolsListPayload,
   getCapabilityManifest,
+  getPermittedToolDescriptors,
 } from '@/utils/mcp-discovery.js';
-import {
-  CAPABILITY_CATALOG,
-  type CapabilityManifest,
-} from '@/handlers/tool-configs/universal/capabilities.js';
+import { type CapabilityManifest } from '@/handlers/tool-configs/universal/capabilities.js';
 import { UniversalUpdateService } from '@/services/UniversalUpdateService.js';
 import { EnhancedApiError } from '@/errors/enhanced-api-errors.js';
 import { TOOL_NAME_MIGRATION } from '@/constants/tool-names.js';
@@ -53,6 +57,116 @@ describe('capability manifest consistency', () => {
     }
   });
 
+  it('measures construction, serialization, and actual HTTP bytes on the same catalog', async () => {
+    const samples: Array<{ constructionMs: number; serializationMs: number }> =
+      [];
+    let serialized = '';
+    for (let index = 0; index < 30; index++) {
+      const start = performance.now();
+      const manifest = getCapabilityManifest();
+      const constructed = performance.now();
+      serialized = JSON.stringify(manifest);
+      samples.push({
+        constructionMs: constructed - start,
+        serializationMs: performance.now() - constructed,
+      });
+    }
+    const manifest = JSON.parse(serialized) as CapabilityManifest;
+    const responses = new Map<string, Uint8Array>();
+    const server = new Server(
+      { name: 'discovery-measurement', version: '1' },
+      { capabilities: { tools: {} } }
+    );
+    registerToolHandlers(server);
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: randomUUID,
+      enableJsonResponse: true,
+    });
+    await server.connect(transport);
+    const host = createHttpServer((request, response) => {
+      void transport.handleRequest(request, response).catch(() => {
+        response.writeHead(500).end();
+      });
+    });
+    const client = new Client({ name: 'discovery-measurement', version: '1' });
+    try {
+      await new Promise<void>((resolve) =>
+        host.listen(0, '127.0.0.1', resolve)
+      );
+      const port = (host.address() as AddressInfo).port;
+      await client.connect(
+        new StreamableHTTPClientTransport(
+          new URL(`http://127.0.0.1:${port}/mcp`),
+          {
+            fetch: async (input, init) => {
+              const response = await fetch(input, init);
+              if (
+                init?.method === 'POST' &&
+                typeof init.body === 'string' &&
+                response.headers
+                  .get('content-type')
+                  ?.includes('application/json')
+              ) {
+                const method = (JSON.parse(init.body) as { method: string })
+                  .method;
+                responses.set(
+                  method,
+                  new Uint8Array(await response.clone().arrayBuffer())
+                );
+              }
+              return response;
+            },
+          }
+        )
+      );
+      const listed = await client.listTools();
+      const result = await client.callTool({
+        name: 'capabilities_get',
+        arguments: {},
+      });
+      expect(result.isError).toBe(false);
+      expect(result.structuredContent?.data).toEqual(manifest);
+      expect(listed.tools.map((tool) => tool.name)).toEqual(
+        manifest.tools.map((entry) => entry.name)
+      );
+      const listBytes = responses.get('tools/list')!;
+      const callBytes = responses.get('tools/call')!;
+      const listWire = JSON.parse(new TextDecoder().decode(listBytes));
+      const callWire = JSON.parse(new TextDecoder().decode(callBytes));
+      expect(listWire.result).toEqual(getToolsListPayload());
+      expect(callWire.result.structuredContent.data).toEqual(manifest);
+      expect(
+        listWire.result.tools.every(
+          (tool: Record<string, unknown>) => !('facts' in tool)
+        )
+      ).toBe(true);
+      expect(callBytes.byteLength).toBe(
+        Buffer.byteLength(JSON.stringify(callWire))
+      );
+      const percentile = (key: keyof (typeof samples)[number], rank: number) =>
+        [...samples].sort((a, b) => a[key] - b[key])[
+          Math.ceil(samples.length * rank) - 1
+        ][key];
+      console.info({
+        measurement: 'Discovery HTTP',
+        tools: manifest.toolCount,
+        samples: samples.length,
+        constructionP50Ms: percentile('constructionMs', 0.5),
+        constructionP95Ms: percentile('constructionMs', 0.95),
+        serializationP50Ms: percentile('serializationMs', 0.5),
+        serializationP95Ms: percentile('serializationMs', 0.95),
+        manifestJsonBytes: Buffer.byteLength(serialized),
+        toolsListHttpBodyBytes: listBytes.byteLength,
+        manifestCallHttpBodyBytes: callBytes.byteLength,
+      });
+    } finally {
+      await client.close();
+      await server.close();
+      host.closeAllConnections();
+      await new Promise<void>((resolve) => host.close(() => resolve()));
+    }
+  });
+
   it('agrees with tools/list in both modes, entry for entry', () => {
     for (const mode of ['full', 'search']) {
       process.env.ATTIO_MCP_TOOL_MODE = mode;
@@ -73,6 +187,7 @@ describe('capability manifest consistency', () => {
         );
         expect(entry.operation, entry.name).not.toBeNull();
         expect(entry.guidance, entry.name).not.toBeNull();
+        expect(entry.guidance?.summary, entry.name).toBe(tool.description);
 
         // The published annotations are the authored operation flags, so a
         // client reading tools/list and one reading the manifest cannot differ.
@@ -95,10 +210,18 @@ describe('capability manifest consistency', () => {
     for (const mode of ['full', 'search']) {
       process.env.ATTIO_MCP_TOOL_MODE = mode;
       const registered = registeredNames();
-      const authored = Object.keys(CAPABILITY_CATALOG);
+      const descriptors = getPermittedToolDescriptors();
+      const authored = descriptors.map((descriptor) => descriptor.name);
+      expect(new Set(authored).size).toBe(authored.length);
+      expect(
+        new Set(descriptors.map((descriptor) => descriptor.facts)).size
+      ).toBe(descriptors.length);
 
       for (const name of registered) {
-        expect(CAPABILITY_CATALOG[name], name).toBeDefined();
+        expect(
+          descriptors.find((descriptor) => descriptor.name === name)?.facts,
+          name
+        ).toBeDefined();
         const entry = catalog().get(name)!;
         expect(entry.unannotated, name).toBeUndefined();
         // A registered tool is resolvable by name, so metadata cannot drift

@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import {
   UniversalToolConfig,
   UniversalRecordDetailsParams,
@@ -15,7 +16,6 @@ import {
 } from '@/handlers/tool-configs/universal/core/utils.js';
 import { handleUniversalGetDetails } from '@/handlers/tool-configs/universal/shared-handlers.js';
 import { UniversalUtilityService } from '@/services/UniversalUtilityService.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { recordDetailsResultContract } from '@/handlers/tools/result-schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { isMergeInProgressError } from '@/services/merge/merge-in-progress.js';
@@ -238,19 +238,35 @@ export const getRecordDetailsConfig: UniversalToolConfig<
   },
 };
 
-export const getRecordDetailsDefinition = {
+export const getRecordDetailsDefinition = defineOperationTool({
   name: 'records_get_details',
-  description: formatToolDescription({
-    capability: 'Fetch a single record with enriched attribute formatting.',
-    boundaries:
-      'search or filter result sets; use records_search tools instead.',
-    constraints:
-      'Requires resource_type and record_id; optional fields filter output.',
-    recoveryHint: 'Validate record IDs with records_search before retrying.',
-  }),
-  inputSchema: getRecordDetailsSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'read',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+        'notes',
+      ],
+      customObjectSlugs: true,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Fetch one record with enriched attribute formatting.',
+      boundaries: 'search or filter a result set, or return several records.',
+      constraints:
+        'Requires resource_type and record_id; fields filters output. Custom resource slugs must be configured in this server.',
+      recovery: 'Resolve the identifier with records_search before retrying.',
+      alternatives: ['records_search', 'records_get_info', 'fetch'],
+    },
   },
-};
+  inputSchema: getRecordDetailsSchema,
+});

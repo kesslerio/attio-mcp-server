@@ -13,11 +13,14 @@ import process from 'node:process';
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
 import { findAdvertisedNameViolations } from '@/constants/tool-names.js';
 import {
-  CAPABILITY_CATALOG,
   CAPABILITY_MANIFEST_VERSION,
   buildCapabilityManifest,
 } from '@/handlers/tool-configs/universal/capabilities.js';
-import type { Tool } from '@modelcontextprotocol/server';
+import type { OperationTool as Tool } from '@/handlers/tool-types.js';
+import {
+  getToolsListPayload,
+  getCapabilityManifest,
+} from '@/utils/mcp-discovery.js';
 
 interface Violation {
   tool: string;
@@ -173,12 +176,7 @@ function validateCapabilityConsistency(tools: Tool[]): Violation[] {
 
   for (const tool of tools) {
     if (!tool.name) continue;
-    const entry = (
-      CAPABILITY_CATALOG as Record<
-        string,
-        (typeof CAPABILITY_CATALOG)[string] | undefined
-      >
-    )[tool.name];
+    const entry = tool.facts;
 
     if (!entry) {
       violations.push({
@@ -232,10 +230,7 @@ function validateCapabilityConsistency(tools: Tool[]): Violation[] {
 
     for (const alternative of entry.guidance.alternatives ?? []) {
       // Pointers must exist now, not in a remembered catalog.
-      const known =
-        registered.has(alternative) ||
-        Object.prototype.hasOwnProperty.call(CAPABILITY_CATALOG, alternative) ||
-        alternative === 'tools/list';
+      const known = registered.has(alternative) || alternative === 'tools/list';
       if (!known) {
         violations.push({
           tool: tool.name,
@@ -247,14 +242,19 @@ function validateCapabilityConsistency(tools: Tool[]): Violation[] {
     }
   }
 
-  // An entry that no longer has a descriptor is a second catalog's leftover.
-  for (const name of Object.keys(CAPABILITY_CATALOG)) {
-    if (!registered.has(name)) {
+  const ordinary = getToolsListPayload().tools;
+  const published = getCapabilityManifest();
+  for (const entry of published.tools) {
+    const tool = ordinary.find((candidate) => candidate.name === entry.name);
+    if (
+      !tool ||
+      tool.description !== entry.guidance?.summary ||
+      JSON.stringify(tool.annotations) !== JSON.stringify(entry.annotations)
+    ) {
       violations.push({
-        tool: name,
-        code: 'capability.orphan',
-        message:
-          'Capability entry exists for a tool the registry does not advertise',
+        tool: entry.name,
+        code: 'capability.projection_mismatch',
+        message: 'Ordinary discovery and manifest guidance or hints disagree',
         severity: 'error',
       });
     }

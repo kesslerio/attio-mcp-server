@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 import {
   UniversalToolConfig,
@@ -17,7 +18,6 @@ import {
 import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { handleUniversalSearchPage } from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Universal search records tool configuration.
@@ -186,18 +186,41 @@ export const searchRecordsConfig: UniversalToolConfig<
   structuredOutput: normalizeRecordCollection,
 };
 
-export const searchRecordsDefinition = {
+export const searchRecordsDefinition = defineOperationTool({
   name: 'records_search',
-  description: formatToolDescription({
-    capability: 'Search across companies, people, deals, tasks, and records',
-    boundaries: 'create or modify records',
-    constraints:
-      'Returns max 100 results (default: 10). Pass the sealed next_cursor from a previous page to continue this exact query; never combine cursor with offset. Ranked relevance sorts are a bounded view, not a stable page sequence.',
-    recoveryHint: 'use records_discover_attributes to find searchable fields',
-  }),
-  inputSchema: searchRecordsSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      action: 'search',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+        'notes',
+      ],
+      customObjectSlugs: true,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+      pagination: { kind: 'cursor', supported: false, cap: 100 },
+    },
+    guidance: {
+      capability: 'Find records across any supported object type.',
+      boundaries:
+        'create or modify records, or return more than one page per call.',
+      constraints:
+        'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Basic task and list routes ignore filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and do not combine the supplied filters or text query. Custom resource slugs must be configured in this server. On strategy-based routes, text query is ignored for records and configured custom objects; tasks use it only with search_type=content. Companies, people, and deals ignore text query when filters are supplied.',
+      recovery:
+        'If attributes are unknown or a page is empty, discover searchable fields.',
+      alternatives: [
+        'records_search_advanced',
+        'records_get_details',
+        'search',
+      ],
+    },
   },
-};
+  inputSchema: searchRecordsSchema,
+});

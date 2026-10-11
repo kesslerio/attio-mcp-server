@@ -3,48 +3,12 @@ import { filterAllowedTools } from '@/config/tool-mode.js';
 import { getAllPrompts } from '@/prompts/templates/index.js';
 import {
   buildCapabilityManifest,
-  capabilityOperationFor,
   type CapabilityManifest,
 } from '@/handlers/tool-configs/universal/capabilities.js';
 import type { Tool } from '@modelcontextprotocol/server';
 
-type ToolWithAnnotations = Tool & {
-  annotations?: Record<string, unknown>;
-};
-
-/**
- * Attach the MCP annotation set from authored operation metadata.
- *
- * The read/write/destructive/idempotent hints come from the same table the
- * capability manifest projects, so discovery never guesses capability from a
- * name shape (KTD8). A tool with no authored entry keeps whatever its
- * descriptor declares, and the schema linter fails a missing entry rather
- * than letting a guess stand.
- */
-function ensureAnnotations(tool: Tool): Tool {
-  const typedTool = tool as ToolWithAnnotations;
-  const operation = capabilityOperationFor(tool.name);
-  const annotations: Record<string, unknown> = {
-    ...(typedTool.annotations ?? {}),
-  };
-
-  if (operation) {
-    annotations.readOnlyHint = operation.readOnly;
-    annotations.destructiveHint = operation.destructive;
-    annotations.idempotentHint = operation.idempotent;
-  }
-
-  if (annotations.openWorldHint === undefined) {
-    annotations.openWorldHint = true;
-  }
-
-  const outputSchema = findToolConfig(tool.name)?.toolConfig.outputSchema;
-  return {
-    ...tool,
-    ...(outputSchema ? { outputSchema } : {}),
-    annotations,
-  } as Tool;
-}
+import type { OperationTool } from '@/handlers/tool-types.js';
+import { projectOperationTool } from '@/handlers/tools/operation-descriptor.js';
 
 export interface ToolsListPayload {
   tools: Tool[];
@@ -61,8 +25,8 @@ export interface PromptsListPayload {
   prompts: PromptSummary[];
 }
 
-function flattenToolDefinitions(): Tool[] {
-  const allTools: Tool[] = [];
+export function getPermittedToolDescriptors(): OperationTool[] {
+  const allTools: OperationTool[] = [];
 
   for (const toolDefs of Object.values(TOOL_DEFINITIONS)) {
     if (!toolDefs) {
@@ -70,22 +34,27 @@ function flattenToolDefinitions(): Tool[] {
     }
 
     if (Array.isArray(toolDefs)) {
-      allTools.push(...(toolDefs as Tool[]));
+      allTools.push(...(toolDefs as OperationTool[]));
       continue;
     }
 
     if (typeof toolDefs === 'object') {
-      allTools.push(...(Object.values(toolDefs) as Tool[]));
+      allTools.push(...(Object.values(toolDefs) as OperationTool[]));
     }
   }
 
-  const allowed = filterAllowedTools(allTools) as Tool[];
-  return allowed.map((tool) => ensureAnnotations(tool));
+  const allowed = filterAllowedTools(allTools) as OperationTool[];
+  return allowed.map((tool) => {
+    const outputSchema = findToolConfig(tool.name)?.toolConfig.outputSchema;
+    return { ...tool, ...(outputSchema ? { outputSchema } : {}) };
+  });
 }
 
 export function getToolsListPayload(): ToolsListPayload {
+  const descriptors = getPermittedToolDescriptors();
+  const permitted = new Set(descriptors.map((tool) => tool.name));
   return {
-    tools: flattenToolDefinitions(),
+    tools: descriptors.map((tool) => projectOperationTool(tool, permitted)),
   };
 }
 
@@ -97,7 +66,7 @@ export function getToolsListPayload(): ToolsListPayload {
  * disagree, and building it needs no credential and no Attio call.
  */
 export function getCapabilityManifest(): CapabilityManifest {
-  return buildCapabilityManifest(getToolsListPayload().tools);
+  return buildCapabilityManifest(getPermittedToolDescriptors());
 }
 
 export function getPromptsListPayload(): PromptsListPayload {

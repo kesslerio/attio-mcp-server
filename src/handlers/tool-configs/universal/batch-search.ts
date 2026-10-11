@@ -5,12 +5,12 @@ import { normalizeBatch } from '@/handlers/tool-configs/universal/read-result-ad
  * Dedicated batch search tool configuration
  * Provides a clean API for batch search operations with multiple queries
  */
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 
 import {
   universalBatchSearch,
   UniversalBatchSearchResult,
 } from '@/api/operations/batch.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import {
   UniversalToolConfig,
   UniversalResourceType,
@@ -215,20 +215,35 @@ export const batchSearchSchema = {
 /**
  * Batch search tool definition for MCP protocol
  */
-export const batchSearchToolDefinition = {
+export const batchSearchToolDefinition = defineOperationTool({
   name: 'records_batch_search',
-  description: formatToolDescription({
-    capability:
-      'Execute multiple searches in parallel and return grouped results.',
-    boundaries:
-      'mutate or import data; use records_batch for write operations.',
-    constraints:
-      'Provide queries array (1–10 items recommended) and resource_type.',
-    recoveryHint: 'If queries fail, retry individually using records_search.',
-  }),
-  inputSchema: batchSearchSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      authRequired: true,
+      action: 'batch',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+      ],
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+      pagination: { kind: 'offset', supported: false, cap: null },
+    },
+    guidance: {
+      capability:
+        'Run several searches together and return grouped outcomes per query.',
+      boundaries: 'mutate or import data; use records_batch for writes.',
+      constraints:
+        'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed. Query-array searches for records and tasks ignore each text query, so distinct queries can return the same records. Company, person, and deal searches ignore text query when filters are supplied.',
+      recovery: 'Retry a failed query on its own with records_search.',
+      alternatives: ['records_batch', 'records_search'],
+    },
   },
-};
+  inputSchema: batchSearchSchema,
+});

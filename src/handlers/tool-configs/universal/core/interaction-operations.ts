@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { interactionsResultContract } from '@/handlers/tools/result-schemas.js';
 /**
  * Interaction metadata operations (Issue #1116)
@@ -20,7 +21,6 @@ import {
 } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { createErrorResult } from '@/utils/error-handler.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { getObjectRecord } from '@/objects/records/index.js';
 import { getPersonDetails } from '@/objects/people/basic.js';
 
@@ -240,21 +240,29 @@ export const getRecordInteractionsConfig: UniversalToolConfig<
   },
 };
 
-export const getRecordInteractionsDefinition = {
+export const getRecordInteractionsDefinition = defineOperationTool({
   name: 'records_get_interactions',
-  description: formatToolDescription({
-    capability:
-      'Fetch interaction metadata (first/last email, calendar, interaction timestamps and owners) for a person or company record.',
-    boundaries:
-      'retrieve full email content or activity feeds; Attio only exposes interaction timestamps and owner actors.',
-    constraints:
-      'Requires resource_type (people or companies) and record_id. Returns system-generated interaction attributes.',
-    recoveryHint:
-      'If no interactions found, verify the record exists with records_get_details. For activity content, use records_search_by_content with content_type=activity.',
-  }),
-  inputSchema: getRecordInteractionsSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'read',
+      resourceTypes: ['people', 'companies'],
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability:
+        'Read interaction timestamps and owners for one person or company.',
+      boundaries:
+        'return email bodies, activity feeds, or note text; Attio exposes only system-generated interaction attributes.',
+      constraints: 'Requires resource_type people or companies.',
+      recovery:
+        'Confirm the record exists; people/activity searches cover last-month activity only, while company activity content is unsupported.',
+      alternatives: ['records_search_by_content', 'records_get_details'],
+    },
   },
-};
+  inputSchema: getRecordInteractionsSchema,
+});
