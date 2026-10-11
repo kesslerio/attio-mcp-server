@@ -276,7 +276,6 @@ export const listNotesDefinition = defineOperationTool({
       constraints:
         'Requires resource_type and record_id; sorted by creation date; page cap 100; custom resource slugs are rejected by tool validation; resource_type is passed as parent_object, so it must identify the note-bearing parent object.',
       recovery: 'Verify the record and its notes with records_get_details.',
-      alternatives: ['records_search_by_content'],
     },
   },
   inputSchema: listNotesSchema,

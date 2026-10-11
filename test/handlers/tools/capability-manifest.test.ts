@@ -206,6 +206,36 @@ describe('capability manifest consistency', () => {
     }
   });
 
+  it('does not recommend disabled content search in either discovery view', () => {
+    for (const mode of ['full', 'search']) {
+      process.env.ATTIO_MCP_TOOL_MODE = mode;
+      const manifest = getCapabilityManifest();
+      const listed = getToolsListPayload().tools;
+
+      for (const entry of manifest.tools) {
+        expect(entry.guidance?.alternatives ?? [], entry.name).not.toContain(
+          'records_search_by_content'
+        );
+        expect(entry.guidance?.alternatives ?? [], entry.name).not.toContain(
+          'search_records_by_content'
+        );
+      }
+
+      const notes = manifest.tools.find((entry) => entry.name === 'notes_list');
+      const tool = listed.find((entry) => entry.name === 'notes_list');
+      if (mode === 'full') {
+        expect(notes).toBeDefined();
+        expect(tool).toBeDefined();
+        expect(notes!.guidance?.alternatives ?? []).toEqual([]);
+        expect(tool!.description).toBe(notes!.guidance?.summary);
+        expect(tool!.description).not.toContain('records_search_by_content');
+      } else {
+        expect(notes).toBeUndefined();
+        expect(tool).toBeUndefined();
+      }
+    }
+  });
+
   it('has exactly one entry per registered tool and no entry for anything else', () => {
     for (const mode of ['full', 'search']) {
       process.env.ATTIO_MCP_TOOL_MODE = mode;
