@@ -344,11 +344,11 @@ describe('truthful search discovery', () => {
         if (!tool || !entry) continue;
         if (name === 'records_search_by_content') {
           expect(tool.description).toContain(
-            'All combinations currently return a nonretryable validation error'
+            'all inputs fail validation, nonretryably, before upstream work.'
           );
           expect(entry.operation.resourceTypes).toEqual([]);
           expect(entry.guidance.constraints).toContain(
-            'All combinations currently return a nonretryable validation error'
+            'all inputs fail validation, nonretryably, before upstream work.'
           );
         } else {
           expect(tool.annotations?.destructiveHint).toBe(true);

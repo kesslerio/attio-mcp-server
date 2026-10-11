@@ -285,7 +285,7 @@ describe('search arguments are honored or rejected before upstream work', () => 
       const search = manifest.tools.find((entry) => entry.name === 'search')!;
       expect(search.operation?.resourceTypes).toEqual(Object.keys(records));
       expect(search.guidance?.constraints).toContain(
-        'omitted type or type=all searches companies, people, and lists'
+        'Omitted type/all searches companies/people/lists'
       );
       for (const type of [undefined, 'all', ...Object.keys(records)]) {
         vi.mocked(StrategyFactory.getStrategy).mockClear();
@@ -342,10 +342,10 @@ describe('search arguments are honored or rejected before upstream work', () => 
       (entry) => entry.name === 'records_batch_search'
     )!;
     expect(batch.guidance?.constraints).toContain(
-      'Nonempty query-array searches for records and tasks fail per item before upstream calls.'
+      'Nonempty records/tasks queries fail per item before upstream.'
     );
     expect(batch.guidance?.constraints).toContain(
-      'Additional filter and sort controls are rejected'
+      'Filter/sort controls rejected.'
     );
     for (const resource_type of ['records', 'tasks']) {
       for (const name of ['records_batch_search', 'records_batch']) {
