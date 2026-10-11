@@ -1,4 +1,4 @@
-import { ResourceType } from '../types/attio.js';
+import { ResourceType } from '@/types/attio.js';
 
 /**
  * Parse an Attio resource URI into resource type and ID
@@ -8,17 +8,17 @@ import { ResourceType } from '../types/attio.js';
  * @throws Error if URI format is invalid
  */
 export function parseResourceUri(uri: string): [ResourceType, string] {
-  const match = uri.match(/^attio:\/\/([^/]+)\/(.+)$/);
+  const match = uri.match(/^attio:\/\/([^/]+)\/([A-Za-z0-9._~-]+)$/);
 
-  if (!match) {
-    throw new Error(`Invalid resource URI format: ${uri}`);
+  if (!match || match[2] === '.' || match[2] === '..') {
+    throw new Error('Invalid resource URI format');
   }
 
   const [, typeStr, id] = match;
 
   // Validate resource type
   if (!Object.values(ResourceType).includes(typeStr as ResourceType)) {
-    throw new Error(`Unsupported resource type: ${typeStr}`);
+    throw new Error('Unsupported resource type');
   }
 
   return [typeStr as ResourceType, id];

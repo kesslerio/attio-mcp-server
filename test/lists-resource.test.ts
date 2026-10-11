@@ -111,12 +111,16 @@ describe('Lists Resource Type', () => {
         if (handler) {
           const result = await handler({
             method: 'resources/read',
-            params: { uri: `lists:${listId}` },
+            params: { uri: `attio://lists/${listId}` },
           });
 
           expect(result).toBeDefined();
           expect(result.contents).toBeDefined();
           expect(Array.isArray(result.contents)).toBe(true);
+          expect(result.contents[0]).toMatchObject({
+            uri: `attio://lists/${listId}`,
+            mimeType: 'application/json',
+          });
         }
       }
     });
