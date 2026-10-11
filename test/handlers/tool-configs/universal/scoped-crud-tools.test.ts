@@ -270,17 +270,17 @@ describe('scoped CRUD universal tools', () => {
     ]);
   });
 
-  it('documents scoped and generic selection boundaries', () => {
+  it('renders scoped and generic selection guidance in public tool descriptions', () => {
     expect(createCompanyDefinition.description).toContain('Create one company');
     expect(updateDealDefinition.description).toContain('Update one deal');
     expect(universalToolDefinitions.records_create.description).toContain(
-      'Prefer companies_create or deals_create'
+      'prefer companies_create/deals_create'
     );
     expect(universalToolDefinitions.records_update.description).toContain(
-      'Prefer companies_update or deals_update'
+      'prefer companies_update/deals_update'
     );
     expect(universalToolDefinitions.records_batch.description).toContain(
-      'Use scoped single-record tools for one company or deal write'
+      'use scoped tools for single company/deal writes'
     );
   });
 });
