@@ -159,6 +159,17 @@ describe('capability manifest consistency', () => {
         toolsListHttpBodyBytes: listBytes.byteLength,
         manifestCallHttpBodyBytes: callBytes.byteLength,
       });
+      const health = await client.callTool({
+        name: 'aaa-health-check',
+        arguments: {},
+      });
+      expect(health.isError).toBe(false);
+      const healthData = health.structuredContent?.data as {
+        capabilities: CapabilityManifest;
+      };
+      expect(healthData.capabilities.tools.map((entry) => entry.guidance)).toEqual(
+        manifest.tools.map((entry) => entry.guidance)
+      );
     } finally {
       await client.close();
       await server.close();

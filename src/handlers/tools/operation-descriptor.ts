@@ -41,7 +41,7 @@ export function permittedOperationGuidance(
   if (!tool.facts) return null;
   return {
     ...tool.facts.guidance,
-    alternatives: tool.facts.guidance.alternatives?.filter(
+    alternatives: (tool.facts.guidance.alternatives ?? []).filter(
       (name) => name === 'tools/list' || permitted.has(name)
     ),
   };
