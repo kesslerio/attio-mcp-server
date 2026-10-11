@@ -125,14 +125,14 @@ describe('resource protocol boundary', () => {
   );
 
   it.each(['companies', 'people', 'lists'])(
-    'maps missing %s to a legacy resource protocol error',
+    'maps missing %s to the maintained SDK resource protocol error',
     async (type) => {
       vi.spyOn(getLazyAttioClient(), 'get').mockRejectedValue({
         response: { status: 404, data: { message: 'private-upstream-detail' } },
       });
       await protocolFailure(
         client.readResource({ uri: `attio://${type}/${company.id.record_id}` }),
-        -32002
+        ErrorCode.InvalidParams
       );
     }
   );

@@ -31,7 +31,7 @@ export function resourceFailure(
   }
 
   if (operation === 'read' && status === 404) {
-    // The current native SDK serves legacy revisions. U7 owns modern encoding.
+    // The maintained SDK maps this legacy code to InvalidParams on the wire.
     return new ResourceProtocolError(-32002, 'Resource not found', error);
   }
   return new ResourceProtocolError(

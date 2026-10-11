@@ -123,10 +123,15 @@ Claude references Attio resources using the following URI format:
 
 These URIs serve as persistent identifiers for records across conversations.
 
-`resources/read` preserves the requested URI in its JSON contents. Malformed or
-unsupported URIs return a protocol invalid-params error (`-32602`). A missing
-resource returns the legacy resource-not-found protocol error (`-32002`);
-access failures and upstream outages return a sanitized internal protocol error
+Resource IDs must be a single nonempty segment using letters, digits, `.`, `_`,
+`~`, or `-`, and cannot be `.` or `..`. Paths, percent escapes, query strings,
+and fragments are rejected.
+
+`resources/read` returns JSON text and preserves the requested URI in
+`contents[].uri`. Malformed, unsupported, or missing resources return a protocol
+invalid-params error (`-32602`); the maintained SDK maps the internal legacy
+resource-not-found code to this wire code for every supported protocol revision.
+Access failures and upstream outages return a sanitized internal protocol error
 (`-32603`). These are JSON-RPC errors, not tool `content`/`isError` results.
 Resource errors do not include upstream response bodies or credentials.
 

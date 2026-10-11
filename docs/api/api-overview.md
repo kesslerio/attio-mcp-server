@@ -19,14 +19,8 @@ The Attio MCP server acts as a bridge between Claude (or other AI assistants) an
 
 ### URI Scheme
 
-The Attio MCP server uses a custom URI scheme to identify resources:
-
-- Companies: `attio://companies/{company_id}`
-- People: `attio://people/{person_id}`
-- Lists: `attio://lists/{list_id}`
-- Notes: `attio://notes/{note_id}`
-
-Claude uses these URIs to reference specific records when performing operations.
+See the [resource URI and discovery contract](./mcp-integration-guide.md#understanding-the-uri-scheme)
+for supported resource types, URI syntax, and protocol errors.
 
 ### Available Tools
 

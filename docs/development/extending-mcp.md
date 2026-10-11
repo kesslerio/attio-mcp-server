@@ -24,7 +24,7 @@ To add support for People objects, we'll need to create several new tools and re
 
 ### Resource handlers
 
-See the [resource handler examples](../api/extending-mcp.md#1-update-the-resourceslist-handler)
+See the [resource handler guidance](../api/extending-mcp.md#1-update-the-resourceslist-handler)
 in the extension reference for registering resource handlers with the current SDK.
 
 ### 3. Add People-related Tools
@@ -227,7 +227,7 @@ if (toolName === 'create-person-note') {
       content: [
         {
           type: 'text',
-          text: `Note added to person ${personId}: attio://notes/${response.data?.id?.note_id}`,
+          text: `Note added to person ${personId}`,
         },
       ],
       isError: false,
