@@ -17,7 +17,10 @@ import { CompanySearchStrategy } from '@/services/search-strategies/CompanySearc
 import { CompanyMockFactory } from '@test/utils/mock-factories/CompanyMockFactory.js';
 import { PersonMockFactory } from '@test/utils/mock-factories/PersonMockFactory.js';
 import { ListMockFactory } from '@test/utils/mock-factories/ListMockFactory.js';
-import { getCapabilityManifest, getToolsListPayload } from '@/utils/mcp-discovery.js';
+import {
+  getCapabilityManifest,
+  getToolsListPayload,
+} from '@/utils/mcp-discovery.js';
 import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
 import { universalBatchSearch } from '@/api/operations/batch.js';
 import { executeToolRequest } from '@/handlers/tools/dispatcher/core.js';
@@ -263,12 +266,14 @@ describe('search arguments are honored or rejected before upstream work', () => 
         people: vi.fn().mockResolvedValue([records.people]),
         lists: vi.fn().mockResolvedValue([records.lists]),
       };
-      vi.mocked(StrategyFactory.getStrategy).mockImplementation(async (resource) => ({
-        search: searches[resource as keyof typeof searches],
-        getResourceType: () => resource,
-        supportsAdvancedFiltering: () => resource !== R.LISTS,
-        supportsQuerySearch: () => true,
-      }));
+      vi.mocked(StrategyFactory.getStrategy).mockImplementation(
+        async (resource) => ({
+          search: searches[resource as keyof typeof searches],
+          getResourceType: () => resource,
+          supportsAdvancedFiltering: () => resource !== R.LISTS,
+          supportsQuerySearch: () => true,
+        })
+      );
       const manifest = getCapabilityManifest();
       const listed = getToolsListPayload().tools;
       for (const entry of manifest.tools) {
@@ -279,7 +284,9 @@ describe('search arguments are honored or rejected before upstream work', () => 
       }
       const search = manifest.tools.find((entry) => entry.name === 'search')!;
       expect(search.operation?.resourceTypes).toEqual(Object.keys(records));
-      expect(search.guidance?.constraints).toContain('omitted type or type=all searches companies, people, and lists');
+      expect(search.guidance?.constraints).toContain(
+        'omitted type or type=all searches companies, people, and lists'
+      );
       for (const type of [undefined, 'all', ...Object.keys(records)]) {
         vi.mocked(StrategyFactory.getStrategy).mockClear();
         const result = await executeToolRequest({
@@ -289,20 +296,40 @@ describe('search arguments are honored or rejected before upstream work', () => 
             arguments: { query: 'Acme', ...(type ? { type } : {}) },
           },
         });
-        const resources = !type || type === 'all' ? Object.keys(records) : [type];
+        const resources =
+          !type || type === 'all' ? Object.keys(records) : [type];
         expect(result.isError).toBe(false);
-        expect(vi.mocked(StrategyFactory.getStrategy).mock.calls.map(([resource]) => resource)).toEqual(resources);
+        expect(
+          vi
+            .mocked(StrategyFactory.getStrategy)
+            .mock.calls.map(([resource]) => resource)
+        ).toEqual(resources);
         const data = resources.map((resource) => {
           const record = records[resource as keyof typeof records];
-          const id = 'list_id' in record.id ? record.id.list_id : record.id.record_id;
-          expect(searches[resource as keyof typeof searches]).toHaveBeenLastCalledWith(expect.objectContaining({ query: 'Acme' }));
-          return expect.objectContaining({ id: `${resource}:${id}`, metadata: { resource_type: resource } });
+          const id =
+            'list_id' in record.id ? record.id.list_id : record.id.record_id;
+          expect(
+            searches[resource as keyof typeof searches]
+          ).toHaveBeenLastCalledWith(
+            expect.objectContaining({ query: 'Acme' })
+          );
+          return expect.objectContaining({
+            id: `${resource}:${id}`,
+            metadata: { resource_type: resource },
+          });
         });
-        expect(result.structuredContent).toMatchObject({ data, count: resources.length, next_cursor: null, pagination: { supported: false } });
+        expect(result.structuredContent).toMatchObject({
+          data,
+          count: resources.length,
+          next_cursor: null,
+          pagination: { supported: false },
+        });
         const text = result.content[0];
         expect(text.type).toBe('text');
         if (text.type === 'text') {
-          expect(JSON.parse(text.text).results).toEqual(result.structuredContent?.data);
+          expect(JSON.parse(text.text).results).toEqual(
+            result.structuredContent?.data
+          );
         }
       }
     }
@@ -311,36 +338,79 @@ describe('search arguments are honored or rejected before upstream work', () => 
   it('publishes executable batch and interaction guidance in both discovery views', async () => {
     vi.stubEnv('ATTIO_MCP_TOOL_MODE', 'full');
     const manifest = getCapabilityManifest();
-    const batch = manifest.tools.find((entry) => entry.name === 'records_batch_search')!;
-    expect(batch.guidance?.constraints).toContain('Nonempty query-array searches for records and tasks fail per item before upstream calls.');
-    expect(batch.guidance?.constraints).toContain('Additional filter and sort controls are rejected');
+    const batch = manifest.tools.find(
+      (entry) => entry.name === 'records_batch_search'
+    )!;
+    expect(batch.guidance?.constraints).toContain(
+      'Nonempty query-array searches for records and tasks fail per item before upstream calls.'
+    );
+    expect(batch.guidance?.constraints).toContain(
+      'Additional filter and sort controls are rejected'
+    );
     for (const resource_type of ['records', 'tasks']) {
       for (const name of ['records_batch_search', 'records_batch']) {
         const result = await executeToolRequest({
           method: 'tools/call',
-          params: { name, arguments: { resource_type, ...(name === 'records_batch' ? { operation_type: 'search' } : {}), queries: ['Acme'] } },
+          params: {
+            name,
+            arguments: {
+              resource_type,
+              ...(name === 'records_batch' ? { operation_type: 'search' } : {}),
+              queries: ['Acme'],
+            },
+          },
         });
         expect(result.structuredContent).toMatchObject({
-          data: [{ query: 'Acme', success: false, error: { code: 'VALIDATION_ERROR', retryable: false } }],
+          data: [
+            {
+              query: 'Acme',
+              success: false,
+              error: { code: 'VALIDATION_ERROR', retryable: false },
+            },
+          ],
         });
       }
     }
-    const interaction = manifest.tools.find((entry) => entry.name === 'records_get_interactions')!;
-    expect(interaction.guidance?.recovery).toBe('Confirm the record exists with records_get_details; activity body search is unsupported.');
+    const interaction = manifest.tools.find(
+      (entry) => entry.name === 'records_get_interactions'
+    )!;
+    expect(interaction.guidance?.recovery).toBe(
+      'Confirm the record exists with records_get_details; activity body search is unsupported.'
+    );
     expect(interaction.guidance?.alternatives).toEqual(['records_get_details']);
     const content = await executeToolRequest({
       method: 'tools/call',
-      params: { name: 'records_search_by_content', arguments: { resource_type: 'people', content_type: 'activity', search_query: 'Acme' } },
+      params: {
+        name: 'records_search_by_content',
+        arguments: {
+          resource_type: 'people',
+          content_type: 'activity',
+          search_query: 'Acme',
+        },
+      },
     });
-    expect(content).toMatchObject({ isError: true, structuredContent: { error: { code: 'VALIDATION_ERROR', retryable: false } } });
+    expect(content).toMatchObject({
+      isError: true,
+      structuredContent: {
+        error: { code: 'VALIDATION_ERROR', retryable: false },
+      },
+    });
     for (const entry of [batch, interaction]) {
-      expect(getToolsListPayload().tools.find((tool) => tool.name === entry.name)?.description).toBe(entry.guidance?.summary);
+      expect(
+        getToolsListPayload().tools.find((tool) => tool.name === entry.name)
+          ?.description
+      ).toBe(entry.guidance?.summary);
     }
     expect(StrategyFactory.getStrategy).not.toHaveBeenCalled();
   });
 
   it('rejects unknown direct connector types instead of defaulting silently', async () => {
-    await expect(OpenAiCompatibilityService.search({ query: 'Acme', type: 'unknown' as 'all' })).rejects.toThrow('Unsupported search type');
+    await expect(
+      OpenAiCompatibilityService.search({
+        query: 'Acme',
+        type: 'unknown' as 'all',
+      })
+    ).rejects.toThrow('Unsupported search type');
     expect(StrategyFactory.getStrategy).not.toHaveBeenCalled();
   });
 

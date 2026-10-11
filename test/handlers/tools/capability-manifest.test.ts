@@ -167,9 +167,9 @@ describe('capability manifest consistency', () => {
       const healthData = health.structuredContent?.data as {
         capabilities: CapabilityManifest;
       };
-      expect(healthData.capabilities.tools.map((entry) => entry.guidance)).toEqual(
-        manifest.tools.map((entry) => entry.guidance)
-      );
+      expect(
+        healthData.capabilities.tools.map((entry) => entry.guidance)
+      ).toEqual(manifest.tools.map((entry) => entry.guidance));
     } finally {
       await client.close();
       await server.close();

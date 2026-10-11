@@ -66,9 +66,9 @@ describe('OpenAiCompatibilityService.search', () => {
       limit: 5,
     });
 
-    expect(searchSpy.mock.calls.map(([params]) => params.resource_type)).toEqual([
-      'companies', 'people', 'lists',
-    ]);
+    expect(
+      searchSpy.mock.calls.map(([params]) => params.resource_type)
+    ).toEqual(['companies', 'people', 'lists']);
     expect(results).toHaveLength(2);
     expect(results[0]).toMatchObject({
       id: 'companies:company-1',
