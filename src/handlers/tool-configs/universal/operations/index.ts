@@ -50,11 +50,11 @@ export const advancedOperationsToolDefinitions = {
       },
       guidance: {
         capability:
-          'Search object records with nested attribute filters; task, list, and note routes have restricted filtering.',
-        boundaries: 'mutate records; use the write tools for that.',
+          'Search object records with nested filters; task/list/note filtering is restricted.',
+        boundaries: 'mutate records; use write tools.',
         constraints:
-          'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. sort_by and sort_order are rejected; scoring and caller-selected ordering are not provided. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.',
-        recovery: 'If filters are rejected, discover valid attributes.',
+          'Configured custom objects supported. Cursor support is conditional; cap 100; never mix cursor/offset. Resource, note-scope, timestamp, sort and strategy-query restrictions: docs/universal-tools/api-reference.md#records-search-guidance.',
+        recovery: 'Discover valid attributes if filters fail.',
         alternatives: ['records_search', 'list_entries_filter_advanced'],
       },
     },
@@ -125,11 +125,11 @@ export const advancedOperationsToolDefinitions = {
       },
       guidance: {
         capability:
-          'Search object records by supported creation, modification, or interaction timestamps.',
+          'Search records by creation, modification or interaction time.',
         boundaries: 'change lifecycle state or schedule follow-ups.',
         constraints:
-          'Requires resource_type plus a timeframe or explicit date boundaries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server.',
-        recovery: 'If the window is too restrictive, search without it.',
+          'Requires resource_type and timeframe/date bounds; custom slugs must be configured. No tasks/lists/notes, extra filters or text query. People/companies reject updated_at/modified_at; use created_at or last_interaction. See docs/universal-tools/api-reference.md#timeframe-guidance.',
+        recovery: 'Try without the window if too restrictive.',
         alternatives: ['records_search', 'records_search_advanced'],
       },
     },
@@ -157,13 +157,12 @@ export const advancedOperationsToolDefinitions = {
       },
       guidance: {
         capability:
-          'Run create/update/delete operations concurrently with outcomes indexed by input; legacy operation_type also supports get and search; note writes accept create and delete only, never update.',
-        boundaries:
-          'replay successful items automatically, or skip host approval guardrails.',
+          'Run indexed concurrent create/update/delete; legacy get/search also supported.',
+        boundaries: 'replay successes or bypass host approval.',
         constraints:
-          'May require explicit user approval from the host. Use scoped single-record tools for one company or deal write. Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; Search with queries forwards limit/offset for lists, records, tasks, and deals; companies and people retain the optimized bounded search path without paging controls. Legacy search rejects singular query, filters, and sort controls; without queries it forwards limit/offset to records_search; neither format provides a cursor. Lists are supported only by legacy get/search. Note writes accept create and delete only, never update; legacy get is also available; query-array searches reject notes, while search without queries also rejects unscoped notes. Custom resource slugs are rejected before execution. Nonempty query-array searches for records and tasks fail per item before upstream calls. Company, person, and deal searches reject text query combined with filters.',
+          'Max 100; unordered; separate dependent writes. Partial failures stay data. Notes: create/delete, never update. Custom slugs rejected. Paging and search restrictions: docs/universal-tools/api-reference.md#batch-guidance.',
         recovery:
-          'Inspect each item outcome before considering a retry; never re-run successful writes.',
+          'Inspect each outcome before retry; use scoped tools for single company/deal writes.',
         alternatives: ['records_batch_search', 'records_create'],
       },
     },

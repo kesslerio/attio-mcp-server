@@ -146,14 +146,12 @@ export const openAiToolDefinitions = {
         pagination: { kind: 'offset', supported: false, cap: 25 },
       },
       guidance: {
-        capability:
-          'Run the lightweight compatibility search used by connector clients such as ChatGPT.',
-        boundaries:
-          'handle complex filters, batch queries, or rich record payloads.',
+        capability: 'Connector text search (e.g. ChatGPT).',
+        boundaries: 'handle complex filters, batches or rich records.',
         constraints:
-          'Requires a query string; omitted type or type=all searches companies, people, and lists. Select one of those types to narrow coverage; tasks are excluded from all and explicit task text queries fail before upstream work. Results identify their resource_type in metadata; limit caps at 25 results across the selected resources.',
+          'Requires query. Omitted type/all searches companies/people/lists; select one to narrow. Tasks excluded; explicit task queries fail before upstream. Results carry metadata.resource_type; total limit 25.',
         recovery:
-          'Refine the query and repeat search; attribute filtering and continuation require full-mode record search tools.',
+          'Refine and repeat; full-mode records_search provides attribute filtering and continuation. See docs/universal-tools/api-reference.md#connector-search-guidance.',
         alternatives: ['fetch', 'records_search'],
       },
     },

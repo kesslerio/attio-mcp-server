@@ -328,13 +328,12 @@ export const createRecordDefinition = defineOperationTool({
     },
     guidance: {
       capability:
-        'Create a record of any supported object type, including configured custom objects. Prefer companies_create or deals_create for common company/deal writes.',
-      boundaries:
-        'update existing records, attach files, or bypass required fields.',
+        'Create supported records, including configured custom objects; prefer companies_create/deals_create.',
+      boundaries: 'update, attach files or bypass required fields.',
       constraints:
-        'May require explicit user approval from the host. Requires resource_type plus record_data matching discovered schema; notes require content, parent_object, and parent_record_id in record_data; a write may be reported as uncertain, so read it back. Custom resource slugs must be configured in this server.',
+        'Host approval may be required. Requires resource_type, record_data matching discovered schema; notes need content, parent_object, parent_record_id. Read back uncertain writes.',
       recovery:
-        'Confirm required fields and enum values, then retry once with corrected values.',
+        'Confirm required fields/enums; retry corrected values once. See docs/universal-tools/api-reference.md#record-write-guidance.',
       alternatives: [
         'companies_create',
         'deals_create',
@@ -361,11 +360,13 @@ export const updateRecordDefinition = defineOperationTool({
     },
     guidance: {
       capability:
-        'Patch fields on one existing company, person, deal, task, record, or configured custom object. Prefer companies_update or deals_update for common company/deal writes.',
-      boundaries: 'create records, delete records, or manage list memberships.',
+        'Patch company/person/deal/task/record or configured custom object; prefer companies_update/deals_update.',
+      boundaries:
+        'create/delete, manage list memberships or update notes/lists.',
       constraints:
-        'May require explicit user approval from the host. Requires resource_type, record_id, and record_data; partial updates are validated against schema; notes and lists cannot be updated here. Custom resource slugs must be configured in this server.',
-      recovery: 'Inspect current values first, then retry the same patch.',
+        'Host approval may be required. Requires resource_type, record_id, record_data; partial updates validated against schema.',
+      recovery:
+        'Inspect current values, then retry same patch. See docs/universal-tools/api-reference.md#record-write-guidance.',
       alternatives: ['companies_update', 'deals_update', 'records_batch'],
     },
   },

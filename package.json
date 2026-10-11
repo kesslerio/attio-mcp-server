@@ -319,6 +319,7 @@
         "src/handlers/tool-configs/**/*.ts",
         "src/handlers/tools/**/*.ts",
         "scripts/tool-schema-lint.ts",
+        "src/config/tool-schema-lint.ts",
         "src/config/tool-aliases.ts",
         "src/utils/mcp-discovery.ts"
       ],

@@ -256,12 +256,12 @@ export const batchSearchToolDefinition = defineOperationTool({
       pagination: { kind: 'offset', supported: false, cap: null },
     },
     guidance: {
-      capability:
-        'Run several searches together and return grouped outcomes per query.',
-      boundaries: 'mutate or import data; use records_batch for writes.',
+      capability: 'Search in batches with per-query outcomes.',
+      boundaries: 'mutate/import; use records_batch.',
       constraints:
-        'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed. Nonempty query-array searches for records and tasks fail per item before upstream calls. Additional filter and sort controls are rejected; use records_search for supported individual controls.',
-      recovery: 'Retry a failed query on its own with records_search.',
+        'Requires resource_type, queries (1-10 recommended). limit/offset: lists/records/tasks/deals only; no cursor or universal cap. Nonempty records/tasks queries fail per item before upstream. Filter/sort controls rejected. See docs/universal-tools/api-reference.md#batch-search-guidance.',
+      recovery:
+        'Retry failures via records_search, also for supported individual controls.',
       alternatives: ['records_batch', 'records_search'],
     },
   },

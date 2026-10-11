@@ -208,13 +208,12 @@ export const searchRecordsDefinition = defineOperationTool({
       pagination: { kind: 'cursor', supported: false, cap: 100 },
     },
     guidance: {
-      capability: 'Find records across any supported object type.',
-      boundaries:
-        'create or modify records, or return more than one page per call.',
+      capability:
+        'Search supported objects; filters and text support vary by route.',
+      boundaries: 'mutate records or return multiple pages.',
       constraints:
-        'Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.',
-      recovery:
-        'If attributes are unknown or a page is empty, discover searchable fields.',
+        'Custom slugs require configuration. Cursor support is conditional; check pagination.supported; cap 100, never mix cursor/offset. Task/list/note and strategy routes have input restrictions. Read docs/universal-tools/api-reference.md#records-search-guidance before choosing inputs.',
+      recovery: 'Discover fields if unknown or results are empty.',
       alternatives: [
         'records_search_advanced',
         'records_get_details',

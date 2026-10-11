@@ -10,6 +10,7 @@
  *    keep a second catalog in prose or in code.
  */
 import process from 'node:process';
+import { toolSchemaLintConfig } from '@/config/tool-schema-lint.js';
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
 import { findAdvertisedNameViolations } from '@/constants/tool-names.js';
 import {
@@ -89,14 +90,11 @@ function validateTool(tool: Tool): Violation[] {
         severity: 'error',
       });
     }
-    // Issue #776 requires: purpose + boundaries + constraints + recovery hints
-    // This yields ~40-60 words (200-300 chars) for comprehensive descriptions
-    // Industry research shows enterprise tools average 500-1000 tokens, so 300 chars is reasonable
-    if (trimmed.length > 300) {
+    if (trimmed.length > toolSchemaLintConfig.descriptionMaxLength) {
       violations.push({
         tool: tool.name ?? '(unknown)',
         code: 'tool.description_length',
-        message: `Description too long (${trimmed.length} chars, limit 300)`,
+        message: `Description too long (${trimmed.length} chars, limit ${toolSchemaLintConfig.descriptionMaxLength})`,
         severity: 'error',
       });
     }

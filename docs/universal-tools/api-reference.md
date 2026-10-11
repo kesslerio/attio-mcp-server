@@ -43,6 +43,102 @@ The connector `search` defaults to companies, people, and lists; `type=all` sele
 
 Bounded searches continue to report `pagination.supported=false` and no cursor; a full page does not imply another page exists. Search correction adds no new note-search functionality. Updates can replace existing values, so universal and scoped update tools both advertise `destructiveHint=true`.
 
+## Detailed operation guidance
+
+These expanded references retain the full input, boundary, and recovery details linked from the concise descriptor guidance. Runtime discovery and the manifest both render the descriptor-owned guidance; this reference is not a runtime catalog.
+
+### Connector search guidance
+
+**`search`**
+
+Run the lightweight compatibility search used by connector clients such as ChatGPT.
+
+Never handle complex filters, batch queries, or rich record payloads.
+
+Requires a query string; omitted type or type=all searches companies, people, and lists. Select one of those types to narrow coverage; tasks are excluded from all and explicit task text queries fail before upstream work. Results identify their resource_type in metadata; limit caps at 25 results across the selected resources.
+
+Refine the query and repeat search; attribute filtering and continuation require full-mode record search tools.
+
+### Batch search guidance
+
+**`records_batch_search`**
+
+Run several searches together and return grouped outcomes per query.
+
+Never mutate or import data; use records_batch for writes.
+
+Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed. Nonempty query-array searches for records and tasks fail per item before upstream calls. Additional filter and sort controls are rejected; use records_search for supported individual controls.
+
+Retry a failed query on its own with records_search.
+
+### Record write guidance
+
+**`records_create`**
+
+Create a record of any supported object type, including configured custom objects. Prefer companies_create or deals_create for common company/deal writes.
+
+Never update existing records, attach files, or bypass required fields.
+
+May require explicit user approval from the host. Requires resource_type plus record_data matching discovered schema; notes require content, parent_object, and parent_record_id in record_data; a write may be reported as uncertain, so read it back. Custom resource slugs must be configured in this server.
+
+Confirm required fields and enum values, then retry once with corrected values.
+
+**`records_update`**
+
+Patch fields on one existing company, person, deal, task, record, or configured custom object. Prefer companies_update or deals_update for common company/deal writes.
+
+Never create records, delete records, or manage list memberships.
+
+May require explicit user approval from the host. Requires resource_type, record_id, and record_data; partial updates are validated against schema; notes and lists cannot be updated here. Custom resource slugs must be configured in this server.
+
+Inspect current values first, then retry the same patch.
+
+### Records search guidance
+
+**`records_search`**
+
+Find records across any supported object type.
+
+Never create or modify records, or return more than one page per call.
+
+Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.
+
+If attributes are unknown or a page is empty, discover searchable fields.
+
+**`records_search_advanced`**
+
+Search object records with nested attribute filters; task, list, and note routes have restricted filtering.
+
+Never mutate records; use the write tools for that.
+
+Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. sort_by and sort_order are rejected; scoring and caller-selected ordering are not provided. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.
+
+If filters are rejected, discover valid attributes.
+
+### Timeframe guidance
+
+**`records_search_by_timeframe`**
+
+Search object records by supported creation, modification, or interaction timestamps.
+
+Never change lifecycle state or schedule follow-ups.
+
+Requires resource_type plus a timeframe or explicit date boundaries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server.
+
+If the window is too restrictive, search without it.
+
+### Batch guidance
+
+**`records_batch`**
+
+Run create/update/delete operations concurrently with outcomes indexed by input; legacy operation_type also supports get and search; note writes accept create and delete only, never update.
+
+Never replay successful items automatically, or skip host approval guardrails.
+
+May require explicit user approval from the host. Use scoped single-record tools for one company or deal write. Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; Search with queries forwards limit/offset for lists, records, tasks, and deals; companies and people retain the optimized bounded search path without paging controls. Legacy search rejects singular query, filters, and sort controls; without queries it forwards limit/offset to records_search; neither format provides a cursor. Lists are supported only by legacy get/search. Note writes accept create and delete only, never update; legacy get is also available; query-array searches reject notes, while search without queries also rejects unscoped notes. Custom resource slugs are rejected before execution. Nonempty query-array searches for records and tasks fail per item before upstream calls. Company, person, and deal searches reject text query combined with filters.
+
+Inspect each item outcome before considering a retry; never re-run successful writes.
+
 ## formatResult Architecture (Updated PR #483)
 
 See the [formatter contract](developer-guide.md#formatresult-architecture-update-pr-483)
