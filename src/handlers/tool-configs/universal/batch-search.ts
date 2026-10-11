@@ -260,7 +260,7 @@ export const batchSearchToolDefinition = defineOperationTool({
         'Run several searches together and return grouped outcomes per query.',
       boundaries: 'mutate or import data; use records_batch for writes.',
       constraints:
-        'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed. Query-array searches for records and tasks ignore each text query, so distinct queries can return the same records. Company, person, and deal searches ignore text query when filters are supplied.',
+        'Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed. Nonempty query-array searches for records and tasks fail per item before upstream calls. Additional filter and sort controls are rejected; use records_search for supported individual controls.',
       recovery: 'Retry a failed query on its own with records_search.',
       alternatives: ['records_batch', 'records_search'],
     },

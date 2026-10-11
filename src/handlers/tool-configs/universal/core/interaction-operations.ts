@@ -260,8 +260,8 @@ export const getRecordInteractionsDefinition = defineOperationTool({
         'return email bodies, activity feeds, or note text; Attio exposes only system-generated interaction attributes.',
       constraints: 'Requires resource_type people or companies.',
       recovery:
-        'Confirm the record exists; people/activity searches cover last-month activity only, while company activity content is unsupported.',
-      alternatives: ['records_search_by_content', 'records_get_details'],
+        'Confirm the record exists with records_get_details; activity body search is unsupported.',
+      alternatives: ['records_get_details'],
     },
   },
   inputSchema: getRecordInteractionsSchema,

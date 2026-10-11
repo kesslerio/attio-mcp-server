@@ -34,7 +34,7 @@ const searchInputSchema = {
       type: 'string' as const,
       enum: ['companies', 'people', 'lists', 'tasks', 'all'] as const,
       description:
-        'Select companies, people, or lists. tasks and all (including omitted type) are unsupported.',
+        'Select companies, people, or lists; all (the default) searches those three resources. Task text queries are unsupported.',
     },
     limit: {
       type: 'integer' as const,
@@ -139,7 +139,7 @@ export const openAiToolDefinitions = {
         customObjectSlugs: false,
         authRequired: true,
         action: 'search',
-        resourceTypes: ['companies', 'people', 'lists', 'tasks'],
+        resourceTypes: ['companies', 'people', 'lists'],
         readOnly: true,
         destructive: false,
         idempotent: true,
@@ -151,7 +151,7 @@ export const openAiToolDefinitions = {
         boundaries:
           'handle complex filters, batch queries, or rich record payloads.',
         constraints:
-          'Requires a query string and type=companies, people, or lists; limit caps at 25 results. Task text queries and type=all (including the omitted-type default) are unsupported and fail before upstream work.',
+          'Requires a query string; omitted type or type=all searches companies, people, and lists. Select one of those types to narrow coverage; tasks are excluded from all and explicit task text queries fail before upstream work. Results identify their resource_type in metadata; limit caps at 25 results across the selected resources.',
         recovery:
           'Refine the query and repeat search; attribute filtering and continuation require full-mode record search tools.',
         alternatives: ['fetch', 'records_search'],

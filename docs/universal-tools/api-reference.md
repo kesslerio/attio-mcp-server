@@ -37,7 +37,7 @@ Unsupported inputs return a nonretryable `VALIDATION_ERROR` before an Attio requ
 | `records_search_by_content`                   | No supported combinations currently                                                                                        | Every note/activity/interaction body search; use `notes_list` for a known record or `records_get_interactions` for metadata |
 | `records_batch_search`                        | `resource_type`, `queries`; `limit`/`offset` only apply to lists, records, tasks, and deals                                | Additional filter/sort controls; nonempty basic task or generic-record queries fail per item                                |
 
-The connector `search` requires `type=companies`, `people`, or `lists`. Task text queries and `type=all` (including omitted type) fail validation before any upstream work; the connector does not silently return unfiltered tasks.
+The connector `search` defaults to companies, people, and lists; `type=all` selects the same three supported text-search resources. Use `type=companies`, `people`, or `lists` to narrow coverage. Each result identifies its resource type in `metadata.resource_type`. Tasks are excluded from `all`; explicit task text queries fail validation before any upstream work.
 
 `sort_by` and `sort_order` are unsupported and must be omitted. Explicit `sort` is supported only as `relevance` for strategy-based content queries; other requested ordering fails rather than returning provider order. `fields` and exact/partial `match_type` apply only to those content queries; fuzzy matching is unsupported. Omitted controls retain existing defaults. Record attribute content search is not CRM note-body search.
 

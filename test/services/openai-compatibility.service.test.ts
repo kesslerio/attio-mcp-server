@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 describe('OpenAiCompatibilityService.search', () => {
-  it('returns supported company results without synthetic sort or match controls', async () => {
+  it('aggregates supported default results without synthetic sort or match controls', async () => {
     const searchSpy = vi
       .spyOn(UniversalSearchService, 'searchRecords')
       .mockImplementation(async ({ resource_type }) => {
@@ -63,12 +63,13 @@ describe('OpenAiCompatibilityService.search', () => {
 
     const results = await OpenAiCompatibilityService.search({
       query: 'acme',
-      type: 'companies',
       limit: 5,
     });
 
-    expect(searchSpy).toHaveBeenCalled();
-    expect(results).toHaveLength(1);
+    expect(searchSpy.mock.calls.map(([params]) => params.resource_type)).toEqual([
+      'companies', 'people', 'lists',
+    ]);
+    expect(results).toHaveLength(2);
     expect(results[0]).toMatchObject({
       id: 'companies:company-1',
       title: 'Acme Inc.',

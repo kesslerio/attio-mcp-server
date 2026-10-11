@@ -39,7 +39,6 @@ const SEARCH_RESOURCE_MAP: Record<
     UniversalResourceType.COMPANIES,
     UniversalResourceType.PEOPLE,
     UniversalResourceType.LISTS,
-    UniversalResourceType.TASKS,
   ],
 };
 
@@ -77,8 +76,10 @@ export class OpenAiCompatibilityService {
     const typeKey = (
       params.type ?? 'all'
     ).toLowerCase() as keyof typeof SEARCH_RESOURCE_MAP;
-    const resourceTypes =
-      SEARCH_RESOURCE_MAP[typeKey] ?? SEARCH_RESOURCE_MAP.all;
+    if (!Object.hasOwn(SEARCH_RESOURCE_MAP, typeKey)) {
+      throw new UniversalValidationError(`Unsupported search type: ${typeKey}`);
+    }
+    const resourceTypes = SEARCH_RESOURCE_MAP[typeKey];
 
     // Validate the entire fan-out before any request; unsupported task queries
     // must not become an unfiltered task list after other resources were read.
