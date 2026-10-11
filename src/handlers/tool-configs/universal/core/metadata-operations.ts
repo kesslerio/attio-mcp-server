@@ -331,10 +331,10 @@ export const discoverAttributesDefinition = defineOperationTool({
     },
     guidance: {
       capability:
-        'Discover standard and custom attributes for a standard resource type.',
+        'Discover standard/custom attributes for a standard resource.',
       boundaries: 'alter schema, create fields, or read record values.',
       constraints:
-        'Requires resource_type; categories selects subsets; custom resource slugs and notes are rejected by tool validation.',
+        'Requires resource_type; categories selects subsets; validation rejects custom resource slugs and notes.',
       recovery:
         'For select or status fields, list valid values before writing.',
       alternatives: ['records_get_attribute_options'],

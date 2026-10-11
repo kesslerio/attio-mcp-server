@@ -99,14 +99,12 @@ export const advancedOperationsToolDefinitions = {
         pagination: { kind: 'none', supported: false, cap: null },
       },
       guidance: {
-        capability:
-          'Report unsupported note, activity, or interaction body searches.',
-        boundaries:
-          'search note text, activity bodies, or communication bodies.',
+        capability: 'Reject note/activity/interaction body searches.',
+        boundaries: 'search note/activity/communication text.',
         constraints:
-          'Requires resource_type, content_type, and search_query. All combinations currently return a nonretryable validation error before upstream work.',
+          'Requires resource_type, content_type, search_query; all inputs fail validation, nonretryably, before upstream work.',
         recovery:
-          'Use notes_list for a known record or records_get_interactions for interaction metadata.',
+          'Use notes_list on a known record or records_get_interactions for metadata.',
         alternatives: ['records_search_advanced', 'notes_list'],
       },
     },

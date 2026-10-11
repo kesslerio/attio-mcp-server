@@ -271,11 +271,11 @@ export const listNotesDefinition = defineOperationTool({
       pagination: { kind: 'cursor', supported: true, cap: 100 },
     },
     guidance: {
-      capability: 'List notes on a record with timestamps and body text.',
+      capability: 'List record notes with timestamps and bodies.',
       boundaries: 'create, edit, or delete notes.',
       constraints:
-        'Requires resource_type and record_id; sorted by creation date; page cap 100; custom resource slugs are rejected by tool validation; resource_type is passed as parent_object, so it must identify the note-bearing parent object.',
-      recovery: 'Verify the record and its notes with records_get_details.',
+        'Requires resource_type (=parent_object) and record_id; creation-date order; cap 100; validation rejects custom resource slugs.',
+      recovery: 'Verify record/notes via records_get_details.',
     },
   },
   inputSchema: listNotesSchema,
