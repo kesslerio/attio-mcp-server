@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { registerResourceHandlers } from '../src/handlers/resources.js';
+import { Server } from '@modelcontextprotocol/server';
+import { registerResourceHandlers } from '@/handlers/resources.js';
 import {
   getLists,
   getListDetails,
@@ -14,15 +14,15 @@ import {
   deleteList,
   searchLists,
   getListAttributes,
-} from '../src/objects/lists.js';
+} from '@/objects/lists.js';
 import {
   createObjectRecord,
   getObjectRecord,
   updateObjectRecord,
   deleteObjectRecord,
   listObjectRecords,
-} from '../src/objects/records/index.js';
-import { initializeAttioClient } from '../src/api/attio-client.js';
+} from '@/objects/records/index.js';
+import { initializeAttioClient } from '@/api/attio-client.js';
 
 // Skip integration tests if API key not available
 const SKIP_INTEGRATION =

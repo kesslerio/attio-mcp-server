@@ -7,8 +7,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { registerToolHandlers } from '@/handlers/tools/index.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { Server } from '@modelcontextprotocol/server';
 
 // Mock the dispatcher
 vi.mock('@/handlers/tools/dispatcher.js', () => ({
@@ -27,7 +26,7 @@ describe('MCP Tool Argument Compatibility (Issue #344)', () => {
     // Create a mock server
     server = {
       setRequestHandler: vi.fn((schema, handler) => {
-        if (schema === CallToolRequestSchema) {
+        if (schema === 'tools/call') {
           requestHandler = handler;
         }
       }),

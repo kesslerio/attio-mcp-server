@@ -6,7 +6,7 @@ import {
   capabilityOperationFor,
   type CapabilityManifest,
 } from '@/handlers/tool-configs/universal/capabilities.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 
 type ToolWithAnnotations = Tool & {
   annotations?: Record<string, unknown>;

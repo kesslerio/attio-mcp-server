@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AxiosError } from 'axios';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { Server } from '@modelcontextprotocol/server';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import {
@@ -1216,7 +1216,7 @@ describe('structured tool protocol', () => {
         { method: 'tools/call', params: { name: 42 } },
         CallToolResultSchema
       )
-    ).rejects.toMatchObject({ code: ErrorCode.InternalError });
+    ).rejects.toMatchObject({ code: ErrorCode.InvalidParams });
   });
 
   it('denies hidden writes before executing their handler and preserves schema-valid errors', async () => {

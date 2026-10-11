@@ -2,11 +2,7 @@
  * Tests for MCP Prompts handlers
  */
 import { describe, beforeEach, it, expect, vi } from 'vitest';
-import {
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
-import { registerPromptHandlers } from '../../src/prompts/handlers';
+import { registerPromptHandlers } from '@/prompts/handlers';
 
 describe('Prompts Handlers', () => {
   let server: {
@@ -28,11 +24,11 @@ describe('Prompts Handlers', () => {
       // Verify the handlers were registered
       expect(server.setRequestHandler).toHaveBeenCalledTimes(2);
       expect(server.setRequestHandler).toHaveBeenCalledWith(
-        ListPromptsRequestSchema,
+        'prompts/list',
         expect.any(Function)
       );
       expect(server.setRequestHandler).toHaveBeenCalledWith(
-        GetPromptRequestSchema,
+        'prompts/get',
         expect.any(Function)
       );
     });
@@ -44,7 +40,7 @@ describe('Prompts Handlers', () => {
       // Get the handler function
       await registerPromptHandlers(server);
       const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
-        (call) => call[0] === ListPromptsRequestSchema
+        (call) => call[0] === 'prompts/list'
       )[1];
 
       // Call the handler
@@ -64,7 +60,7 @@ describe('Prompts Handlers', () => {
       // Get the handler function
       await registerPromptHandlers(server);
       const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
-        (call) => call[0] === GetPromptRequestSchema
+        (call) => call[0] === 'prompts/get'
       )[1];
 
       // Test with a v1 prompt
@@ -89,7 +85,7 @@ describe('Prompts Handlers', () => {
       // Get the handler function
       await registerPromptHandlers(server);
       const handler = (server.setRequestHandler as vi.Mock).mock.calls.find(
-        (call) => call[0] === GetPromptRequestSchema
+        (call) => call[0] === 'prompts/get'
       )[1];
 
       // Call the handler with a non-existent prompt name

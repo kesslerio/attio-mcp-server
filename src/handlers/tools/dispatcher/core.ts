@@ -3,9 +3,9 @@
  */
 import {
   CallToolRequest,
-  McpError,
-  ErrorCode,
-} from '@modelcontextprotocol/sdk/types.js';
+  ProtocolError,
+  ProtocolErrorCode,
+} from '@modelcontextprotocol/server';
 import { ResourceType } from '@/types/attio.js';
 
 // Import utilities
@@ -133,7 +133,10 @@ export async function executeToolRequest(request: CallToolRequest) {
   const toolInfo = findToolConfig(toolName, { enforceMode: false });
   if (!toolInfo) {
     logToolConfigError(toolName, 'Tool configuration not found');
-    throw new McpError(ErrorCode.InvalidParams, `Tool not found: ${toolName}`);
+    throw new ProtocolError(
+      ProtocolErrorCode.InvalidParams,
+      `Tool not found: ${toolName}`
+    );
   }
   const readOnly =
     getToolsListPayload().tools.find(

@@ -17,7 +17,7 @@ import {
   CAPABILITY_MANIFEST_VERSION,
   buildCapabilityManifest,
 } from '@/handlers/tool-configs/universal/capabilities.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 
 interface Violation {
   tool: string;

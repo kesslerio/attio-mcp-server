@@ -9,7 +9,7 @@ import {
   AttioListEntry,
 } from '@/types/attio.js';
 import { ListEntryFilters } from '@/api/operations/index.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 import type { z } from 'zod';
 
 /**

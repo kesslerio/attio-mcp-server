@@ -1,7 +1,5 @@
-import {
-  CallToolResultSchema,
-  type CallToolResult,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolResultSchema } from '@modelcontextprotocol/core';
+import type { CallToolResult } from '@modelcontextprotocol/server';
 import type { ToolConfig } from '@/handlers/tool-types.js';
 import { sanitizeMcpResponse } from '@/utils/json-serializer.js';
 import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';

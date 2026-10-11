@@ -4,7 +4,7 @@
  * Handles basic search operations including search, searchByEmail, searchByPhone, and smartSearch
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequest } from '@modelcontextprotocol/server';
 import { createErrorResult } from '@utils/error-handler.js';
 import { ResourceType } from '@shared-types/attio.js';
 import { SearchToolConfig } from '@handlers/tool-types.js';

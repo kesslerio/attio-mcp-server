@@ -1,24 +1,19 @@
 /**
  * Handlers for resource-related requests
  */
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { Server } from '@modelcontextprotocol/server';
 import {
-  ListResourcesRequestSchema,
-  ReadResourceRequestSchema,
   ListResourcesResult,
   ReadResourceResult,
-} from '@modelcontextprotocol/sdk/types.js';
-import { ServerContext } from '../server/createServer.js';
-import { withGlobalContext } from '../api/lazy-client.js';
-import { createErrorResult } from '../utils/error-handler.js';
-import {
-  listCompanies,
-  getCompanyDetails,
-} from '../objects/companies/index.js';
-import { listPeople, getPersonDetails } from '../objects/people/index.js';
-import { getLists, getListDetails } from '../objects/lists.js';
-import { parseResourceUri, formatResourceUri } from '../utils/uri-parser.js';
-import { ResourceType, AttioRecord, AttioList } from '../types/attio.js';
+} from '@modelcontextprotocol/server';
+import { ServerContext } from '@/server/createServer.js';
+import { withGlobalContext } from '@/api/lazy-client.js';
+import { createErrorResult } from '@/utils/error-handler.js';
+import { listCompanies, getCompanyDetails } from '@/objects/companies/index.js';
+import { listPeople, getPersonDetails } from '@/objects/people/index.js';
+import { getLists, getListDetails } from '@/objects/lists.js';
+import { parseResourceUri, formatResourceUri } from '@/utils/uri-parser.js';
+import { ResourceType, AttioRecord, AttioList } from '@/types/attio.js';
 
 /**
  * Type for API errors with response data
@@ -83,7 +78,7 @@ export function registerResourceHandlers(
 ): void {
   // Handler for listing resources (Companies, People, and Lists)
   server.setRequestHandler(
-    ListResourcesRequestSchema,
+    'resources/list',
     async (_request): Promise<ListResourcesResult> => {
       const buildResources = async (): Promise<ListResourcesResult> => {
         try {
@@ -140,7 +135,7 @@ export function registerResourceHandlers(
 
   // Handler for reading resource details (Companies, People, and Lists)
   server.setRequestHandler(
-    ReadResourceRequestSchema,
+    'resources/read',
     async (request): Promise<ReadResourceResult> => {
       const readResource = async (): Promise<ReadResourceResult> => {
         try {
