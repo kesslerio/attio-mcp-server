@@ -700,9 +700,9 @@ await client.callTool('records_search_by_relationship', {
 **Migration Steps:**
 
 1. Content searches: see the [supported-input matrix](api-reference.md#supported-search-inputs) for limitations and alternatives.
-4. Relationship searches: `search-*-by-*` → `records_search_by_relationship`
-5. Add parameters: `resource_type`, `related_resource_type`
-6. Wrap ID in filter: `company_id` → `relationship_filter: { record_id }`
+2. Relationship searches: `search-*-by-*` → `records_search_by_relationship`
+3. Add parameters: `resource_type`, `related_resource_type`
+4. Wrap ID in filter: `company_id` → `relationship_filter: { record_id }`
 
 </td>
 </tr>

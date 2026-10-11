@@ -22,12 +22,14 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 **Objective:** Validate ability to discover and retrieve schema information for resource types
 
 **Test Steps:**
+
 1. Get company attributes: `mcp__attio__get-attributes resource_type="companies"`
 2. Get people attributes: `mcp__attio__get-attributes resource_type="people"`
 3. Get tasks attributes: `mcp__attio__get-attributes resource_type="tasks"`
 4. Get lists attributes: `mcp__attio__get-attributes resource_type="lists"`
 
 **Expected Results:**
+
 - Returns comprehensive schema information for each resource type
 - Includes field names, types, validation rules, and constraints
 - Schema information is accurate and up-to-date
@@ -42,11 +44,13 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 **Objective:** Validate dynamic attribute discovery for flexible schema exploration
 
 **Test Steps:**
+
 1. Discover company attributes: `mcp__attio__discover-attributes resource_type="companies"`
 2. Discover people attributes: `mcp__attio__discover-attributes resource_type="people"`
 3. Discover deals attributes: `mcp__attio__discover-attributes resource_type="deals"`
 
 **Expected Results:**
+
 - Returns discoverable attributes including custom fields
 - Identifies optional vs required fields
 - Shows field relationships and dependencies
@@ -63,11 +67,13 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 **Prerequisites:** Valid record IDs from previous tests
 
 **Test Steps:**
+
 1. Get company activities: `mcp__attio__get-detailed-info resource_type="companies" record_id="[COMPANY_ID]" info_type="activities"`
 2. Get person contact history: `mcp__attio__get-detailed-info resource_type="people" record_id="[PERSON_ID]" info_type="contact"`
 3. Get task relationships: `mcp__attio__get-detailed-info resource_type="tasks" record_id="[TASK_ID]" info_type="relationships"`
 
 **Expected Results:**
+
 - Returns specific information types as requested
 - Data is relevant and properly formatted
 - Handles missing or unavailable information gracefully
@@ -100,19 +106,21 @@ Evaluate results before proceeding to P2:
 
 | Pass Rate              | Decision      | Action                              |
 | ---------------------- | ------------- | ----------------------------------- |
-| **100% (4/4)**         | ✅ Excellent   | Proceed to P2 with confidence       |
-| **≥80% (3/4)**         | ✅ Acceptable  | Proceed to P2, document failed test |
+| **100% (4/4)**         | ✅ Excellent  | Proceed to P2 with confidence       |
+| **≥80% (3/4)**         | ✅ Acceptable | Proceed to P2, document failed test |
 | **<80% (2/4 or less)** | ⚠️ Concerning | **Evaluate production readiness**   |
 
 ### If Pass Rate <80%
 
 **Evaluation Questions:**
+
 - Which specific test failed and why?
 - Is the failure in core functionality or edge cases?
 - Can the failure be worked around in production?
 - Does the failure block critical user workflows?
 
 **Decision Options:**
+
 1. **Proceed to P2** if failures are minor and don't block core workflows
 2. **Stop testing** if failures indicate fundamental issues
 3. **Fix and retest** if time allows and fixes are straightforward
@@ -124,6 +132,7 @@ Evaluate results before proceeding to P2:
 ---
 
 **Related Documentation:**
+
 - [Previous: P0 Core Tests](./p0-core-tests.md)
 - [Next: P2 Advanced Tests](./p2-advanced-tests.md)
 - [Back: Test Cases Overview](./index.md)

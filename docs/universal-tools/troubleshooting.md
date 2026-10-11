@@ -119,7 +119,7 @@ await client.callTool('records.search', {
 
 **Complete Date Operator Migration Table**:
 
-| ❌ Old (Deprecated)       | ✅ New (Required)  | Use Case                          | Example                     |
+| ❌ Old (Deprecated)      | ✅ New (Required) | Use Case                          | Example                     |
 | ------------------------ | ----------------- | --------------------------------- | --------------------------- |
 | `GREATER_THAN_OR_EQUALS` | `AFTER`           | Records created on or after date  | Created after Jan 1, 2024   |
 | `LESS_THAN_OR_EQUALS`    | `BEFORE`          | Records created on or before date | Created before Dec 31, 2024 |
@@ -188,7 +188,7 @@ await client.callTool('records.search', {
 
 **Complete Valid Date Presets List**:
 
-| ✅ Valid Preset  | Description                   | Example Date Range                    |
+| ✅ Valid Preset | Description                   | Example Date Range                    |
 | --------------- | ----------------------------- | ------------------------------------- |
 | `today`         | Current day                   | Today 00:00 - 23:59                   |
 | `yesterday`     | Previous day                  | Yesterday 00:00 - 23:59               |

@@ -264,11 +264,11 @@ Build powerful CRM queries with multi-criteria AND/OR filtering. See the [Advanc
 
 | Client             | Local Install (Tier 1-2) | Cloudflare Worker (Tier 3) |
 | ------------------ | ------------------------ | -------------------------- |
-| Claude Desktop     | ✅ Recommended            | ✅ Full support             |
-| Claude Web         | N/A                      | ✅ Full support             |
-| ChatGPT (Pro/Plus) | N/A                      | ✅ Recommended              |
-| Cursor IDE         | ✅ Full support           | ✅ Full support             |
-| Claude Code (CLI)  | ✅ Recommended            | Partial                    |
+| Claude Desktop     | ✅ Recommended           | ✅ Full support            |
+| Claude Web         | N/A                      | ✅ Full support            |
+| ChatGPT (Pro/Plus) | N/A                      | ✅ Recommended             |
+| Cursor IDE         | ✅ Full support          | ✅ Full support            |
+| Claude Code (CLI)  | ✅ Recommended           | Partial                    |
 
 **Choose your installation method:**
 
@@ -460,12 +460,12 @@ Deploy your own Attio MCP server on Cloudflare Workers with full OAuth 2.1 suppo
 | Feature           | Cloudflare Worker |
 | ----------------- | ----------------- |
 | Setup complexity  | Medium            |
-| OAuth built-in    | ✅                 |
-| Mobile app access | ✅                 |
-| Multi-user access | ✅                 |
-| Custom domain     | ✅                 |
-| Self-hosted       | ✅                 |
-| Team deployments  | ✅ Full            |
+| OAuth built-in    | ✅                |
+| Mobile app access | ✅                |
+| Multi-user access | ✅                |
+| Custom domain     | ✅                |
+| Self-hosted       | ✅                |
+| Team deployments  | ✅ Full           |
 | Cost              | Free tier         |
 
 #### Quick Deploy

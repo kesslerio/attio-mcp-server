@@ -27,18 +27,21 @@ Priority 2 tests validate advanced functionality including relationship queries,
 ⚠️ **IMPLEMENTATION NOTE**: As of Issue #523, this test requires proper query API implementation. Current MCP tools may not use correct Attio API structure.
 
 **Test Steps:**
+
 1. Find people associated with a company:
+
    ```bash
    # PREFERRED: Use records_search_advanced with proper filter structure (after Issue #523 fix)
    mcp__attio__advanced-search resource_type="people" \
      filters='{"filter": {"path": ["company", "id"], "constraints": [{"operator": "equals", "value": "[COMPANY_ID]"}]}}'
-   
+
    # LEGACY: Current relationship search (may fail until Issue #523 resolved)
    mcp__attio__search-by-relationship relationship_type="company_person" \
      source_id="[COMPANY_ID]" target_resource_type="people" limit=10
    ```
 
 2. Find deals associated with a person:
+
    ```bash
    # PREFERRED: Query API approach
    mcp__attio__advanced-search resource_type="deals" \
@@ -47,12 +50,13 @@ Priority 2 tests validate advanced functionality including relationship queries,
 
 3. Find tasks linked to a company:
    ```bash
-   # PREFERRED: Query API approach  
+   # PREFERRED: Query API approach
    mcp__attio__advanced-search resource_type="tasks" \
      filters='{"filter": {"path": ["company", "id"], "constraints": [{"operator": "equals", "value": "[COMPANY_ID]"}]}}'
    ```
 
 **Expected Results:**
+
 - Returns related records based on established relationships
 - Supports different relationship types and directions
 - Handles cases with no relationships gracefully
@@ -77,9 +81,11 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
 ⚠️ **IMPLEMENTATION NOTE**: As of Issue #523, this test requires proper query API implementation. Current MCP tools attempt direct timeframe search instead of date filtering.
 
 **Test Steps:**
+
 1. Check unsupported task timeframe and filter requests against the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs).
 
 2. Search companies by last activity:
+
    ```bash
    # PREFERRED: Query API with date operator
    mcp__attio__advanced-search resource_type="companies" \
@@ -95,6 +101,7 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
    ```
 
 **Expected Results:**
+
 - Filters records within specified date ranges
 - Supports different timeframe_type options
 - Handles date format variations appropriately
@@ -113,13 +120,16 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
 **Prerequisites:** Multiple test records available for batch operations
 
 **Test Steps:**
+
 1. Batch get multiple companies:
+
    ```bash
    mcp__attio__batch-operations resource_type="companies" \
      operation_type="get" record_ids='["[ID1]","[ID2]","[ID3]"]'
    ```
 
 2. Batch update multiple people:
+
    ```bash
    mcp__attio__batch-operations resource_type="people" \
      operation_type="update" \
@@ -140,6 +150,7 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
    ```
 
 **Expected Results:**
+
 - Processes multiple operations efficiently
 - Returns batch results with success/failure status for each item
 - Handles partial failures gracefully
@@ -154,13 +165,16 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
 **Objective:** Validate parallel search execution for efficiency
 
 **Test Steps:**
+
 1. Parallel company searches:
+
    ```bash
    mcp__attio__batch-search resource_type="companies" \
      queries='["technology", "consulting", "software"]' limit=5
    ```
 
 2. Parallel people searches:
+
    ```bash
    mcp__attio__batch-search resource_type="people" \
      queries='["manager", "engineer", "director"]' limit=5
@@ -173,6 +187,7 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
    ```
 
 **Expected Results:**
+
 - Executes multiple searches in parallel or efficiently
 - Returns consolidated results for all queries
 - Maintains individual query performance
@@ -185,7 +200,7 @@ See the [supported-input matrix](../../../universal-tools/api-reference.md#suppo
 Document results without blocking release:
 
 - [ ] **TC-010** [Pass/Fail] Relationship searches
-- [ ] **TC-011** [Pass/Fail] Content-based searches  
+- [ ] **TC-011** [Pass/Fail] Content-based searches
 - [ ] **TC-012** [Pass/Fail] Timeframe searches
 - [ ] **TC-013** [Pass/Fail] Batch operations
 - [ ] **TC-019** [Pass/Fail] Batch search operations
@@ -196,14 +211,15 @@ Document results without blocking release:
 
 | Pass Rate       | Assessment      | Recommendation                          |
 | --------------- | --------------- | --------------------------------------- |
-| **≥60% (3+/5)** | ✅ Excellent     | Advanced features working well          |
-| **50% (3/5)**   | ✅ Target Met    | Acceptable enhancement level            |
+| **≥60% (3+/5)** | ✅ Excellent    | Advanced features working well          |
+| **50% (3/5)**   | ✅ Target Met   | Acceptable enhancement level            |
 | **40% (2/5)**   | ⚠️ Below Target | Document limitations, plan improvements |
-| **<40% (1-/5)** | ❌ Concerning    | Consider disabling advanced features    |
+| **<40% (1-/5)** | ❌ Concerning   | Consider disabling advanced features    |
 
 ### Enhancement Planning
 
 For failed tests, document:
+
 - **Failure Details:** Specific error or limitation encountered
 - **Impact Assessment:** Effect on user experience and workflows
 - **Workaround Options:** Alternative approaches users can take
@@ -216,6 +232,7 @@ For failed tests, document:
 ---
 
 **Related Documentation:**
+
 - [Previous: P1 Essential Tests](./p1-essential-tests.md)
 - [Next: Usability Tests](./usability-tests.md)
 - [Back: Test Cases Overview](./index.md)
