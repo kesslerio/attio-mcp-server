@@ -79,8 +79,9 @@ function asSchemaDocument(schema: unknown): Record<string, unknown> | null {
 /**
  * Project an advertised tool list into the capability manifest.
  *
- * `tools` must be the same mode-filtered descriptors `tools/list` returns, so
- * the manifest can never advertise a tool the server would not list.
+ * `tools` must be the internal mode-filtered descriptors returned by
+ * `getPermittedToolDescriptors`, retaining the facts stripped by `tools/list`.
+ * Both projections therefore advertise the same permitted tools.
  */
 export function buildCapabilityManifest(
   tools: readonly OperationTool[]

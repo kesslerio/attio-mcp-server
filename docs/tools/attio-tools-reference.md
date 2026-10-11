@@ -282,19 +282,7 @@ See the [supported-input matrix](../universal-tools/api-reference.md#supported-s
 
 ### 12. `records_search_by_timeframe`
 
-**Time-based searches with date ranges**
-
-```typescript
-{
-  "name": "records_search_by_timeframe",
-  "arguments": {
-    "resource_type": "companies" | "people" | "tasks",
-    "date_field": "created_at" | "updated_at" | "last_contacted",
-    "start_date": "2023-01-01",
-    "end_date": "2023-12-31"
-  }
-}
-```
+See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for supported resources and limitations.
 
 ### 13. `records_batch`
 
