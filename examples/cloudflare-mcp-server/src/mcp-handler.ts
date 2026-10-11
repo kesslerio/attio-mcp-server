@@ -191,12 +191,9 @@ export function createMcpHandler(config: { attioToken: string }) {
 
         const result = await executeToolRequest(request);
 
-        // Return dispatcher result directly - structuredOutput handles normalization
-        return {
-          content: (result as any).content,
-          isError: (result as any).isError,
-          error: (result as any).error,
-        };
+        // The shared dispatcher owns sanitization and result validation. Preserve
+        // its complete result, including structuredContent and protocol metadata.
+        return result;
       } finally {
         // Ensure no per-request credentials remain cached after execution
         ClientCache.clearInstance();

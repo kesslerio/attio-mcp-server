@@ -12,6 +12,37 @@ This Cloudflare Worker provides:
 - **Claude.ai & ChatGPT Compatible**: Works with both MCP connector implementations
 - **All Attio Tools**: Search, create, update, delete records, notes, and more
 
+## Tool result contract
+
+The Worker forwards the shared dispatcher's complete tool result, including
+`structuredContent`, `content`, and `isError`. See the shared
+[result contract](../../docs/universal-tools/developer-guide.md#structured-results-v2-boundary-a)
+for schema validation, execution errors, mutation uncertainty, and
+`MCP_TEXT_RESULTS=false`, and
+[connector results](../../docs/universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d)
+for required connector content. Protocol errors remain JSON-RPC errors.
+
+### Offline Worker verification
+
+From the repository root, with dependencies installed:
+
+```bash
+bun run test:single test/cloudflare/structured-results.test.ts
+```
+
+This suite rebuilds `dist`, bundles the actual example Worker, and sends serialized
+HTTP requests through local Miniflare/workerd. Only upstream Attio HTTP responses
+are synthetic; encrypted session lookup, dispatch, schema validation, and Worker
+serialization execute normally. It checks read/write output schemas, prose
+opt-out, connector content, mode denials, and one mutation after an invalid or
+interrupted upstream response.
+
+The test runtime uses Node.js 22+ and workerd compatibility date `2026-07-30` for
+Node built-in support. It does not certify the older Wrangler template's build
+polyfills or any deployed Worker. This hotfix retains MCP `2024-11-05` and the
+credential execution lock. Live Attio verification and deployment are separate
+release gates; this offline suite performs no live CRM writes.
+
 ## Prerequisites
 
 1. A Cloudflare account (free tier works)
@@ -171,11 +202,11 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 | `aaa-health-check`            | Verify server connectivity             |
 | `records_search`              | Search companies, people, deals, tasks |
 | `records_get_details`         | Get full record details                |
-| `records_create`               | Create new records                     |
-| `records_update`               | Update existing records                |
-| `records_delete`               | Delete records                         |
+| `records_create`              | Create new records                     |
+| `records_update`              | Update existing records                |
+| `records_delete`              | Delete records                         |
 | `records_discover_attributes` | Discover available attributes          |
-| `notes_create`                 | Create notes on records                |
+| `notes_create`                | Create notes on records                |
 | `notes_list`                  | List notes for a record                |
 
 ## Endpoints
@@ -204,8 +235,8 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 
 ```
 ┌─────────────────────────────────────┐
-│     @attio-mcp/core (shared)        │
-│   Edge-compatible tool library      │
+│   Root dist/ (shared dispatcher)     │
+│   Built from the repository source   │
 └─────────────────────────────────────┘
                  │
                  ▼
