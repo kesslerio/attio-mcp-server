@@ -111,7 +111,7 @@ Search object records with nested attribute filters; task, list, and note routes
 
 Never mutate records; use the write tools for that.
 
-Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. sort_by and sort_order are rejected; scoring and caller-selected ordering are not provided. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.
+The `records_search` restrictions above also apply to advanced search. `sort_by` and `sort_order` are rejected; scoring and caller-selected ordering are not provided.
 
 If filters are rejected, discover valid attributes.
 
@@ -160,14 +160,13 @@ for companion prose formatting.
   query?: string,                    // Smart query string (names, emails, phones, domains)
   filters?: object,                  // Advanced filter conditions
   search_type?: 'basic' | 'content', // Search type (default: 'basic')
-  fields?: string[],                 // Fields to search (content search only)
-  match_type?: 'exact' | 'partial' | 'fuzzy', // Match type (default: 'partial')
-  sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
   limit?: number,                    // Max results (1-100; record-query defaults vary)
   offset?: number,                   // Pagination offset (default: 0)
   cursor?: string                    // See Collection Continuation
 }
 ```
+
+For `fields`, `match_type`, and `sort`, see [Supported search inputs](#supported-search-inputs). The runtime schema in `tools/list` is authoritative; accepting a value in the schema does not make it executable on every route.
 
 **Examples**:
 
