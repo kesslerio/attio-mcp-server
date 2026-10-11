@@ -12,6 +12,37 @@ This Cloudflare Worker provides:
 - **Claude.ai & ChatGPT Compatible**: Works with both MCP connector implementations
 - **All Attio Tools**: Search, create, update, delete records, notes, and more
 
+## Tool result contract
+
+The Worker forwards the shared dispatcher's complete tool result, including
+`structuredContent`, `content`, and `isError`. Successful machine results conform
+to the `outputSchema` returned by `tools/list`. `MCP_TEXT_RESULTS=false` disables
+companion prose only; required JSON text (including connector `fetch`/`search`
+content) remains available. Execution errors retain their stable error code and
+`retryable` flag. An uncertain mutation is nonretryable: read back its outcome
+before considering another write. Protocol errors remain JSON-RPC errors.
+
+### Offline Worker verification
+
+From the repository root, with dependencies installed:
+
+```bash
+bun run test:single test/cloudflare/structured-results.test.ts
+```
+
+This suite rebuilds `dist`, bundles the actual example Worker, and sends serialized
+HTTP requests through local Miniflare/workerd. Only upstream Attio HTTP responses
+are synthetic; encrypted session lookup, dispatch, schema validation, and Worker
+serialization execute normally. It checks read/write output schemas, prose
+opt-out, connector content, mode denials, and one mutation after an invalid or
+interrupted upstream response.
+
+The test runtime uses Node.js 22+ and workerd compatibility date `2026-07-30` for
+Node built-in support. It does not certify the older Wrangler template's build
+polyfills or any deployed Worker. This hotfix retains MCP `2024-11-05` and the
+credential execution lock. Live Attio verification and deployment are separate
+release gates; this offline suite performs no live CRM writes.
+
 ## Prerequisites
 
 1. A Cloudflare account (free tier works)

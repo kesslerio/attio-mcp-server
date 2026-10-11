@@ -34,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Cloudflare Worker preserves structured tool results** — HTTP clients receive the shared validated `structuredContent`, connector content, and nonretryable execution-error envelopes instead of losing machine-readable outcomes during serialization (#1312)
+
 - **Stdio server no longer stays resident after the client closes stdin** — the performance tracker's cache-cleanup interval was registered as a ref'd timer, so an abandoned server kept its event loop open indefinitely and lingered as an orphan process; the interval now releases its hold on the loop while still firing on schedule. A client that never closes the pipe still leaves the server running (#1288)
 - **Test-data cleanup script no longer 404s on lists and notes** — lists are fetched via `GET /v2/lists` and deleted via `DELETE /v2/lists/{id}` (list resources, not object records), and notes requests exit with an explanatory notice instead of hitting the nonexistent `notes` object slug (#620)
 
