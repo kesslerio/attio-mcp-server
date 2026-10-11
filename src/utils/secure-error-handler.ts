@@ -20,7 +20,7 @@ import {
   executionErrorCodes,
   type ExecutionErrorCode,
 } from '@/handlers/tools/result-schemas.js';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { CallToolResult } from '@modelcontextprotocol/server';
 import { NetworkError } from '@/errors/api-errors.js';
 
 const DEFAULT_STATUS_CODE = 500;
@@ -472,7 +472,9 @@ export function createSecureErrorResponse(
 export function createSecureToolErrorResult(
   error: unknown,
   options: SecureToolErrorOptions = {}
-): CallToolResult {
+): CallToolResult & {
+  structuredContent: ReturnType<typeof executionErrorSchema.parse>;
+} {
   const {
     correlationId,
     requestId,
@@ -535,7 +537,7 @@ export function createSecureToolErrorResult(
     },
   });
 
-  const result: CallToolResult = {
+  const result = {
     content: [
       {
         type: 'text' as const,
@@ -548,7 +550,7 @@ export function createSecureToolErrorResult(
     isError: true,
     structuredContent,
     error: errorPayload as Record<string, unknown>,
-  };
+  } satisfies CallToolResult;
 
   // This payload contains only our own JSON primitives; no upstream body or stack.
   return result;

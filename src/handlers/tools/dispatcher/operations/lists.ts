@@ -4,7 +4,7 @@
  * Handles list-related operations including adding/removing records from lists
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequest } from '@modelcontextprotocol/server';
 import { createErrorResult } from '@/utils/error-handler.js';
 import { ToolConfig, GetListsToolConfig } from '@/handlers/tool-types.js';
 import {

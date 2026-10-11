@@ -26,7 +26,7 @@ import {
 } from '@/handlers/tools/standards/index.js';
 import { isSearchOnlyMode } from '@/config/tool-mode.js';
 import { capabilitiesResultContract } from '@/handlers/tools/result-schemas.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 
 /** Shape of the published manifest. Bumped when the entry contract changes. */
 export const CAPABILITY_MANIFEST_VERSION = 1;

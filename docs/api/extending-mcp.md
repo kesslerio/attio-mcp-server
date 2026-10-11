@@ -16,13 +16,13 @@ This guide provides examples and patterns for extending the server with new func
 
 The following sections demonstrate the patterns used to implement object support, using People objects as an example. These patterns can be adapted for new object types.
 
-### 1. Update ListResourcesRequestSchema Handler
+### 1. Update the resources/list Handler
 
 Add People objects to the resources that can be listed:
 
 ```typescript
 // Example: List Resources Handler (Updated to include People)
-server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
+server.setRequestHandler('resources/list', async (request) => {
   // If resource type specified in request is 'people'
   if (request.params?.type === 'people') {
     const path = '/objects/people/records/query';
@@ -91,12 +91,12 @@ server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
 });
 ```
 
-### 2. Update ReadResourceRequestSchema Handler
+### 2. Update the resources/read Handler
 
 Extend the read resource handler to work with People:
 
 ```typescript
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+server.setRequestHandler('resources/read', async (request) => {
   // Handle people resources
   if (request.params.uri.startsWith('attio://people/')) {
     const personId = request.params.uri.replace('attio://people/', '');

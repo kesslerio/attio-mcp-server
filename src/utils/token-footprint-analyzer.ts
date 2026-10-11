@@ -5,7 +5,7 @@ import {
   getPromptsListPayload,
 } from '@/utils/mcp-discovery.js';
 import { countJsonTokens, getCountModel } from '@/utils/token-count.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 import type {
   ToolsListPayload,
   PromptsListPayload,

@@ -4,7 +4,7 @@
  * Handles notes operations including retrieving and creating notes for records
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequest } from '@modelcontextprotocol/server';
 import { createErrorResult } from '@utils/error-handler.js';
 import { parseResourceUri } from '@utils/uri-parser.js';
 import { ResourceType } from '@shared-types/attio.js';

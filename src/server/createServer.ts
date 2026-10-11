@@ -3,13 +3,13 @@
  * This centralizes all server setup logic to be reused by different transports
  */
 
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import { createScopedLogger } from '../utils/logger.js';
+import { Server } from '@modelcontextprotocol/server';
+import { createScopedLogger } from '@/utils/logger.js';
 import { z } from 'zod';
-import { registerResourceHandlers } from '../handlers/resources.js';
-import { registerToolHandlers } from '../handlers/tools/index.js';
-import { registerPromptHandlers } from '../prompts/handlers.js';
-import { setGlobalContext } from '../api/lazy-client.js';
+import { registerResourceHandlers } from '@/handlers/resources.js';
+import { registerToolHandlers } from '@/handlers/tools/index.js';
+import { registerPromptHandlers } from '@/prompts/handlers.js';
+import { setGlobalContext } from '@/api/lazy-client.js';
 
 /**
  * Context interface for passing configuration to the server

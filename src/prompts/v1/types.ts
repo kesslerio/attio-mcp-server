@@ -9,7 +9,7 @@ import { z } from 'zod';
 
 /**
  * MCP PromptMessage types
- * Aligned with @modelcontextprotocol/sdk types
+ * Aligned with @modelcontextprotocol/server types
  */
 export type PromptRole = 'user' | 'assistant';
 
@@ -29,7 +29,7 @@ export interface EmbeddedResource {
   resource: {
     uri: string;
     mimeType?: string;
-    text?: string;
+    text: string;
   };
 }
 
