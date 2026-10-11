@@ -5,7 +5,6 @@ import { Server } from '@modelcontextprotocol/server';
 import {
   ListResourcesResult,
   ReadResourceResult,
-  ProtocolError,
   ProtocolErrorCode as ErrorCode,
 } from '@modelcontextprotocol/server';
 import { ServerContext } from '@/server/createServer.js';
@@ -18,25 +17,10 @@ import { parseResourceUri, formatResourceUri } from '@/utils/uri-parser.js';
 import { ResourceType, AttioRecord, AttioList } from '@/types/attio.js';
 import {
   ResourceProtocolError,
-  resourceFailure as sanitizeResourceFailure,
+  resourceFailure,
 } from '@/handlers/resource-errors.js';
 
 const RESOURCE_PAGE_SIZE = 20;
-
-// The maintained SDK recognizes ProtocolError at its wire boundary. Preserve
-// U5's sanitized codes and messages while keeping diagnostics off the wire.
-function resourceFailure(
-  error: unknown,
-  operation: 'read' | 'list'
-): ProtocolError {
-  const sanitized = sanitizeResourceFailure(error, operation);
-  const protocolError = new ProtocolError(sanitized.code, sanitized.message);
-  Object.defineProperty(protocolError, 'cause', {
-    value: sanitized.cause,
-    enumerable: false,
-  });
-  return protocolError;
-}
 
 /**
  * Format a single record for resource response

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { ProtocolError, Server } from '@modelcontextprotocol/server';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
 import { registerResourceHandlers } from '@/handlers/resources.js';
@@ -283,7 +283,7 @@ describe('resource protocol boundary', () => {
   it('retains the internal cause without serializing it into protocol data', () => {
     const cause = new Error('private-upstream-detail');
     const error = resourceFailure(cause, 'read');
-    expect(error).toBeInstanceOf(McpError);
+    expect(error).toBeInstanceOf(ProtocolError);
     expect(error.cause).toBe(cause);
     expect(error.data).toBeUndefined();
     expect(JSON.stringify(error)).not.toContain('private-upstream-detail');

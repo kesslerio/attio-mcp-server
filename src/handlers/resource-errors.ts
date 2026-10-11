@@ -1,8 +1,11 @@
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import {
+  ProtocolError,
+  ProtocolErrorCode as ErrorCode,
+} from '@modelcontextprotocol/server';
 import { getErrorStatus } from '@/types/error-interfaces.js';
 
 /** Only errors constructed at the resource boundary may pass through unchanged. */
-export class ResourceProtocolError extends McpError {
+export class ResourceProtocolError extends ProtocolError {
   constructor(code: number, message: string, cause?: unknown) {
     super(code, message);
     // Retain diagnostics locally without putting upstream data in SDK error.data.
