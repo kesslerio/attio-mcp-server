@@ -15,12 +15,12 @@ This Cloudflare Worker provides:
 ## Tool result contract
 
 The Worker forwards the shared dispatcher's complete tool result, including
-`structuredContent`, `content`, and `isError`. Successful machine results conform
-to the `outputSchema` returned by `tools/list`. `MCP_TEXT_RESULTS=false` disables
-companion prose only; required JSON text (including connector `fetch`/`search`
-content) remains available. Execution errors retain their stable error code and
-`retryable` flag. An uncertain mutation is nonretryable: read back its outcome
-before considering another write. Protocol errors remain JSON-RPC errors.
+`structuredContent`, `content`, and `isError`. See the shared
+[result contract](../../docs/universal-tools/developer-guide.md#structured-results-v2-boundary-a)
+for schema validation, execution errors, mutation uncertainty, and
+`MCP_TEXT_RESULTS=false`, and
+[connector results](../../docs/universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d)
+for required connector content. Protocol errors remain JSON-RPC errors.
 
 ### Offline Worker verification
 
@@ -202,11 +202,11 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 | `aaa-health-check`            | Verify server connectivity             |
 | `records_search`              | Search companies, people, deals, tasks |
 | `records_get_details`         | Get full record details                |
-| `records_create`               | Create new records                     |
-| `records_update`               | Update existing records                |
-| `records_delete`               | Delete records                         |
+| `records_create`              | Create new records                     |
+| `records_update`              | Update existing records                |
+| `records_delete`              | Delete records                         |
 | `records_discover_attributes` | Discover available attributes          |
-| `notes_create`                 | Create notes on records                |
+| `notes_create`                | Create notes on records                |
 | `notes_list`                  | List notes for a record                |
 
 ## Endpoints
@@ -235,8 +235,8 @@ If you see "error code: 1042", check the [Troubleshooting](#troubleshooting) sec
 
 ```
 ┌─────────────────────────────────────┐
-│     @attio-mcp/core (shared)        │
-│   Edge-compatible tool library      │
+│   Root dist/ (shared dispatcher)     │
+│   Built from the repository source   │
 └─────────────────────────────────────┘
                  │
                  ▼
