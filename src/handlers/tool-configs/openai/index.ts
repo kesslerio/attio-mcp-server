@@ -12,6 +12,7 @@ import {
   connectorSearchResultContract,
 } from '@/handlers/tools/result-schemas.js';
 import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
+import { validateConnectorSearchControls } from '@/services/search/search-input-validation.js';
 
 const searchParamsValidator = z.object({
   query: z.string().min(1, 'Query is required'),
@@ -60,6 +61,7 @@ const fetchInputSchema = {
 };
 
 async function handleSearch(params: unknown) {
+  validateConnectorSearchControls(params);
   const validated = searchParamsValidator.parse(params) as OpenAiSearchParams;
   // The adapter owns the envelope; the handler returns the domain results.
   return await OpenAiCompatibilityService.search(validated);
@@ -147,7 +149,8 @@ export const openAiToolDefinitions = {
       },
       guidance: {
         capability: 'Connector text search (e.g. ChatGPT).',
-        boundaries: 'handle complex filters, batches or rich records.',
+        boundaries:
+          'accept filters, sorting, search_type, fields, match_type, batches or rich records.',
         constraints:
           'Requires query. Omitted type/all searches companies/people/lists; select one to narrow. Tasks excluded; explicit task queries fail before upstream. Results carry metadata.resource_type; total limit 25.',
         recovery:

@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Search requests now reject unsupported query/filter/sort combinations before upstream work, including aliases and batches; note and activity body searches no longer substitute unrelated results, and update hints consistently indicate that values can be replaced (#1313)
+- Search requests now reject unsupported query/filter/sort combinations before upstream work, including aliases and batches; connector filter/sort/mode/field/match controls and object-record `list_membership` filters are rejected rather than ignored; note and activity body searches no longer substitute unrelated results, and update hints consistently indicate that values can be replaced (#1313)
 - Connector search preserves query-only calls by searching companies, people, and lists by default (also `type=all`); explicit task queries fail validation before upstream work instead of returning unfiltered tasks (#1313)
 
 - **Install scripts are now source-safe** — `install-claude-desktop.sh` runs its installer flow only when executed, not when sourced, so function-level tests and shell sourcing no longer trigger a live install run

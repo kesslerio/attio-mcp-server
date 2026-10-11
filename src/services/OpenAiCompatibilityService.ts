@@ -1,4 +1,7 @@
-import { validateSearchInput } from '@/services/search/search-input-validation.js';
+import {
+  validateConnectorSearchControls,
+  validateSearchInput,
+} from '@/services/search/search-input-validation.js';
 /**
  * OpenAI compatibility helpers – expose the universal search + retrieval stack
  * using the `search`/`fetch` contract that non-Developer-Mode ChatGPT accounts
@@ -68,6 +71,7 @@ export class OpenAiCompatibilityService {
   static async search(
     params: OpenAiSearchParams
   ): Promise<OpenAiSearchResult[]> {
+    validateConnectorSearchControls(params);
     const query = params.query?.trim();
     if (!query) {
       throw new UniversalValidationError('Query must be provided');
