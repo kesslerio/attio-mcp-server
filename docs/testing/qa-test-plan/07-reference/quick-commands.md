@@ -129,7 +129,7 @@ mcp__attio__get-detailed-info resource_type="tasks" record_id="[TASK_ID]" info_t
 #### TC-009: Advanced Search
 
 ```bash
-# Company search with filters
+# Unsupported ordering: see the supported-input matrix for validation expectations
 mcp__attio__records.search_advanced resource_type="companies" \
   filters='[{"field": "employee_count", "operator": ">", "value": "50"}]' \
   sort_by="name" sort_order="asc"
@@ -139,7 +139,7 @@ mcp__attio__records.search_advanced resource_type="people" \
   filters='[{"field": "created_at", "operator": ">=", "value": "2024-01-01"}]' \
   limit=20
 
-# Multi-field task search
+# Unsupported task filters: see the supported-input matrix for validation expectations
 mcp__attio__records.search_advanced resource_type="tasks" \
   filters='[
     {"field": "status", "operator": "in", "value": ["open", "in_progress"]},
@@ -167,19 +167,7 @@ mcp__attio__records.search_by_relationship relationship_type="company_task" \
 
 #### TC-011: Search by Content
 
-```bash
-# Search companies by notes content
-mcp__attio__records.search_by_content resource_type="companies" \
-  content_type="notes" search_query="important client" limit=10
-
-# Search people by description content
-mcp__attio__records.search_by_content resource_type="people" \
-  content_type="description" search_query="key contact" limit=10
-
-# Search across multiple content types
-mcp__attio__records.search_by_content resource_type="deals" \
-  content_type="all" search_query="quarterly review" limit=10
-```
+See the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs) for unsupported-input expectations.
 
 #### TC-012: Search by Timeframe
 

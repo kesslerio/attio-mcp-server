@@ -19,14 +19,8 @@ The Attio MCP server acts as a bridge between Claude (or other AI assistants) an
 
 ### URI Scheme
 
-The Attio MCP server uses a custom URI scheme to identify resources:
-
-- Companies: `attio://companies/{company_id}`
-- People: `attio://people/{person_id}`
-- Lists: `attio://lists/{list_id}`
-- Notes: `attio://notes/{note_id}`
-
-Claude uses these URIs to reference specific records when performing operations.
+See the [resource URI and discovery contract](./mcp-integration-guide.md#understanding-the-uri-scheme)
+for supported resource types, URI syntax, and protocol errors.
 
 ### Available Tools
 
@@ -52,7 +46,7 @@ Claude can interact with Attio using **41 fully implemented tools** provided by 
 
 - **`records_search_advanced`** - Complex filtering with multiple conditions
 - **`records_search_by_relationship`** - Cross-resource relationship searches
-- **`records_search_by_content`** - Content-based searches (notes, activity)
+- **`records_search_by_content`** - Discoverable compatibility name; note/activity/interaction body search returns a nonretryable validation error
 - **`records_search_by_timeframe`** - Time-based searches with date ranges
 - **`records_batch`** - Bulk operations for multiple records
 - **`records_batch_search`** - Bulk search operations

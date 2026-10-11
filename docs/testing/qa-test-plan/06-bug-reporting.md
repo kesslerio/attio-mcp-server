@@ -202,7 +202,7 @@ Advanced search sorting parameter ignored, results return unsorted
 
 ### Expected Behavior
 
-Results should be sorted by specified field and order
+Unsupported ordering should fail validation before upstream work; see the [supported-input matrix](../../universal-tools/api-reference.md#supported-search-inputs).
 
 ### Actual Behavior
 

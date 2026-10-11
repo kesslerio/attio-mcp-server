@@ -2,7 +2,7 @@ import { ResponseNormalizer } from '@/services/update/ResponseNormalizer.js';
 import { UniversalUpdateService } from '@/services/UniversalUpdateService.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { Server } from '@modelcontextprotocol/server';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import { registerToolHandlers } from '@/handlers/tools/index.js';

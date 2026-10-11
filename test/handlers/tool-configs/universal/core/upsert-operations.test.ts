@@ -52,6 +52,8 @@ describe('records_upsert tool surface', () => {
     expect(upsertRecordDefinition.annotations).toEqual({
       readOnlyHint: false,
       destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
     });
     const schema = upsertRecordDefinition.inputSchema as Record<
       string,

@@ -10,12 +10,11 @@ import {
   ContentSearchType,
   UniversalResourceType,
 } from '@/handlers/tool-configs/universal/types.js';
-import { InteractionType } from '@/types/attio.js';
 import type { UniversalRecordResult } from '@/types/attio.js';
 import { isAttioRecord } from '@/types/attio.js';
 
 import { validateUniversalToolParams } from '@/handlers/tool-configs/universal/schemas.js';
-import { UniversalSearchService } from '@/services/UniversalSearchService.js';
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import {
   getPluralResourceType,
@@ -39,71 +38,13 @@ export const searchByContentConfig: UniversalToolConfig<
         params
       );
 
-      const { resource_type, content_type, search_query, limit, offset } =
-        sanitizedParams;
-
-      // For notes content search, delegate to universal search so callers can return
-      // record types (companies/people) according to their own expectations/tests.
-      if (
-        content_type === ContentSearchType.NOTES &&
-        resource_type === UniversalResourceType.NOTES
-      ) {
-        // Delegate directly to search service so unit tests can assert it was called
-        return await UniversalSearchService.searchRecords({
-          resource_type: UniversalResourceType.COMPANIES, // default; mocks determine returned entities
-          query: search_query,
-          limit: limit || 10,
-          offset: offset || 0,
-        });
-      }
-
-      // For other content types that are not supported
-      if (content_type === ContentSearchType.ACTIVITY) {
-        // Support basic activity content for people via specialized handler mock
-        if (resource_type === UniversalResourceType.PEOPLE) {
-          const { searchPeopleByActivity } =
-            await import('@/objects/people/search.js');
-          return await searchPeopleByActivity({
-            dateRange: { preset: 'last_month' },
-            interactionType: InteractionType.ANY,
-          });
-        }
-        throw new Error(
-          `Activity content search is not currently available for ${resource_type}. ` +
-            `This feature requires access to activity/interaction API endpoints. ` +
-            `As an alternative, try searching by notes content or using timeframe search.`
-        );
-      }
-
-      if (content_type === ContentSearchType.INTERACTIONS) {
-        throw new Error(
-          `Interaction content search is not available via records_search_by_content. ` +
-            `Use records_get_interactions(resource_type, record_id) instead to fetch ` +
-            `interaction metadata (first/last email, calendar, interaction timestamps) ` +
-            `for a specific person or company record.`
-        );
-      }
-
-      throw new Error(
-        `Content search not supported for resource type ${resource_type} and content type ${content_type}. ` +
-          `Supported combinations: resource_type=notes with content_type=notes`
+      throw new UniversalValidationError(
+        `Content search not supported for resource type ${sanitizedParams.resource_type} and content type ${sanitizedParams.content_type}. ` +
+          'Note, activity, and interaction body search is not supported. Use notes_list for notes on a known record or records_get_interactions for interaction metadata.',
+        undefined,
+        { field: 'content_type' }
       );
     } catch (error: unknown) {
-      // If the error is a direct message we want to preserve, don't wrap it
-      if (
-        error instanceof Error &&
-        (error.message.includes('Content search not supported') ||
-          error.message.includes(
-            'Interaction content search is not available'
-          ) ||
-          error.message.includes(
-            'Activity content search is not currently available'
-          ) ||
-          error.message.includes('Timeframe search is not currently optimized'))
-      ) {
-        throw error;
-      }
-
       throw ErrorService.createUniversalError(
         'records_search_by_content',
         `${params.resource_type}:${params.content_type}`,

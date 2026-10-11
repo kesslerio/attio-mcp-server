@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { normalizeRecordCollection } from '@/handlers/tool-configs/universal/read-result-adapters.js';
 import {
   UniversalToolConfig,
@@ -17,7 +18,6 @@ import {
 import { recordSearchResultContract } from '@/handlers/tools/result-schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { handleUniversalSearchPage } from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Universal search records tool configuration.
@@ -186,18 +186,40 @@ export const searchRecordsConfig: UniversalToolConfig<
   structuredOutput: normalizeRecordCollection,
 };
 
-export const searchRecordsDefinition = {
+export const searchRecordsDefinition = defineOperationTool({
   name: 'records_search',
-  description: formatToolDescription({
-    capability: 'Search across companies, people, deals, tasks, and records',
-    boundaries: 'create or modify records',
-    constraints:
-      'Returns max 100 results (default: 10). Pass the sealed next_cursor from a previous page to continue this exact query; never combine cursor with offset. Ranked relevance sorts are a bounded view, not a stable page sequence.',
-    recoveryHint: 'use records_discover_attributes to find searchable fields',
-  }),
-  inputSchema: searchRecordsSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      action: 'search',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+        'notes',
+      ],
+      customObjectSlugs: true,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+      pagination: { kind: 'cursor', supported: false, cap: 100 },
+    },
+    guidance: {
+      capability:
+        'Search supported objects; filters and text support vary by route.',
+      boundaries: 'mutate records or return multiple pages.',
+      constraints:
+        'Custom slugs require configuration. Cursor support is conditional; check pagination.supported; cap 100, never mix cursor/offset. Task/list/note and strategy routes have input restrictions. Read docs/universal-tools/api-reference.md#records-search-guidance before choosing inputs.',
+      recovery: 'Discover fields if unknown or results are empty.',
+      alternatives: [
+        'records_search_advanced',
+        'records_get_details',
+        'search',
+      ],
+    },
   },
-};
+  inputSchema: searchRecordsSchema,
+});

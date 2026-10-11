@@ -219,12 +219,12 @@ describe('smithery-diagnostics', () => {
     ).toBe('⚠️ No diagnostic data available');
   });
 
-  it('describes the tool as non-sensitive runtime diagnostics', () => {
+  it('renders sanitized runtime guidance in the public tool description', () => {
     expect(smitheryDiagnosticsToolDefinition.description).toContain(
-      'non-sensitive diagnostic information'
+      'Read sanitized runtime and context-storage diagnostics for the server.'
     );
     expect(smitheryDiagnosticsToolDefinition.description).toContain(
-      'runtime configuration propagation'
+      'Compare across deployments to isolate configuration drift.'
     );
     expect(smitheryDiagnosticsToolDefinition.description).not.toMatch(
       /authentication issues/i

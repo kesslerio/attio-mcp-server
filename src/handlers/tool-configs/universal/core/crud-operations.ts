@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import {
   recordWriteResultContract,
   recordDeleteResultContract,
@@ -33,7 +34,6 @@ import {
   formatValidationDetails,
   ValidationMetadata,
 } from '@/handlers/tool-configs/universal/core/utils.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /**
  * Normalize record data for structured output
@@ -306,61 +306,102 @@ export const deleteRecordConfig: UniversalToolConfig<
   },
 };
 
-export const createRecordDefinition = {
+export const createRecordDefinition = defineOperationTool({
   name: 'records_create',
-  description: formatToolDescription({
-    capability:
-      'Create new Attio records across supported resource types when a scoped tool is not available. Prefer companies_create or deals_create for common company/deal writes.',
-    boundaries:
-      'update existing records, attach files, or bypass required fields.',
-    constraints:
-      'Requires resource_type plus record_data that matches records_discover_attributes output.',
-    requiresApproval: true,
-    recoveryHint:
-      'If validation fails, call records_discover_attributes to confirm required fields and enums. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options before retrying.',
-  }),
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'records',
+        'notes',
+      ],
+      customObjectSlugs: true,
+      readOnly: false,
+      destructive: false,
+      idempotent: false,
+    },
+    guidance: {
+      capability:
+        'Create supported records, including configured custom objects; prefer companies_create/deals_create.',
+      boundaries: 'update, attach files or bypass required fields.',
+      constraints:
+        'Host approval may be required. Requires resource_type, record_data matching discovered schema; notes need content, parent_object, parent_record_id. Read back uncertain writes.',
+      recovery:
+        'Confirm required fields/enums; retry corrected values once. See docs/universal-tools/api-reference.md#record-write-guidance.',
+      alternatives: [
+        'companies_create',
+        'deals_create',
+        'records_upsert',
+        'records_batch',
+      ],
+    },
+  },
   inputSchema: createRecordSchema,
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-  },
-};
+});
 
-export const updateRecordDefinition = {
+export const updateRecordDefinition = defineOperationTool({
   name: 'records_update',
-  description: formatToolDescription({
-    capability:
-      'Update existing Attio record fields across supported resource types when a scoped tool is not available. Prefer companies_update or deals_update for common company/deal writes.',
-    boundaries: 'create new records, delete data, or manage list memberships.',
-    constraints:
-      'Requires resource_type, record_id, and record_data; supports partial updates with schema validation.',
-    requiresApproval: true,
-    recoveryHint:
-      'Call records_get_details first to inspect the latest values before editing. If a select/status value is rejected, call records_get_attribute_options for that attribute to list valid options.',
-  }),
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records'],
+      customObjectSlugs: true,
+      readOnly: false,
+      destructive: true,
+      idempotent: true,
+    },
+    guidance: {
+      capability:
+        'Patch company/person/deal/task/record or configured custom object; prefer companies_update/deals_update.',
+      boundaries:
+        'create/delete, manage list memberships or update notes/lists.',
+      constraints:
+        'Host approval may be required. Requires resource_type, record_id, record_data; partial updates validated against schema.',
+      recovery:
+        'Inspect current values, then retry same patch. See docs/universal-tools/api-reference.md#record-write-guidance.',
+      alternatives: ['companies_update', 'deals_update', 'records_batch'],
+    },
+  },
   inputSchema: updateRecordSchema,
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-  },
-};
+});
 
-export const deleteRecordDefinition = {
+export const deleteRecordDefinition = defineOperationTool({
   name: 'records_delete',
-  description: formatToolDescription({
-    capability:
-      'Delete an Attio record from its object (company, person, deal, task).',
-    boundaries:
-      'cascade delete related data or clean up list memberships automatically.',
-    constraints:
-      'Requires record_id and resource_type; operation is irreversible once confirmed.',
-    requiresApproval: true,
-    recoveryHint:
-      'If uncertain, fetch with records_get_details to confirm the target before deletion.',
-  }),
-  inputSchema: deleteRecordSchema,
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'records',
+        'notes',
+      ],
+      customObjectSlugs: true,
+      readOnly: false,
+      destructive: true,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Delete one record from its object type.',
+      boundaries:
+        'cascade to related data or clean up list memberships automatically.',
+      constraints:
+        'May require explicit user approval from the host. Requires resource_type and record_id; irreversible once confirmed. Custom resource slugs must be configured in this server.',
+      recovery: 'Confirm the target with records_get_details before deleting.',
+      alternatives: ['list_entries_remove'],
+    },
   },
-};
+  inputSchema: deleteRecordSchema,
+});

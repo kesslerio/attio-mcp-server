@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import {
   metadataResultContract,
   attributeOptionsResultContract,
@@ -26,7 +27,6 @@ import {
   handleUniversalGetAttributeOptions,
   getSingularResourceType,
 } from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import type { AttributeOptionsResult } from '@/services/metadata/index.js';
 
 function extractResourceTypeFromFormatArgs(
@@ -278,38 +278,70 @@ export const discoverAttributesConfig: UniversalToolConfig<
   },
 };
 
-export const getAttributesDefinition = {
+export const getAttributesDefinition = defineOperationTool({
   name: 'records_get_attributes',
-  description: formatToolDescription({
-    capability: 'Retrieve attribute metadata for a given resource type.',
-    boundaries: 'modify schema definitions or record data.',
-    constraints: 'Requires resource_type; optional categories narrows groups.',
-    recoveryHint:
-      'Use records_discover_attributes for grouped schema discovery.',
-  }),
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'metadata',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+      ],
+      customObjectSlugs: false,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Read attribute metadata for a resource type.',
+      boundaries: 'modify schema definitions or record data.',
+      constraints: 'Requires resource_type; categories narrows the groups.',
+      recovery: 'Use records_discover_attributes for grouped discovery.',
+      alternatives: ['records_discover_attributes'],
+    },
+  },
   inputSchema: getAttributesSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
-  },
-};
+});
 
-export const discoverAttributesDefinition = {
+export const discoverAttributesDefinition = defineOperationTool({
   name: 'records_discover_attributes',
-  description: formatToolDescription({
-    capability:
-      'Discover available attributes (standard/custom) for a resource.',
-    boundaries: 'alter schema or create fields.',
-    constraints: 'Requires resource_type; optional categories selects subsets.',
-    recoveryHint:
-      'For select/status attributes, use records_get_attribute_options to fetch valid values before creating or updating records.',
-  }),
-  inputSchema: discoverAttributesSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'metadata',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+      ],
+      customObjectSlugs: false,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability:
+        'Discover standard/custom attributes for a standard resource.',
+      boundaries: 'alter schema, create fields, or read record values.',
+      constraints:
+        'Requires resource_type; categories selects subsets; validation rejects custom resource slugs and notes.',
+      recovery:
+        'For select or status fields, list valid values before writing.',
+      alternatives: ['records_get_attribute_options'],
+    },
   },
-};
+  inputSchema: discoverAttributesSchema,
+});
 
 /**
  * Tool config for getting attribute options (select, multi-select, status)
@@ -427,19 +459,28 @@ export const getAttributeOptionsConfig: UniversalToolConfig<
   },
 };
 
-export const getAttributeOptionsDefinition = {
+export const getAttributeOptionsDefinition = defineOperationTool({
   name: 'records_get_attribute_options',
-  description: formatToolDescription({
-    capability:
-      'Get valid options for select, multi-select, and status attributes to avoid "Cannot find select option" errors.',
-    boundaries: 'return options for text, number, or other non-option types.',
-    constraints: 'Requires resource_type and attribute slug/ID.',
-    recoveryHint:
-      'Use records_discover_attributes to find option-based attributes first. Use retrieved option titles when calling records_create or records_update.',
-  }),
-  inputSchema: getAttributeOptionsSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      authRequired: true,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'metadata',
+      resourceTypes: ['companies', 'people', 'deals', 'tasks', 'records'],
+      customObjectSlugs: false,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability:
+        'List valid options for select, multi-select, and status attributes.',
+      boundaries: 'return options for text, number, or other non-option types.',
+      constraints:
+        'Requires a standard object resource_type and the attribute slug or ID; lists are rejected and custom resource slugs are rejected by tool validation; notes have no object-attribute endpoint.',
+      recovery: 'Discover option-based attributes, then retry with that slug.',
+      alternatives: ['records_discover_attributes'],
+    },
   },
-};
+  inputSchema: getAttributeOptionsSchema,
+});

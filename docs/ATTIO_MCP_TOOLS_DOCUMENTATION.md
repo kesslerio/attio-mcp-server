@@ -42,9 +42,9 @@ Comprehensive reference for all 13 universal tools with detailed schemas and exa
 
 ### Advanced Operations (5 tools)
 
-- `records_search_advanced` - Complex searches with sorting and advanced filtering
+- `records_search_advanced` - Attribute filtering; see the [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs)
 - `records_search_by_relationship` - Cross-resource relationship searches
-- `records_search_by_content` - Content-based searches (notes, activity)
+- See the [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 - `records_search_by_timeframe` - Time-based searches with date ranges
 - `records_batch` - Bulk operations on multiple records
 

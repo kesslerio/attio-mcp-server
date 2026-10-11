@@ -54,7 +54,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 - **Notes**: Create and list operations for all record types
 - **Records**: Universal CRUD operations across all resource types
 - **Batch Operations**: Create, Update, Delete with chunking and error handling
-- **Content Search**: Universal search capabilities across notes, tasks, and lists
+- **Content Search**: See the [supported-input matrix](docs/universal-tools/api-reference.md#supported-search-inputs) for resource-specific limits
 - **Relationship Navigation**: Bidirectional company↔person↔deal relationships
 - **Advanced Filtering**: Sophisticated query capabilities with intelligent field mapping
 
@@ -71,7 +71,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 
 - **Universal Contact Search**: Find people by any criteria using universal search tools
 - **Relationship Tracking**: Link people to companies with `records_search_by_relationship`
-- **Activity Timeline**: Track interactions with `records_search_by_content` and `records_search_by_timeframe`
+- **Activity Timeline**: Retrieve interaction metadata with `records_get_interactions`
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
@@ -815,6 +815,46 @@ Comprehensive documentation is available in the [docs directory](./docs):
 - [Security Best Practices](./docs/docker/security-guide.md)
 
 ## 🛠 Development
+
+### MCP SDK compatibility
+
+The shared server uses exact `2.3.1` releases of `@modelcontextprotocol/server`
+and `@modelcontextprotocol/core`. Types and protocol errors come from the server
+package; runtime Zod protocol schemas come from core. The reusable
+`createServer(context?)` factory returns the SDK's low-level `Server`. The CLI
+connects it to `StdioServerTransport` from `@modelcontextprotocol/server/stdio`.
+This retains the legacy initialize/serve flow; upgrading packages does **not**
+activate protocol revision 2026-07-28.
+
+The v2 client is pinned for tests. The v1 SDK remains a development dependency
+for older-client compatibility tests, and the existing Worker transport retains
+its optional legacy peer until its transport migration. Neither is a second
+runtime owner in the shared server. Domain result schemas, connector content,
+and nonretryable uncertain-write results are unchanged. Invalid tool parameters
+now receive the SDK's `InvalidParams` (-32602) protocol error.
+
+After restoring dependencies, build before running the SDK compatibility suite:
+
+```sh
+bun run build
+bun run test:single test/server/sdk-compatibility.test.ts
+```
+
+This suite exercises the built CLI with both SDK client generations, the public
+library export, and the Worker's built shared-module imports against local HTTP
+fixtures. After restoring the example's locked development dependencies, also run:
+
+```sh
+bun run test:sdk:worker
+```
+
+The separate Worker check uses its locked Wrangler/Miniflare toolchain and the
+example's `2024-12-01` compatibility date with `nodejs_compat`. It builds a temporary
+bundle and exercises workerd locally: missing/invalid session denial, authorized
+legacy initialization/discovery, output schemas, and an uncertain delete sent
+exactly once to an intercepted upstream. No credentials or live CRM access are
+needed. Neither check certifies modern protocol serving or a production deployment.
+See the official [v2 migration guide](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/migration/upgrade-to-v2.md).
 
 ### **Setup Development Environment**
 

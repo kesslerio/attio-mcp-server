@@ -4,12 +4,12 @@
  * Handles create, read, update, delete, and related operations
  */
 
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { createErrorResult } from '../../../../utils/error-handler.js';
-import { ResourceType } from '../../../../types/attio.js';
-import { ToolConfig } from '../../../tool-types.js';
-import { formatResponse } from '../../formatters.js';
-import { hasResponseData } from '../../error-types.js';
+import { CallToolRequest } from '@modelcontextprotocol/server';
+import { createErrorResult } from '@/utils/error-handler.js';
+import { ResourceType } from '@/types/attio.js';
+import { ToolConfig } from '@/handlers/tool-types.js';
+import { formatResponse } from '@/handlers/tools/formatters.js';
+import { hasResponseData } from '@/handlers/tools/error-types.js';
 
 /**
  * Handle create operations

@@ -288,8 +288,10 @@ export class UniversalSearchService {
       cursor: _cursor,
       search_type = SearchType.BASIC,
       fields,
-      match_type = MatchType.PARTIAL,
-      sort = SortType.NAME,
+      match_type,
+      sort,
+      sort_by,
+      sort_order,
       // New TC search parameters
       relationship_target_type,
       relationship_target_id,
@@ -415,6 +417,8 @@ export class UniversalSearchService {
         fields,
         match_type,
         sort,
+        sort_by,
+        sort_order,
         // New TC search parameters
         relationship_target_type,
         relationship_target_id,
@@ -469,6 +473,8 @@ export class UniversalSearchService {
       fields?: string[];
       match_type?: MatchType;
       sort?: SortType;
+      sort_by?: string;
+      sort_order?: 'asc' | 'desc';
       relationship_target_type?: UniversalResourceType;
       relationship_target_id?: string;
       timeframe_attribute?: string;

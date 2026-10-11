@@ -1,3 +1,7 @@
+import {
+  validateConnectorSearchControls,
+  validateSearchInput,
+} from '@/services/search/search-input-validation.js';
 /**
  * OpenAI compatibility helpers – expose the universal search + retrieval stack
  * using the `search`/`fetch` contract that non-Developer-Mode ChatGPT accounts
@@ -11,8 +15,6 @@ import {
   UniversalResourceType,
   UniversalSearchParams,
   SearchType,
-  MatchType,
-  SortType,
 } from '@/handlers/tool-configs/universal/types.js';
 import { SearchUtilities } from '@/services/search-utilities/SearchUtilities.js';
 import type { UniversalRecordResult } from '@/types/attio.js';
@@ -40,7 +42,6 @@ const SEARCH_RESOURCE_MAP: Record<
     UniversalResourceType.COMPANIES,
     UniversalResourceType.PEOPLE,
     UniversalResourceType.LISTS,
-    UniversalResourceType.TASKS,
   ],
 };
 
@@ -70,6 +71,7 @@ export class OpenAiCompatibilityService {
   static async search(
     params: OpenAiSearchParams
   ): Promise<OpenAiSearchResult[]> {
+    validateConnectorSearchControls(params);
     const query = params.query?.trim();
     if (!query) {
       throw new UniversalValidationError('Query must be provided');
@@ -78,8 +80,16 @@ export class OpenAiCompatibilityService {
     const typeKey = (
       params.type ?? 'all'
     ).toLowerCase() as keyof typeof SEARCH_RESOURCE_MAP;
-    const resourceTypes =
-      SEARCH_RESOURCE_MAP[typeKey] ?? SEARCH_RESOURCE_MAP.all;
+    if (!Object.hasOwn(SEARCH_RESOURCE_MAP, typeKey)) {
+      throw new UniversalValidationError(`Unsupported search type: ${typeKey}`);
+    }
+    const resourceTypes = SEARCH_RESOURCE_MAP[typeKey];
+
+    // Validate the entire fan-out before any request; unsupported task queries
+    // must not become an unfiltered task list after other resources were read.
+    for (const resourceType of resourceTypes) {
+      validateSearchInput({ resource_type: resourceType, query });
+    }
 
     const requestedLimit = params.limit ?? DEFAULT_LIMIT;
     const limit = Math.min(Math.max(requestedLimit, 1), MAX_LIMIT);
@@ -94,8 +104,6 @@ export class OpenAiCompatibilityService {
         query,
         limit: perTypeLimit,
         search_type: SearchType.BASIC,
-        match_type: MatchType.PARTIAL,
-        sort: SortType.RELEVANCE,
       };
 
       const page = await UniversalSearchService.searchRecordsPage(searchParams);

@@ -7,23 +7,26 @@
  * Universal tools use parameter-based routing with resource_type discrimination
  * to provide consolidated operations across companies, people, records, and tasks.
  */
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 
 import {
   coreOperationsToolConfigs,
   coreOperationsToolDefinitions,
-} from './core/index.js';
+} from '@/handlers/tool-configs/universal/core/index.js';
 
 import {
   advancedOperationsToolConfigs,
   advancedOperationsToolDefinitions,
-} from './operations/index.js';
+} from '@/handlers/tool-configs/universal/operations/index.js';
 
 import {
   batchSearchConfig,
   batchSearchToolDefinition,
-} from './batch-search.js';
-import { openAiToolConfigs, openAiToolDefinitions } from '../openai/index.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+} from '@/handlers/tool-configs/universal/batch-search.js';
+import {
+  openAiToolConfigs,
+  openAiToolDefinitions,
+} from '@/handlers/tool-configs/openai/index.js';
 import {
   healthDataSchema,
   healthResultContract,
@@ -31,39 +34,47 @@ import {
 import {
   smitheryDiagnosticsToolDefinition,
   smitheryDiagnosticsConfig,
-} from './smithery-diagnostics.js';
+} from '@/handlers/tool-configs/universal/smithery-diagnostics.js';
 import {
   capabilitiesGetToolDefinition,
   capabilitiesGetConfig,
   healthCapabilityProjection,
   readCapabilityManifest,
-} from './capabilities.js';
+} from '@/handlers/tool-configs/universal/capabilities.js';
 
 /**
  * Simple no-auth health-check tool to support unauthenticated capability scanning
  * This tool intentionally performs no Attio API calls and always succeeds.
  */
-export const healthCheckToolDefinition = {
+export const healthCheckToolDefinition = defineOperationTool({
   name: 'aaa-health-check',
-  description: formatToolDescription({
-    capability:
-      'Run a lightweight health probe that echoes deployment metadata.',
-    boundaries: 'query Attio APIs, mutate data, or require credentials.',
-    constraints:
-      'Accepts optional echo text; returns JSON payload as text for MCP clients.',
-    recoveryHint:
-      'If unavailable, review Smithery sandbox logs or restart the server process.',
-  }),
+  facts: {
+    operation: {
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'diagnostic',
+      resourceTypes: [],
+      customObjectSlugs: false,
+      authRequired: false,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Probe deployment liveness without touching Attio.',
+      boundaries:
+        'read workspace data, validate credentials, or report credential scopes.',
+      constraints:
+        'Always succeeds while the process is up; no credential is required.',
+      recovery: 'If unavailable, restart the server or check sandbox logs.',
+      alternatives: ['diagnostics_get'],
+    },
+  },
   inputSchema: {
     type: 'object',
     properties: {},
     additionalProperties: true,
   },
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
-  },
-};
+});
 
 export const healthCheckConfig = {
   name: 'aaa-health-check',
@@ -105,9 +116,9 @@ export {
 };
 
 // Re-export types for external use
-export * from './types.js';
-export * from './schemas.js';
-export * from './shared-handlers.js';
+export * from '@/handlers/tool-configs/universal/types.js';
+export * from '@/handlers/tool-configs/universal/schemas.js';
+export * from '@/handlers/tool-configs/universal/shared-handlers.js';
 
 /**
  * All universal tool configurations

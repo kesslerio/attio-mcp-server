@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { getToolsListPayload } from '@/utils/mcp-discovery.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 
 function normaliseTool(tool: Tool): Tool {
   const clone = structuredClone(tool) as Tool;

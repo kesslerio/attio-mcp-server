@@ -13,7 +13,7 @@ import {
   getLogContext,
   PerformanceTimer,
 } from '@/utils/logger.js';
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequest } from '@modelcontextprotocol/server';
 
 type RawCallToolRequest = CallToolRequest & {
   method?: string;

@@ -170,7 +170,8 @@
     "e2e:analyze:basic": "python3 ./scripts/e2e_analyze.py test-results --stdout",
     "e2e:health": "./scripts/e2e-health-check.sh",
     "verify:staged": "lint-staged",
-    "lint:ci": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings=50 \"src/**/*.ts\" \"test/**/*.ts\""
+    "lint:ci": "bunx eslint --cache --cache-location .eslintcache -f compact --max-warnings=50 \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test:sdk:worker": "node --import tsx examples/cloudflare-mcp-server/test/sdk-compatibility.mjs"
   },
   "files": [
     "dist",
@@ -202,7 +203,6 @@
   "dependencies": {
     "@dqbd/tiktoken": "^1.0.15",
     "@leeoniya/ufuzzy": "^1.0.14",
-    "@modelcontextprotocol/sdk": "~1.32.0",
     "axios": "^1.12.0",
     "chalk": "^5.3.0",
     "cors": "^2.8.5",
@@ -217,7 +217,9 @@
     "sanitize-html": "^2.17.0",
     "user": "^0.0.0",
     "yargs": "^18.0.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@modelcontextprotocol/server": "2.3.1",
+    "@modelcontextprotocol/core": "2.3.1"
   },
   "engines": {
     "node": ">=20.0.0",
@@ -253,7 +255,9 @@
     "tsx": "^4.19.2",
     "typescript": "^6.0.2",
     "vitest": "^4.0.18",
-    "wireit": "^0.14.12"
+    "wireit": "^0.14.12",
+    "@modelcontextprotocol/client": "2.3.1",
+    "@modelcontextprotocol/sdk": "1.32.0"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs}": [
@@ -315,6 +319,7 @@
         "src/handlers/tool-configs/**/*.ts",
         "src/handlers/tools/**/*.ts",
         "scripts/tool-schema-lint.ts",
+        "src/config/tool-schema-lint.ts",
         "src/config/tool-aliases.ts",
         "src/utils/mcp-discovery.ts"
       ],

@@ -2,11 +2,7 @@
  * Request handlers for prompt endpoints
  */
 import { Request, Response } from 'express';
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
-import {
-  ListPromptsRequestSchema,
-  GetPromptRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { Server, type GetPromptResult } from '@modelcontextprotocol/server';
 import { ServerContext } from '@/server/createServer.js';
 import { withGlobalContext } from '@/api/lazy-client.js';
 import {
@@ -18,19 +14,23 @@ import {
 import { PromptTemplate, PromptExecutionRequest } from '@/prompts/types.js';
 import { createErrorResult } from '@/prompts/error-handler.js';
 import { getPromptsListPayload } from '@/utils/mcp-discovery.js';
-import { getAllPromptsV1, getPromptV1ByName, isV1Prompt } from './v1/index.js';
+import {
+  getAllPromptsV1,
+  getPromptV1ByName,
+  isV1Prompt,
+} from '@/prompts/v1/index.js';
 import {
   validateArguments,
   checkTokenBudget,
   createValidationError,
   createBudgetExceededError,
-} from './v1/utils/validation.js';
-import { calculatePromptTokens } from './v1/utils/token-metadata.js';
+} from '@/prompts/v1/utils/validation.js';
+import { calculatePromptTokens } from '@/prompts/v1/utils/token-metadata.js';
 import {
   logPromptTelemetry,
   createTelemetryEvent,
-} from './v1/utils/telemetry.js';
-import { isDevMetaEnabled } from './v1/constants.js';
+} from '@/prompts/v1/utils/telemetry.js';
+import { isDevMetaEnabled } from '@/prompts/v1/constants.js';
 
 // Import Handlebars using ES module import
 // This avoids the "require is not defined in ES module scope" error
@@ -546,7 +546,7 @@ export function registerPromptHandlers(
   context?: ServerContext
 ): void {
   // Register handler for prompts/list endpoint
-  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  server.setRequestHandler('prompts/list', async () => {
     const listPrompts = async () => {
       const legacyPrompts = getPromptsListPayload().prompts;
       const v1Prompts = getAllPromptsV1().map((p) => ({
@@ -568,8 +568,8 @@ export function registerPromptHandlers(
   });
 
   // Register handler for prompts/get endpoint
-  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
-    const getPrompt = async () => {
+  server.setRequestHandler('prompts/get', async (request) => {
+    const getPrompt = async (): Promise<GetPromptResult> => {
       const promptName = request.params.name as string;
       const args = (request.params.arguments || {}) as Record<string, unknown>;
       const startTime = Date.now();
@@ -613,14 +613,14 @@ export function registerPromptHandlers(
         logPromptTelemetry(telemetryEvent);
 
         // Build response
-        const response: Record<string, unknown> = {
+        const response: GetPromptResult = {
           description: promptDef.metadata.description,
           messages: messages,
         };
 
         // Add dev metadata if enabled
         if (isDevMetaEnabled()) {
-          response._meta = tokenMetadata;
+          response._meta = { ...tokenMetadata };
         }
 
         return response;

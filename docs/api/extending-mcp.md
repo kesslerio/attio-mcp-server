@@ -16,138 +16,20 @@ This guide provides examples and patterns for extending the server with new func
 
 The following sections demonstrate the patterns used to implement object support, using People objects as an example. These patterns can be adapted for new object types.
 
-### 1. Update ListResourcesRequestSchema Handler
+### 1. Update the resources/list Handler
 
-Add People objects to the resources that can be listed:
+Extend the shared [resource handlers](../../src/handlers/resources.ts) using the
+[resource discovery contract](./mcp-integration-guide.md#understanding-the-uri-scheme).
+The existing implementation and its
+[protocol regression suite](../../test/handlers/resources-protocol.test.ts)
+provide the registration and completeness patterns for additional object types.
 
-```typescript
-// Example: List Resources Handler (Updated to include People)
-server.setRequestHandler(ListResourcesRequestSchema, async (request) => {
-  // If resource type specified in request is 'people'
-  if (request.params?.type === 'people') {
-    const path = '/objects/people/records/query';
-    try {
-      const response = await api.post(path, {
-        limit: 20,
-        sorts: [
-          {
-            attribute: 'last_interaction',
-            field: 'interacted_at',
-            direction: 'desc',
-          },
-        ],
-      });
-      const people = response.data.data || [];
+### 2. Update the resources/read Handler
 
-      return {
-        resources: people.map((person: any) => ({
-          uri: `attio://people/${person.id?.record_id}`,
-          name: person.values?.name?.[0]?.value || 'Unknown Person',
-          mimeType: 'application/json',
-        })),
-        description: `Found ${people.length} people that you have interacted with most recently`,
-      };
-    } catch (error) {
-      return createErrorResult(
-        error instanceof Error ? error : new Error('Unknown error'),
-        path,
-        'POST',
-        (error as any).response?.data || {}
-      );
-    }
-  }
-
-  // Default handling for companies (existing code)
-  const path = '/objects/companies/records/query';
-  try {
-    const response = await api.post(path, {
-      limit: 20,
-      sorts: [
-        {
-          attribute: 'last_interaction',
-          field: 'interacted_at',
-          direction: 'desc',
-        },
-      ],
-    });
-    const companies = response.data.data || [];
-
-    return {
-      resources: companies.map((company: any) => ({
-        uri: `attio://companies/${company.id?.record_id}`,
-        name: company.values?.name?.[0]?.value || 'Unknown Company',
-        mimeType: 'application/json',
-      })),
-      description: `Found ${companies.length} companies that you have interacted with most recently`,
-    };
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      path,
-      'POST',
-      (error as any).response?.data || {}
-    );
-  }
-});
-```
-
-### 2. Update ReadResourceRequestSchema Handler
-
-Extend the read resource handler to work with People:
-
-```typescript
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  // Handle people resources
-  if (request.params.uri.startsWith('attio://people/')) {
-    const personId = request.params.uri.replace('attio://people/', '');
-    try {
-      const path = `/objects/people/records/${personId}`;
-      const response = await api.get(path);
-
-      return {
-        contents: [
-          {
-            uri: request.params.uri,
-            text: JSON.stringify(response.data, null, 2),
-            mimeType: 'application/json',
-          },
-        ],
-      };
-    } catch (error) {
-      return createErrorResult(
-        error instanceof Error ? error : new Error('Unknown error'),
-        `/objects/people/${personId}`,
-        'GET',
-        (error as any).response?.data || {}
-      );
-    }
-  }
-
-  // Handle company resources (existing code)
-  const companyId = request.params.uri.replace('attio://companies/', '');
-  try {
-    const path = `/objects/companies/records/${companyId}`;
-    const response = await api.get(path);
-
-    return {
-      contents: [
-        {
-          uri: request.params.uri,
-          text: JSON.stringify(response.data, null, 2),
-          mimeType: 'application/json',
-        },
-      ],
-    };
-  } catch (error) {
-    return createErrorResult(
-      error instanceof Error ? error : new Error('Unknown error'),
-      `/objects/companies/${companyId}`,
-      'GET',
-      (error as any).response?.data || {}
-    );
-  }
-});
-```
+Extend the same shared handler and
+[URI parser](../../src/utils/uri-parser.ts), following the resource contract above.
+Use the [resource error boundary](../../src/handlers/resource-errors.ts) to retain
+internal diagnostics while sanitizing protocol failures.
 
 ### 3. Add People-related Tools
 
@@ -349,7 +231,7 @@ if (toolName === 'create-person-note') {
       content: [
         {
           type: 'text',
-          text: `Note added to person ${personId}: attio://notes/${response.data?.id?.note_id}`,
+          text: `Note added to person ${personId}`,
         },
       ],
       isError: false,

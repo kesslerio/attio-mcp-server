@@ -22,12 +22,14 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 **Objective:** Validate ability to discover and retrieve schema information for resource types
 
 **Test Steps:**
+
 1. Get company attributes: `mcp__attio__get-attributes resource_type="companies"`
 2. Get people attributes: `mcp__attio__get-attributes resource_type="people"`
 3. Get tasks attributes: `mcp__attio__get-attributes resource_type="tasks"`
 4. Get lists attributes: `mcp__attio__get-attributes resource_type="lists"`
 
 **Expected Results:**
+
 - Returns comprehensive schema information for each resource type
 - Includes field names, types, validation rules, and constraints
 - Schema information is accurate and up-to-date
@@ -42,11 +44,13 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 **Objective:** Validate dynamic attribute discovery for flexible schema exploration
 
 **Test Steps:**
+
 1. Discover company attributes: `mcp__attio__discover-attributes resource_type="companies"`
 2. Discover people attributes: `mcp__attio__discover-attributes resource_type="people"`
 3. Discover deals attributes: `mcp__attio__discover-attributes resource_type="deals"`
 
 **Expected Results:**
+
 - Returns discoverable attributes including custom fields
 - Identifies optional vs required fields
 - Shows field relationships and dependencies
@@ -63,11 +67,13 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 **Prerequisites:** Valid record IDs from previous tests
 
 **Test Steps:**
+
 1. Get company activities: `mcp__attio__get-detailed-info resource_type="companies" record_id="[COMPANY_ID]" info_type="activities"`
 2. Get person contact history: `mcp__attio__get-detailed-info resource_type="people" record_id="[PERSON_ID]" info_type="contact"`
 3. Get task relationships: `mcp__attio__get-detailed-info resource_type="tasks" record_id="[TASK_ID]" info_type="relationships"`
 
 **Expected Results:**
+
 - Returns specific information types as requested
 - Data is relevant and properly formatted
 - Handles missing or unavailable information gracefully
@@ -79,39 +85,11 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 
 ### TC-009: Advanced Search - Complex Search Operations
 
-**Objective:** Validate advanced search capabilities with filters, sorting, and complex queries
+**Objective:** Validate accepted filters and rejected input combinations against the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs).
 
-**Test Steps:**
-1. Company search with filters:
-   ```bash
-   mcp__attio__advanced-search resource_type="companies" \
-     filters='[{"field": "employee_count", "operator": ">", "value": "50"}]' \
-     sort_by="name" sort_order="asc"
-   ```
+Use supported object-record filters for successful searches; treat explicit ordering and task filters as validation cases.
 
-2. People search with date filters:
-   ```bash
-   mcp__attio__advanced-search resource_type="people" \
-     filters='[{"field": "created_at", "operator": ">=", "value": "2024-01-01"}]' \
-     limit=20
-   ```
-
-3. Multi-field task search:
-   ```bash
-   mcp__attio__advanced-search resource_type="tasks" \
-     filters='[
-       {"field": "status", "operator": "in", "value": ["open", "in_progress"]},
-       {"field": "priority", "operator": "=", "value": "high"}
-     ]'
-   ```
-
-**Expected Results:**
-- Returns filtered results matching specified criteria
-- Sorting and pagination work as expected
-- Complex multi-field filters function correctly
-- Handles invalid filters with appropriate error messages
-
-**Success Criteria:** Advanced search operations work with filters, sorting, and complex query combinations
+**Success Criteria:** Supported filters affect results; unsupported inputs fail before upstream work. This is a test plan, not verification evidence.
 
 ## P1 Quality Gate Assessment
 
@@ -126,21 +104,23 @@ Evaluate results before proceeding to P2:
 
 ### Decision Matrix
 
-| Pass Rate | Decision | Action |
-|-----------|----------|---------|
-| **100% (4/4)** | ✅ Excellent | Proceed to P2 with confidence |
-| **≥80% (3/4)** | ✅ Acceptable | Proceed to P2, document failed test |
-| **<80% (2/4 or less)** | ⚠️ Concerning | **Evaluate production readiness** |
+| Pass Rate              | Decision      | Action                              |
+| ---------------------- | ------------- | ----------------------------------- |
+| **100% (4/4)**         | ✅ Excellent  | Proceed to P2 with confidence       |
+| **≥80% (3/4)**         | ✅ Acceptable | Proceed to P2, document failed test |
+| **<80% (2/4 or less)** | ⚠️ Concerning | **Evaluate production readiness**   |
 
 ### If Pass Rate <80%
 
 **Evaluation Questions:**
+
 - Which specific test failed and why?
 - Is the failure in core functionality or edge cases?
 - Can the failure be worked around in production?
 - Does the failure block critical user workflows?
 
 **Decision Options:**
+
 1. **Proceed to P2** if failures are minor and don't block core workflows
 2. **Stop testing** if failures indicate fundamental issues
 3. **Fix and retest** if time allows and fixes are straightforward
@@ -152,6 +132,7 @@ Evaluate results before proceeding to P2:
 ---
 
 **Related Documentation:**
+
 - [Previous: P0 Core Tests](./p0-core-tests.md)
 - [Next: P2 Advanced Tests](./p2-advanced-tests.md)
 - [Back: Test Cases Overview](./index.md)

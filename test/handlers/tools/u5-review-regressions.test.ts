@@ -907,15 +907,15 @@ describe('U5 review pagination invariants', () => {
     }
   );
 
-  it('reports connector aggregation slices even when each resource is complete', async () => {
+  it('reports connector output slices even when the source page is complete', async () => {
     vi.spyOn(UniversalSearchService, 'searchRecordsPage').mockResolvedValue({
-      data: [CompanyMockFactory.create()],
+      data: [CompanyMockFactory.create(), CompanyMockFactory.create()],
       next_cursor: null,
       pagination: { supported: false, truncated: false },
     });
     const raw = await OpenAiCompatibilityService.search({
       query: 'match',
-      type: 'all',
+      type: 'companies',
       limit: 1,
     });
     const normalized =

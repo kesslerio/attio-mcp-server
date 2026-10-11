@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Content Search feature (Issue #474) enables comprehensive full-text searching across multiple fields in Attio records. This goes beyond basic field matching to search within descriptions, notes, comments, and other text content.
+The Content Search feature (Issue #474) searches text attributes on Attio records. For supported routes and the distinction from CRM note-body search, see the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs).
 
 ## Features
 
@@ -101,16 +101,7 @@ const results = await mcp.callTool('records.search', {
 
 ## Parameters
 
-| Parameter       | Type   | Required | Description                                                         |
-| --------------- | ------ | -------- | ------------------------------------------------------------------- |
-| `resource_type` | string | Yes      | Type of resource to search (`companies`, `people`)                  |
-| `query`         | string | No       | Search query text                                                   |
-| `search_type`   | string | No       | Search type: `basic` (default) or `content`                         |
-| `fields`        | array  | No       | Specific fields to search (defaults to all content fields)          |
-| `match_type`    | string | No       | Match type: `partial` (default), `exact`, or `fuzzy`                |
-| `sort`          | string | No       | Sort order: `name` (default), `relevance`, `created`, or `modified` |
-| `limit`         | number | No       | Maximum results to return (default: 10, max: 100)                   |
-| `offset`        | number | No       | Number of results to skip for pagination (default: 0)               |
+Use the schemas from `tools/list` or `capabilities_get` and the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for query, field, matching, and ordering constraints.
 
 ## Relevance Scoring
 
@@ -179,8 +170,7 @@ const page2 = await mcp.callTool('records.search', {
 
 ## Limitations
 
-- Content search is currently available for companies and people only
-- Fuzzy matching is not yet implemented (reserved for future enhancement)
+- For matching and ordering restrictions, see the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs)
 - Search is limited to text fields; structured data fields are not searched
 - Maximum of 100 results per request due to API limits
 

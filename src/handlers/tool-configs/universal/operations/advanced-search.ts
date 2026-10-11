@@ -97,6 +97,7 @@ export const advancedSearchConfig: UniversalToolConfig<
       const { handleUniversalSearchPage } =
         await import('@/handlers/tool-configs/universal/shared-handlers.js');
       const searchParams = {
+        ...sanitizedParams,
         resource_type,
         query: sanitizedParams.query,
         filters,

@@ -9,6 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getToolsListPayload,
   getCapabilityManifest,
+  getPermittedToolDescriptors,
   getPromptsListPayload,
 } from '@/utils/mcp-discovery.js';
 import {
@@ -19,6 +20,7 @@ import {
 import {
   healthCheckConfig,
   healthCheckToolDefinition,
+  advancedOperationsToolDefinitions,
 } from '@/handlers/tool-configs/universal/index.js';
 import { searchOnlyCanonicalToolNames } from '@/config/tool-mode.js';
 import { canonicalToolNames } from '@/constants/tool-names.js';
@@ -28,6 +30,7 @@ import {
 } from '@/handlers/tools/result-schemas.js';
 import * as attioClientModule from '@/api/attio-client.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolOperationFacts } from '@/handlers/tool-types.js';
 
 // Fixture material for the leak assertions. Never a real value.
 const FIXTURE_API_KEY = 'attio_fixture_key_0f3c81d217b94f6';
@@ -112,6 +115,41 @@ afterEach(() => {
 });
 
 describe('static discovery projection', () => {
+  it('projects a descriptor-owned input fact into both discovery views without stale copies', () => {
+    const descriptor =
+      advancedOperationsToolDefinitions.records_search_advanced;
+    const facts: ToolOperationFacts = descriptor.facts;
+    expect(facts).toBeDefined();
+    const original = facts.guidance.constraints;
+    const originalDestructive = facts.operation.destructive;
+    try {
+      facts.guidance.constraints =
+        'Characterization: sort_by and sort_order are unsupported inputs.';
+      facts.operation.destructive = true;
+      const tool = getToolsListPayload().tools.find(
+        (item) => item.name === descriptor.name
+      )!;
+      const entry = getCapabilityManifest().tools.find(
+        (item) => item.name === descriptor.name
+      )!;
+      expect(tool.description).toContain(facts.guidance.constraints);
+      expect(entry.description).toBe(tool.description);
+      expect(entry.guidance?.constraints).toBe(facts.guidance.constraints);
+      expect(entry.guidance?.summary).toBe(tool.description);
+      expect(tool.annotations?.destructiveHint).toBe(true);
+      expect(entry.operation?.destructive).toBe(true);
+      expect(tool).not.toHaveProperty('facts');
+    } finally {
+      facts.guidance.constraints = original;
+      facts.operation.destructive = originalDestructive;
+    }
+    const restored = getToolsListPayload().tools.find(
+      (item) => item.name === descriptor.name
+    )!;
+    expect(restored.description).not.toContain('Characterization:');
+    expect(restored.annotations?.destructiveHint).toBe(originalDestructive);
+  });
+
   it('publishes the same permitted names and schemas as tools/list in full mode', () => {
     const tools = getToolsListPayload().tools;
     const manifest = getCapabilityManifest();
@@ -223,11 +261,8 @@ describe('static discovery projection', () => {
 
   it('serializes the full manifest without recursion or silent truncation', async () => {
     const tools = getToolsListPayload().tools;
-    const startedAt = process.hrtime.bigint();
     const manifest = getCapabilityManifest();
-    const latencyUs = Number(process.hrtime.bigint() - startedAt) / 1000 / 1;
     const serialized = JSON.stringify(manifest);
-    const bytes = Buffer.byteLength(serialized);
 
     // Round-tripping is how a silent size cut would show up.
     expect(JSON.parse(serialized)).toEqual(
@@ -247,23 +282,12 @@ describe('static discovery projection', () => {
       }
     }
 
-    // Recorded against the pre-change tools/list measurement (262,253 bytes on
-    // the U6 baseline). The manifest is allowed to be bigger; a multiple that
-    // runs away would mean a duplicated catalog rather than a projection.
-    const baseline = {
-      toolsListBytes: 262253,
-      manifestBytesCeiling: 1_600_000,
-    };
-    console.info(
-      `capability-manifest-baseline bytes=${bytes} tools=${manifest.toolCount} latency_us=${latencyUs.toFixed(0)}`
-    );
-    expect(bytes).toBeLessThan(baseline.manifestBytesCeiling);
-    expect(bytes).toBeGreaterThan(0);
-    expect(latencyUs).toBeLessThan(5_000_000);
+    // Timings and real HTTP body sizes are measured together in the manifest
+    // suite; this test checks serialization correctness, not a runaway ceiling.
   });
 
   it('projects a caller-supplied tool list rather than a private catalog', () => {
-    const tools = getToolsListPayload().tools.slice(0, 3);
+    const tools = getPermittedToolDescriptors().slice(0, 3);
     const manifest = buildCapabilityManifest(tools);
 
     expect(manifest.toolCount).toBe(3);
@@ -299,4 +323,38 @@ describe('static discovery projection', () => {
     const advertised = advertisedNames().sort();
     expect(advertised).toEqual(canonical);
   });
+});
+
+describe('truthful search discovery', () => {
+  it.each(['full', 'search'])(
+    'keeps tool and manifest restrictions aligned in %s mode',
+    (mode) => {
+      process.env.ATTIO_MCP_TOOL_MODE = mode;
+      const tools = getToolsListPayload().tools;
+      const manifest = getCapabilityManifest();
+      for (const name of [
+        'records_search_by_content',
+        'records_update',
+        'companies_update',
+        'deals_update',
+      ]) {
+        const tool = tools.find((item) => item.name === name);
+        const entry = manifest.tools.find((item) => item.name === name);
+        expect(Boolean(entry)).toBe(Boolean(tool));
+        if (!tool || !entry) continue;
+        if (name === 'records_search_by_content') {
+          expect(tool.description).toContain(
+            'all inputs fail validation, nonretryably, before upstream work.'
+          );
+          expect(entry.operation.resourceTypes).toEqual([]);
+          expect(entry.guidance.constraints).toContain(
+            'all inputs fail validation, nonretryably, before upstream work.'
+          );
+        } else {
+          expect(tool.annotations?.destructiveHint).toBe(true);
+          expect(entry.operation.destructive).toBe(true);
+        }
+      }
+    }
+  );
 });

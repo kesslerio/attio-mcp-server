@@ -1,6 +1,6 @@
-import { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
-import { ResourceType } from '../../../types/attio.js';
-import type { ToolConfig } from '../../tool-types.js';
+import { CallToolRequest } from '@modelcontextprotocol/server';
+import { ResourceType } from '@/types/attio.js';
+import type { ToolConfig } from '@/handlers/tool-types.js';
 
 export async function handleInfoOperation(
   request: CallToolRequest,

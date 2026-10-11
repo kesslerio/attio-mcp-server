@@ -194,7 +194,7 @@ The E2E framework covers all universal tools with real API integration:
 
 - `records.search_advanced` with complex filters
 - `records.search_by_relationship` with cross-resource queries
-- `records.search_by_content` with content-based searching
+- See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 - `records.search_by_timeframe` with temporal queries
 - `records.batch` with bulk processing
 

@@ -122,7 +122,7 @@ Help me prioritize accounts. Find companies in both our "Financial Services" and
 - `records.search_advanced` with `resource_type: "companies"`
 - List membership filters (multiple lists with AND logic)
 - `records.search_by_relationship` to find primary contacts
-- `records.search_by_content` to retrieve recent notes
+- See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 
 ### Cross-List Analysis
 
@@ -173,9 +173,9 @@ Find all enterprise accounts (>$100K revenue) where we've mentioned "renewal" or
 
 - `records.search_advanced` with `resource_type: "companies"`
 - Revenue filter: `{ "revenue": { "$gte": 100000 } }`
-- `records.search_by_content` with content query: "renewal OR expansion"
+- See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 - Date range: last quarter
-- Sort by company size (employees or revenue)
+- Sort retrieved results locally by company size (employees or revenue)
 
 ### Customer Success Analysis
 
@@ -189,7 +189,7 @@ Identify at-risk accounts: Find all customers with contracts ending in next 90 d
 
 - `records.search_by_timeframe` with `resource_type: "companies"`
 - Date field: contract expiration, range: next 90 days
-- `records.search_by_content` to find support tickets with negative sentiment
+- See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 - Combine results to identify at-risk customers
 
 ## 🔄 Relationship-Based Examples
@@ -206,7 +206,7 @@ I'm planning account expansion. Find existing customers (1+ year relationship) w
 
 - `records.search_by_timeframe` with `resource_type: "companies"`
 - Customer relationship duration filter
-- `records.search_by_content` to find notes mentioning expansion/upsell
+- See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 - Activity correlation analysis
 
 ### Competitive Intelligence
@@ -219,10 +219,8 @@ Find all prospects where we've mentioned competitors in our notes, and show me w
 
 **Universal Tools Used:**
 
-- `records.search_by_content` with `resource_type: "companies"`
-- Content types: ["notes"]
-- Query patterns for competitor names
-- Aggregation and analysis of competitor mentions
+- See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
+- This workflow requires separately retrieved note data; the tools do not perform the requested workspace-wide body search.
 
 ### Network Effect Analysis
 
@@ -300,7 +298,7 @@ I need to prepare for next quarter's strategic accounts review. Please analyze o
 1. **Sequential Thinking**: Break down analysis into logical steps
 2. **Advanced Search**: Find enterprise accounts with multiple criteria
 3. **Relationship Analysis**: Connect accounts with usage and engagement data
-4. **Content Search**: Find notes indicating expansion opportunities
+4. **Review Notes**: List notes for the identified records with `notes_list` and review them for expansion opportunities
 5. **Decision Framework**: Prioritize opportunities systematically
 
 ### Universal Tools + External Data Enrichment

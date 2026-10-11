@@ -1,3 +1,4 @@
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 import type { JsonObject } from '@/types/attio.js';
 import {
@@ -309,6 +310,26 @@ async function executeSearchBatch(
   resourceType: UniversalResourceType,
   params: JsonObject
 ): Promise<JsonObject[] | JsonObject> {
+  // Legacy batches have no schema slots for these search controls. Reject
+  // explicit inputs rather than discarding them while constructing each call.
+  for (const field of [
+    'query',
+    'filters',
+    'sort',
+    'sort_by',
+    'sort_order',
+    'search_type',
+    'fields',
+    'match_type',
+  ]) {
+    if (params[field] != null) {
+      throw new UniversalValidationError(
+        `records_batch search does not support ${field}; use records_search or records_batch_search.`,
+        undefined,
+        { field }
+      );
+    }
+  }
   const queries = params.queries as string[] | undefined;
 
   if (queries && Array.isArray(queries) && queries.length > 0) {
@@ -357,7 +378,8 @@ async function executeSearchBatch(
     throw new Error(validation.error);
   }
 
-  const { handleUniversalSearch } = await import('../shared-handlers.js');
+  const { handleUniversalSearch } =
+    await import('@/handlers/tool-configs/universal/shared-handlers.js');
   const searchResults = await handleUniversalSearch({
     resource_type: resourceType,
     limit: coerceNumber(params.limit),

@@ -4,8 +4,8 @@
  * This tool exposes sanitized runtime information to help debug why
  * config parameters from Smithery UI aren't reaching the server runtime.
  */
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { getContextStats } from '@/api/client-context.js';
 import {
   diagnosticsDataSchema,
@@ -36,31 +36,36 @@ export interface SmitheryDiagnosticsPayload {
 /**
  * Tool definition for Smithery diagnostics
  */
-export const smitheryDiagnosticsToolDefinition = {
+export const smitheryDiagnosticsToolDefinition = defineOperationTool({
   name: 'diagnostics_get',
-  description: formatToolDescription({
-    capability:
-      'Retrieve non-sensitive diagnostic information about Smithery runtime configuration propagation.',
-    boundaries:
-      'expose credentials or auth state, write data, or modify configuration.',
-    constraints:
-      'Returns runtime, workspace, and context-storage diagnostics only. Read-only operation.',
-    recoveryHint:
-      'Use this tool to compare runtime mode, workspace configuration, and context storage state across deployments.',
-  }),
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'diagnostic',
+      resourceTypes: [],
+      authRequired: false,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability:
+        'Read sanitized runtime and context-storage diagnostics for the server.',
+      boundaries:
+        'expose credentials, auth state, or workspace data, or change configuration.',
+      constraints:
+        'Static read-only output; values come from the server environment, not from Attio.',
+      recovery: 'Compare across deployments to isolate configuration drift.',
+      alternatives: ['aaa-health-check', 'capabilities_get'],
+    },
+  },
   inputSchema: {
     type: 'object',
     properties: {},
     additionalProperties: false,
   },
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
-    // Explicit rather than absent: the capability manifest projects this
-    // descriptor's semantics, and it must never have to infer them.
-    destructiveHint: false,
-  },
-};
+});
 
 /**
  * Handler for Smithery diagnostics tool

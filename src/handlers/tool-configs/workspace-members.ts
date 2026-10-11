@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { AttioWorkspaceMember } from '@/types/attio.js';
 import { z } from 'zod';
 import {
@@ -12,7 +13,6 @@ import {
   workspaceMemberResultContract,
 } from '@/handlers/tools/result-schemas.js';
 import { boundedPaginationMetadata } from '@/handlers/tools/result-cursor.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 /** Member responses always publish the native workspace_member_id identifier. */
 function normalizeMemberCollection(result: unknown): Record<string, unknown> {
@@ -151,16 +151,29 @@ export const workspaceMembersToolConfigs = {
 };
 
 export const workspaceMembersToolDefinitions = [
-  {
+  defineOperationTool({
     name: 'workspace_members_list',
-    description: formatToolDescription({
-      capability:
-        'List workspace members to plan assignments and access checks.',
-      boundaries: 'change access levels or invite new members; read-only.',
-      constraints:
-        'Supports optional search, pagination (1-100 per page, default 25).',
-      recoveryHint: 'Use workspace_members_search for targeted lookups.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'read',
+        resourceTypes: ['workspace_members'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'page', supported: true, cap: 100 },
+      },
+      guidance: {
+        capability:
+          'List workspace members for assignment and access planning.',
+        boundaries: 'change access levels or invite members.',
+        constraints:
+          'Optional search and page paging (1-100 per page, default 25).',
+        recovery: 'Narrow with workspace_members_search for a named person.',
+        alternatives: ['workspace_members_search', 'workspace_members_get'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -189,20 +202,28 @@ export const workspaceMembersToolDefinitions = [
       },
       additionalProperties: false,
     },
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'workspace_members_search',
-    description: formatToolDescription({
-      capability: 'Search workspace members by name, email, or access role.',
-      boundaries: 'modify member profiles or permissions; lookup only.',
-      constraints: 'Requires query string (minimum 2 characters).',
-      recoveryHint:
-        'If no results, workspace_members_list provides the full roster.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['workspace_members'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+      },
+      guidance: {
+        capability: 'Search workspace members by name, email, or role.',
+        boundaries: 'modify member profiles or permissions.',
+        constraints: 'Requires a query of at least 2 characters.',
+        recovery: 'If nothing matches, read the full roster instead.',
+        alternatives: ['workspace_members_list'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -216,22 +237,28 @@ export const workspaceMembersToolDefinitions = [
       required: ['query'],
       additionalProperties: false,
     },
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'workspace_members_get',
-    description: formatToolDescription({
-      capability:
-        'Retrieve profile and access details for one workspace member.',
-      boundaries: 'update member information or change permissions.',
-      constraints:
-        'Requires workspace_member_id from list/search results; read-only.',
-      recoveryHint:
-        'Use workspace_members_list to confirm the memberId before retrying.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'read',
+        resourceTypes: ['workspace_members'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+      },
+      guidance: {
+        capability: 'Read profile and access details for one member.',
+        boundaries: 'update member information or permissions.',
+        constraints: 'Requires a memberId taken from list or search results.',
+        recovery: 'Confirm the identifier with workspace_members_list.',
+        alternatives: ['workspace_members_list'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -244,9 +271,5 @@ export const workspaceMembersToolDefinitions = [
       required: ['memberId'],
       additionalProperties: false,
     },
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
+  }),
 ];

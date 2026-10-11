@@ -9,8 +9,9 @@ import {
   AttioListEntry,
 } from '@/types/attio.js';
 import { ListEntryFilters } from '@/api/operations/index.js';
-import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import type { Tool } from '@modelcontextprotocol/server';
 import type { z } from 'zod';
+import type { CapabilityGuidance } from '@/handlers/tools/standards/index.js';
 
 /**
  * What an operation does to a resource, as published for tool selection.
@@ -31,9 +32,8 @@ export type ToolOperationAction =
 export type ToolPaginationKind = 'none' | 'offset' | 'cursor' | 'page';
 
 /**
- * Static operation contract for one tool, authored once per canonical name.
- * `universal/capabilities.ts` owns the table; the registry projection and the
- * capability manifest both read it, so no surface keeps its own copy.
+ * Static operation contract authored on the defining tool descriptor.
+ * Ordinary discovery and the capability manifest project that same owner.
  */
 export interface ToolOperationMetadata {
   action: ToolOperationAction;
@@ -57,6 +57,14 @@ export interface ToolOperationMetadata {
     cap: number | null;
   };
 }
+
+/** Descriptor-owned facts; internal data, never an extra MCP wire field. */
+export interface ToolOperationFacts {
+  operation: ToolOperationMetadata;
+  guidance: CapabilityGuidance;
+}
+
+export type OperationTool = Tool & { facts?: ToolOperationFacts };
 
 // Base tool configuration interface
 export interface ToolConfig {

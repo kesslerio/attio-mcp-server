@@ -105,7 +105,7 @@ if (!isMain) {
 
     // Dynamic imports to avoid loading modules during help/version
     const { StdioServerTransport } =
-      await import('@modelcontextprotocol/sdk/server/stdio.js');
+      await import('@modelcontextprotocol/server/stdio');
     const { createServer } = await import('./server/createServer.js');
     const { error: logError, OperationType } =
       await import('./utils/logger.js');

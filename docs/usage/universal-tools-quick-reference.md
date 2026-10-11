@@ -6,22 +6,22 @@ _Validated prompts that work perfectly with the Attio MCP Server's universal too
 
 The Attio MCP Server uses **14 universal tools** (68% reduction from 40+ tools) that handle all CRM operations through `resource_type` parameters:
 
-| **Universal Tool**               | **Purpose**                        | **Resource Types**                                   |
-| -------------------------------- | ---------------------------------- | ---------------------------------------------------- |
-| `records.search`                 | Basic search with filters          | companies, people, tasks, deals, custom object slugs |
-| `records.search_advanced`        | Multi-condition complex queries    | companies, people, tasks, deals, custom object slugs |
-| `records.get_details`            | Complete record information        | companies, people, tasks, deals, custom object slugs |
-| `records_create`                  | Create new records                 | companies, people, tasks, deals, custom object slugs |
-| `records_update`                  | Modify existing records            | companies, people, tasks, deals, custom object slugs |
-| `records_delete`                  | Remove records                     | companies, people, tasks, deals, custom object slugs |
-| `records.get_attributes`         | Available fields for resource type | companies, people, tasks, deals                      |
-| `records.discover_attributes`    | Dynamic field discovery            | companies, people, tasks, deals                      |
-| `records.get_info`               | Structured info by type            | companies, people                                    |
-| `records.search_by_relationship` | Find connected records             | companies ↔ people                                   |
-| `records.search_by_content`      | Text-based matching                | notes, activities, content                           |
-| `records.search_by_timeframe`    | Date-based filtering               | created, modified, last_interaction                  |
-| `records.batch`                  | Bulk processing                    | create, update, delete, search                       |
-| `records.search_batch`           | Multi-criteria batch search        | All resource types                                   |
+| **Universal Tool**               | **Purpose**                                                                                   | **Resource Types**                                   |
+| -------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `records.search`                 | Basic search with filters                                                                     | companies, people, tasks, deals, custom object slugs |
+| `records.search_advanced`        | Multi-condition complex queries                                                               | companies, people, tasks, deals, custom object slugs |
+| `records.get_details`            | Complete record information                                                                   | companies, people, tasks, deals, custom object slugs |
+| `records_create`                 | Create new records                                                                            | companies, people, tasks, deals, custom object slugs |
+| `records_update`                 | Modify existing records                                                                       | companies, people, tasks, deals, custom object slugs |
+| `records_delete`                 | Remove records                                                                                | companies, people, tasks, deals, custom object slugs |
+| `records.get_attributes`         | Available fields for resource type                                                            | companies, people, tasks, deals                      |
+| `records.discover_attributes`    | Dynamic field discovery                                                                       | companies, people, tasks, deals                      |
+| `records.get_info`               | Structured info by type                                                                       | companies, people                                    |
+| `records.search_by_relationship` | Find connected records                                                                        | companies ↔ people                                   |
+| `records.search_by_content`      | See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) | Compatibility only                                   |
+| `records.search_by_timeframe`    | Date-based filtering                                                                          | created, modified, last_interaction                  |
+| `records.batch`                  | Bulk processing                                                                               | create, update, delete, search                       |
+| `records.search_batch`           | Multi-criteria batch search                                                                   | All resource types                                   |
 
 **Plus 11 Lists Tools**: Complete pipeline and list management functionality
 
@@ -133,7 +133,7 @@ Limit to 15 connections per company
 Build complete account map:
 1. Use records.get_details for the target company
 2. Use records.search_by_relationship to find all connected people
-3. Use records.search_by_content to find related notes and activities
+3. See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 4. Use records_get_list_memberships to see which lists/pipelines they're in
 Present as organizational chart with contact details
 ```
@@ -180,7 +180,7 @@ Prioritize by deal value or engagement score
 ```
 Find potential duplicates:
 1. Use records.search to get all companies
-2. Use records.search_by_content for similar names/domains
+2. See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 3. Group by website domain for exact matches
 4. Flag similar company names for manual review
 Process in batches of 25 companies to manage response size

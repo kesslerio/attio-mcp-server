@@ -1,15 +1,13 @@
 /**
  * Main entry point for tool handlers - maintains backward compatibility
  */
-import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { Server } from '@modelcontextprotocol/server';
 import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
   CallToolRequest,
   CallToolResult,
-  McpError,
-  ErrorCode,
-} from '@modelcontextprotocol/sdk/types.js';
+  ProtocolError,
+  ProtocolErrorCode,
+} from '@modelcontextprotocol/server';
 import {
   warn,
   clearLogContext,
@@ -144,7 +142,7 @@ export function registerToolHandlers(
   context?: ServerContext
 ): void {
   // Handler for listing available tools
-  server.setRequestHandler(ListToolsRequestSchema, async () => {
+  server.setRequestHandler('tools/list', async () => {
     const { tools } = getToolsListPayload();
     return {
       tools,
@@ -153,14 +151,14 @@ export function registerToolHandlers(
 
   // Handler for calling tools
   server.setRequestHandler(
-    CallToolRequestSchema,
+    'tools/call',
     async (request, extra): Promise<CallToolResult> =>
       withLogContext(
         {
           requestId:
-            extra?.requestId === undefined
+            extra?.mcpReq.id === undefined
               ? undefined
-              : String(extra.requestId),
+              : String(extra.mcpReq.id),
         },
         async () => {
           const toolName =
@@ -168,8 +166,8 @@ export function registerToolHandlers(
               ? request.params.name
               : 'unknown_tool';
           if (!findToolConfig(toolName, { enforceMode: false })) {
-            throw new McpError(
-              ErrorCode.InvalidParams,
+            throw new ProtocolError(
+              ProtocolErrorCode.InvalidParams,
               `Tool not found: ${toolName}`
             );
           }
@@ -188,7 +186,7 @@ export function registerToolHandlers(
               : executeToolRequest(normalizedRequest))) as CallToolResult;
             return result;
           } catch (error: unknown) {
-            if (error instanceof McpError) throw error;
+            if (error instanceof ProtocolError) throw error;
             warn(
               'tool:normalization',
               'Tool request failed before execution',
