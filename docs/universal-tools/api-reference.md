@@ -152,19 +152,7 @@ for companion prose formatting.
 
 **Consolidates**: `search-companies`, `search-people`, `list-records`, `list-tasks`
 
-**Schema**:
-
-```typescript
-{
-  resource_type: 'companies' | 'people' | 'records' | 'deals' | 'tasks' | '<custom_object_slug>', // Required
-  query?: string,                    // Smart query string (names, emails, phones, domains)
-  filters?: object,                  // Advanced filter conditions
-  search_type?: 'basic' | 'content', // Search type (default: 'basic')
-  limit?: number,                    // Max results (1-100; record-query defaults vary)
-  offset?: number,                   // Pagination offset (default: 0)
-  cursor?: string                    // See Collection Continuation
-}
-```
+**Schema**: Read the callable descriptor from `tools/list` or `capabilities_get`; see [supported search inputs](#supported-search-inputs) for valid combinations.
 
 For `fields`, `match_type`, and `sort`, see [Supported search inputs](#supported-search-inputs). The runtime schema in `tools/list` is authoritative; accepting a value in the schema does not make it executable on every route.
 
@@ -479,20 +467,7 @@ await client.callTool('records.get_info', {
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
-**Schema**:
-
-```typescript
-{
-  resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
-  query?: string,                    // Search query string
-  filters?: object,                  // Advanced filter conditions
-  sort_by?: string,                  // Unsupported; omit
-  sort_order?: 'asc' | 'desc',      // Unsupported; omit
-  limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
-  offset?: number,                   // Pagination offset (default: 0)
-  cursor?: string                    // See Collection Continuation
-}
-```
+**Schema**: Read the callable descriptor from `tools/list` or `capabilities_get`; see [supported search inputs](#supported-search-inputs) for valid combinations.
 
 **Examples**:
 
@@ -809,7 +784,7 @@ writes enforce authorization the same way whether or not a tool was advertised.
 - All tools require `resource_type`
 - Record operations require `record_id`
 - Create/update operations require `record_data`
-- Content searches require non-empty `search_query`
+- Search requirements depend on the route; see [supported search inputs](#supported-search-inputs)
 
 ### Date Operators ⚠️
 
@@ -863,9 +838,7 @@ Use correct operators for date filtering:
 
 ### Query Requirements
 
-- Search queries **cannot be empty strings**
-- Use meaningful search terms
-- Content searches require specific, non-generic queries
+See [supported search inputs](#supported-search-inputs) for query requirements and empty-query listing support.
 
 ## Error Handling
 

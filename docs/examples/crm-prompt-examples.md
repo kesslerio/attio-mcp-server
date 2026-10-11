@@ -298,7 +298,7 @@ I need to prepare for next quarter's strategic accounts review. Please analyze o
 1. **Sequential Thinking**: Break down analysis into logical steps
 2. **Advanced Search**: Find enterprise accounts with multiple criteria
 3. **Relationship Analysis**: Connect accounts with usage and engagement data
-4. **Content Search**: Find notes indicating expansion opportunities
+4. **Review Notes**: List notes for the identified records with `notes_list` and review them for expansion opportunities
 5. **Decision Framework**: Prioritize opportunities systematically
 
 ### Universal Tools + External Data Enrichment

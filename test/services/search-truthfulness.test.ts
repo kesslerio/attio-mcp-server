@@ -26,7 +26,6 @@ import {
 import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
 import { universalBatchSearch } from '@/api/operations/batch.js';
 import { executeToolRequest } from '@/handlers/tools/dispatcher/core.js';
-import { OpenAiCompatibilityService } from '@/services/OpenAiCompatibilityService.js';
 import * as attioClient from '@/api/attio-client.js';
 
 const filters = {
