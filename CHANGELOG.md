@@ -22,9 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Search requests now reject unsupported query/filter/sort combinations before upstream work, including aliases and batches; note and activity body searches no longer substitute unrelated results, and update hints consistently indicate that values can be replaced (#1313)
-- Connector search preserves query-only calls by searching companies, people, and lists by default (also `type=all`); explicit task queries fail validation before upstream work instead of returning unfiltered tasks (#1313)
-
 - **Install scripts are now source-safe** — `install-claude-desktop.sh` runs its installer flow only when executed, not when sourced, so function-level tests and shell sourcing no longer trigger a live install run
 - **List 403 errors keep their Attio error code** — `createList`/`updateList` no longer flatten 403 responses into message-only errors, so agents get plan-upgrade or token-scope guidance instead of "Retry the operation"; client-side access validation failures are likewise categorized as `unsupported_input` instead of unexpected API failures (#1148)
 - **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
@@ -36,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tool capability discovery is now answerable without trial calls** — `capabilities_get` publishes the permitted capability manifest from the same registry `tools/list` reads: for every advertised tool, its input/output schemas plus action, supported resource types (including discovered custom-object slugs), read-only/destructive/idempotent flags, credential requirement, pagination kind and cap, and guidance on capability, boundaries, limits, and recovery. `aaa-health-check` returns the same permitted set for its mode, projected to its operation sections, so a search-only client can choose tools without widening its allowlist. Both surfaces are static: no Attio call, no credential, no credential material in output or logs. A listed tool is configured, not granted — authorization is still enforced on every call. See [capability discovery](docs/universal-tools/api-reference.md#capability-discovery-capabilities_get-u7)
 
 ### Fixed
+
+- Search requests now reject unsupported query/filter/sort combinations before upstream work, including aliases and batches; connector filter/sort/mode/field/match controls and object-record `list_membership` filters are rejected rather than ignored; note and activity body searches no longer substitute unrelated results, and update hints consistently indicate that values can be replaced (#1313)
+- Connector search preserves query-only calls by searching companies, people, and lists by default (also `type=all`); explicit task queries fail validation before upstream work instead of returning unfiltered tasks (#1313)
 
 - **Cloudflare Worker preserves structured tool results** — HTTP clients receive the shared validated `structuredContent`, connector content, and nonretryable execution-error envelopes instead of losing machine-readable outcomes during serialization (#1312)
 

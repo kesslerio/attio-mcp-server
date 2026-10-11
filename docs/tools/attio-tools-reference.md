@@ -52,7 +52,7 @@ Universal tools provide consistent operations across all resource types (compani
 
 - Find companies by name: `resource_type: "companies", query: "acme"`
 - Find people by email: `resource_type: "people", query: "john@example.com"`
-- Find tasks by title: `resource_type: "tasks", query: "follow up"`
+- Task text search: see the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs)
 
 ### 2. `records_get_details`
 
