@@ -79,39 +79,11 @@ Priority 1 tests validate essential schema discovery and advanced search operati
 
 ### TC-009: Advanced Search - Complex Search Operations
 
-**Objective:** Validate advanced search capabilities with filters, sorting, and complex queries
+**Objective:** Validate accepted filters and rejected input combinations against the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs).
 
-**Test Steps:**
-1. Company search with filters:
-   ```bash
-   mcp__attio__advanced-search resource_type="companies" \
-     filters='[{"field": "employee_count", "operator": ">", "value": "50"}]' \
-     sort_by="name" sort_order="asc"
-   ```
+Use supported object-record filters for successful searches; treat explicit ordering and task filters as validation cases.
 
-2. People search with date filters:
-   ```bash
-   mcp__attio__advanced-search resource_type="people" \
-     filters='[{"field": "created_at", "operator": ">=", "value": "2024-01-01"}]' \
-     limit=20
-   ```
-
-3. Multi-field task search:
-   ```bash
-   mcp__attio__advanced-search resource_type="tasks" \
-     filters='[
-       {"field": "status", "operator": "in", "value": ["open", "in_progress"]},
-       {"field": "priority", "operator": "=", "value": "high"}
-     ]'
-   ```
-
-**Expected Results:**
-- Returns filtered results matching specified criteria
-- Sorting and pagination work as expected
-- Complex multi-field filters function correctly
-- Handles invalid filters with appropriate error messages
-
-**Success Criteria:** Advanced search operations work with filters, sorting, and complex query combinations
+**Success Criteria:** Supported filters affect results; unsupported inputs fail before upstream work. This is a test plan, not verification evidence.
 
 ## P1 Quality Gate Assessment
 
@@ -126,11 +98,11 @@ Evaluate results before proceeding to P2:
 
 ### Decision Matrix
 
-| Pass Rate | Decision | Action |
-|-----------|----------|---------|
-| **100% (4/4)** | ✅ Excellent | Proceed to P2 with confidence |
-| **≥80% (3/4)** | ✅ Acceptable | Proceed to P2, document failed test |
-| **<80% (2/4 or less)** | ⚠️ Concerning | **Evaluate production readiness** |
+| Pass Rate              | Decision      | Action                              |
+| ---------------------- | ------------- | ----------------------------------- |
+| **100% (4/4)**         | ✅ Excellent   | Proceed to P2 with confidence       |
+| **≥80% (3/4)**         | ✅ Acceptable  | Proceed to P2, document failed test |
+| **<80% (2/4 or less)** | ⚠️ Concerning | **Evaluate production readiness**   |
 
 ### If Pass Rate <80%
 

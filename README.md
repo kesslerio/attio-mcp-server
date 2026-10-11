@@ -71,7 +71,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 
 - **Universal Contact Search**: Find people by any criteria using universal search tools
 - **Relationship Tracking**: Link people to companies with `records_search_by_relationship`
-- **Activity Timeline**: Track interactions with `records_search_by_content` and `records_search_by_timeframe`
+- **Activity Timeline**: Retrieve interaction metadata with `records_get_interactions`
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 
@@ -264,11 +264,11 @@ Build powerful CRM queries with multi-criteria AND/OR filtering. See the [Advanc
 
 | Client             | Local Install (Tier 1-2) | Cloudflare Worker (Tier 3) |
 | ------------------ | ------------------------ | -------------------------- |
-| Claude Desktop     | ✅ Recommended           | ✅ Full support            |
-| Claude Web         | N/A                      | ✅ Full support            |
-| ChatGPT (Pro/Plus) | N/A                      | ✅ Recommended             |
-| Cursor IDE         | ✅ Full support          | ✅ Full support            |
-| Claude Code (CLI)  | ✅ Recommended           | Partial                    |
+| Claude Desktop     | ✅ Recommended            | ✅ Full support             |
+| Claude Web         | N/A                      | ✅ Full support             |
+| ChatGPT (Pro/Plus) | N/A                      | ✅ Recommended              |
+| Cursor IDE         | ✅ Full support           | ✅ Full support             |
+| Claude Code (CLI)  | ✅ Recommended            | Partial                    |
 
 **Choose your installation method:**
 
@@ -460,12 +460,12 @@ Deploy your own Attio MCP server on Cloudflare Workers with full OAuth 2.1 suppo
 | Feature           | Cloudflare Worker |
 | ----------------- | ----------------- |
 | Setup complexity  | Medium            |
-| OAuth built-in    | ✅                |
-| Mobile app access | ✅                |
-| Multi-user access | ✅                |
-| Custom domain     | ✅                |
-| Self-hosted       | ✅                |
-| Team deployments  | ✅ Full           |
+| OAuth built-in    | ✅                 |
+| Mobile app access | ✅                 |
+| Multi-user access | ✅                 |
+| Custom domain     | ✅                 |
+| Self-hosted       | ✅                 |
+| Team deployments  | ✅ Full            |
 | Cost              | Free tier         |
 
 #### Quick Deploy

@@ -27,47 +27,47 @@ This guide provides historical from-to references and examples for migrating rem
 
 ### Company Tools → Universal Equivalents
 
-| Deprecated Tool                     | Universal Tool                   | Resource Type | Additional Parameters                    |
-| ----------------------------------- | -------------------------------- | ------------- | ---------------------------------------- |
-| `search-companies`                  | `records_search`                 | `companies`   | -                                        |
-| `get-company-details`               | `records_get_details`            | `companies`   | -                                        |
-| `create-company`                    | `records_create`                 | `companies`   | -                                        |
-| `update-company`                    | `records_update`                 | `companies`   | -                                        |
-| `delete-company`                    | `records_delete`                 | `companies`   | -                                        |
-| `get-company-attributes`            | `records_get_attributes`         | `companies`   | -                                        |
-| `discover-company-attributes`       | `records_discover_attributes`    | `companies`   | -                                        |
-| `get-company-basic-info`            | `records_get_info`               | `companies`   | `info_type: 'basic'`                     |
-| `get-company-contact-info`          | `records_get_info`               | `companies`   | `info_type: 'contact'`                   |
-| `get-company-business-info`         | `records_get_info`               | `companies`   | `info_type: 'business'`                  |
-| `get-company-social-info`           | `records_get_info`               | `companies`   | `info_type: 'social'`                    |
-| `records.search_advanced-companies` | `records_search_advanced`        | `companies`   | -                                        |
-| `search-companies-by-notes`         | `records_search_by_content`      | `companies`   | `content_type: 'notes'`                  |
-| `search-companies-by-people`        | `records_search_by_relationship` | `companies`   | `relationship_type: 'people_to_company'` |
+| Deprecated Tool                     | Universal Tool                                                     | Resource Type | Additional Parameters                    |
+| ----------------------------------- | ------------------------------------------------------------------ | ------------- | ---------------------------------------- |
+| `search-companies`                  | `records_search`                                                   | `companies`   | ---------------------------------------- |
+| `get-company-details`               | `records_get_details`                                              | `companies`   | ---------------------------------------- |
+| `create-company`                    | `records_create`                                                   | `companies`   | ---------------------------------------- |
+| `update-company`                    | `records_update`                                                   | `companies`   | ---------------------------------------- |
+| `delete-company`                    | `records_delete`                                                   | `companies`   | ---------------------------------------- |
+| `get-company-attributes`            | `records_get_attributes`                                           | `companies`   | ---------------------------------------- |
+| `discover-company-attributes`       | `records_discover_attributes`                                      | `companies`   | ---------------------------------------- |
+| `get-company-basic-info`            | `records_get_info`                                                 | `companies`   | `info_type: 'basic'`                     |
+| `get-company-contact-info`          | `records_get_info`                                                 | `companies`   | `info_type: 'contact'`                   |
+| `get-company-business-info`         | `records_get_info`                                                 | `companies`   | `info_type: 'business'`                  |
+| `get-company-social-info`           | `records_get_info`                                                 | `companies`   | `info_type: 'social'`                    |
+| `records.search_advanced-companies` | `records_search_advanced`                                          | `companies`   | ---------------------------------------- |
+| `search-companies-by-notes`         | [supported-input matrix](api-reference.md#supported-search-inputs) | `companies`   | `content_type: 'notes'`                  |
+| `search-companies-by-people`        | `records_search_by_relationship`                                   | `companies`   | `relationship_type: 'people_to_company'` |
 
 ### People Tools → Universal Equivalents
 
-| Deprecated Tool                      | Universal Tool                   | Resource Type | Additional Parameters                    |
-| ------------------------------------ | -------------------------------- | ------------- | ---------------------------------------- |
-| `search-people`                      | `records_search`                 | `people`      | -                                        |
-| `get-person-details`                 | `records_get_details`            | `people`      | -                                        |
-| `create-person`                      | `records_create`                 | `people`      | -                                        |
-| `records.search_advanced-people`     | `records_search_advanced`        | `people`      | -                                        |
-| `search-people-by-company`           | `records_search_by_relationship` | `people`      | `relationship_type: 'company_to_people'` |
-| `search-people-by-activity`          | `records_search_by_content`      | `people`      | `content_type: 'activity'`               |
-| `search-people-by-notes`             | `records_search_by_content`      | `people`      | `content_type: 'notes'`                  |
-| `search-people-by-creation-date`     | `records_search_by_timeframe`    | `people`      | `timeframe_type: 'created'`              |
-| `search-people-by-modification-date` | `records_search_by_timeframe`    | `people`      | `timeframe_type: 'modified'`             |
-| `search-people-by-last-interaction`  | `records_search_by_timeframe`    | `people`      | `timeframe_type: 'last_interaction'`     |
+| Deprecated Tool                      | Universal Tool                                                     | Resource Type | Additional Parameters                    |
+| ------------------------------------ | ------------------------------------------------------------------ | ------------- | ---------------------------------------- |
+| `search-people`                      | `records_search`                                                   | `people`      | ---------------------------------------- |
+| `get-person-details`                 | `records_get_details`                                              | `people`      | ---------------------------------------- |
+| `create-person`                      | `records_create`                                                   | `people`      | ---------------------------------------- |
+| `records.search_advanced-people`     | `records_search_advanced`                                          | `people`      | ---------------------------------------- |
+| `search-people-by-company`           | `records_search_by_relationship`                                   | `people`      | `relationship_type: 'company_to_people'` |
+| `search-people-by-activity`          | [supported-input matrix](api-reference.md#supported-search-inputs) | `people`      | `content_type: 'activity'`               |
+| `search-people-by-notes`             | [supported-input matrix](api-reference.md#supported-search-inputs) | `people`      | `content_type: 'notes'`                  |
+| `search-people-by-creation-date`     | `records_search_by_timeframe`                                      | `people`      | `timeframe_type: 'created'`              |
+| `search-people-by-modification-date` | `records_search_by_timeframe`                                      | `people`      | `timeframe_type: 'modified'`             |
+| `search-people-by-last-interaction`  | `records_search_by_timeframe`                                      | `people`      | `timeframe_type: 'last_interaction'`     |
 
 ### Record Tools → Universal Equivalents
 
 | Deprecated Tool        | Universal Tool        | Resource Type | Additional Parameters      |
 | ---------------------- | --------------------- | ------------- | -------------------------- |
 | `create-record`        | `records_create`      | `records`     | Already universal          |
-| `get-record`           | `records_get_details` | `records`     | -                          |
+| `get-record`           | `records_get_details` | `records`     | -------------------------- |
 | `update-record`        | `records_update`      | `records`     | Already universal          |
 | `delete-record`        | `records_delete`      | `records`     | Already universal          |
-| `list-records`         | `records_search`      | `records`     | -                          |
+| `list-records`         | `records_search`      | `records`     | -------------------------- |
 | `batch-create-records` | `records_batch`       | `records`     | `operation_type: 'create'` |
 | `batch-update-records` | `records_batch`       | `records`     | `operation_type: 'update'` |
 
@@ -75,10 +75,10 @@ This guide provides historical from-to references and examples for migrating rem
 
 | Deprecated Tool | Universal Tool   | Resource Type | Additional Parameters |
 | --------------- | ---------------- | ------------- | --------------------- |
-| `create-task`   | `records_create` | `tasks`       | -                     |
-| `update-task`   | `records_update` | `tasks`       | -                     |
-| `delete-task`   | `records_delete` | `tasks`       | -                     |
-| `list-tasks`    | `records_search` | `tasks`       | -                     |
+| `create-task`   | `records_create` | `tasks`       | --------------------- |
+| `update-task`   | `records_update` | `tasks`       | --------------------- |
+| `delete-task`   | `records_delete` | `tasks`       | --------------------- |
+| `list-tasks`    | `records_search` | `tasks`       | --------------------- |
 
 ### Batch Tools → Universal Equivalents
 
@@ -682,13 +682,6 @@ await client.callTool('search-people-by-company', {
 <td>
 
 ```typescript
-// Search companies by notes
-await client.callTool('records_search_by_content', {
-  resource_type: 'companies',
-  content_type: 'notes',
-  search_query: 'quarterly review',
-});
-
 // Search people by company
 await client.callTool('records_search_by_relationship', {
   resource_type: 'people',
@@ -706,9 +699,7 @@ await client.callTool('records_search_by_relationship', {
 
 **Migration Steps:**
 
-1. Content searches: `search-*-by-notes` → `records_search_by_content`
-2. Add parameters: `resource_type`, `content_type: 'notes'`
-3. Rename parameter: `searchText` → `search_query`
+1. Content searches: see the [supported-input matrix](api-reference.md#supported-search-inputs) for limitations and alternatives.
 4. Relationship searches: `search-*-by-*` → `records_search_by_relationship`
 5. Add parameters: `resource_type`, `related_resource_type`
 6. Wrap ID in filter: `company_id` → `relationship_filter: { record_id }`

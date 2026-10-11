@@ -88,6 +88,8 @@ All other tools are filtered out at registry time and ignored by the dispatcher.
 
 Unset the variable (or set it to any value other than `search`) to restore the full tool catalogue.
 
+For required connector search inputs, see the [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs).
+
 ### Connector result shapes
 
 See the authoritative [structured surface contract](./universal-tools/developer-guide.md#structured-surface-coverage-v2-boundary-d)

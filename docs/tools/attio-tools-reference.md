@@ -13,22 +13,22 @@ Universal tools provide consistent operations across all resource types (compani
 
 ## 📚 Quick Navigation
 
-| Need to...                      | Use This Tool                    | Key Parameters                                  |
-| ------------------------------- | -------------------------------- | ----------------------------------------------- |
-| **Search any resource**         | `records_search`                 | `resource_type`, `query`                        |
-| **Get record details**          | `records_get_details`             | `resource_type`, `record_id`                    |
-| **Create new record**           | `records_create`                  | `resource_type`, `record_data`                  |
-| **Update existing record**      | `records_update`                  | `resource_type`, `record_id`, `record_data`     |
-| **Idempotent create-or-update** | `records_upsert`                  | `resource_type`, `match`, `values`              |
-| **Delete record**               | `records_delete`                  | `resource_type`, `record_id`                    |
-| **Complex searches**            | `records_search_advanced`        | `resource_type`, `filters`                      |
-| **Cross-resource searches**     | `records_search_by_relationship` | `relationship_type`, `source_id`                |
-| **Content-based searches**      | `records_search_by_content`      | `resource_type`, `content_type`, `search_query` |
-| **Time-based searches**         | `records_search_by_timeframe`    | `resource_type`, `start_date`, `end_date`       |
-| **Bulk operations**             | `records_batch`                  | `operation_type`, `records`                     |
-| **Get attributes**              | `records_get_attributes`          | `resource_type`, `record_id`                    |
-| **Discover schema**             | `records_discover_attributes`     | `resource_type`                                 |
-| **Get specialized info**        | `records_get_info`                | `resource_type`, `record_id`, `info_type`       |
+| Need to...                      | Use This Tool                    | Key Parameters                                                                                |
+| ------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Search any resource**         | `records_search`                 | `resource_type`, `query`                                                                      |
+| **Get record details**          | `records_get_details`            | `resource_type`, `record_id`                                                                  |
+| **Create new record**           | `records_create`                 | `resource_type`, `record_data`                                                                |
+| **Update existing record**      | `records_update`                 | `resource_type`, `record_id`, `record_data`                                                   |
+| **Idempotent create-or-update** | `records_upsert`                 | `resource_type`, `match`, `values`                                                            |
+| **Delete record**               | `records_delete`                 | `resource_type`, `record_id`                                                                  |
+| **Complex searches**            | `records_search_advanced`        | `resource_type`, `filters`                                                                    |
+| **Cross-resource searches**     | `records_search_by_relationship` | `relationship_type`, `source_id`                                                              |
+| **Content search limitations**  | `records_search_by_content`      | See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) |
+| **Time-based searches**         | `records_search_by_timeframe`    | `resource_type`, `start_date`, `end_date`                                                     |
+| **Bulk operations**             | `records_batch`                  | `operation_type`, `records`                                                                   |
+| **Get attributes**              | `records_get_attributes`         | `resource_type`, `record_id`                                                                  |
+| **Discover schema**             | `records_discover_attributes`    | `resource_type`                                                                               |
+| **Get specialized info**        | `records_get_info`               | `resource_type`, `record_id`, `info_type`                                                     |
 
 ## 🛠 Core Operations (8 Tools)
 
@@ -278,19 +278,7 @@ Behavior notes:
 
 ### 11. `records_search_by_content`
 
-**Content-based searches (notes, activity)**
-
-```typescript
-{
-  "name": "records_search_by_content",
-  "arguments": {
-    "resource_type": "companies" | "people",
-    "content_type": "notes" | "activity" | "interactions",
-    "search_query": "quarterly review",
-    "limit": 20
-  }
-}
-```
+See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs) for limitations and alternatives.
 
 ### 12. `records_search_by_timeframe`
 
@@ -360,7 +348,7 @@ Generic records with custom attributes defined in your Attio workspace
 
 - **Multi-criteria**: Use `records_search_advanced`
 - **Cross-resource**: Use `records_search_by_relationship`
-- **Content-based**: Use `records_search_by_content`
+- **Content-based**: See the [supported-input matrix](../universal-tools/api-reference.md#supported-search-inputs)
 - **Time-based**: Use `records_search_by_timeframe`
 
 ### For Bulk Operations
@@ -377,8 +365,8 @@ All previous individual tools have been consolidated:
 | --------------------------- | ----------------------------------------------------------- |
 | `search-companies`          | `records_search` with `resource_type: "companies"`          |
 | `search-people`             | `records_search` with `resource_type: "people"`             |
-| `get-company-details`       | `records_get_details` with `resource_type: "companies"`      |
-| `create-person`             | `records_create` with `resource_type: "people"`              |
+| `get-company-details`       | `records_get_details` with `resource_type: "companies"`     |
+| `create-person`             | `records_create` with `resource_type: "people"`             |
 | `advanced-search-companies` | `records_search_advanced` with `resource_type: "companies"` |
 
 **Complete Migration Guide**: See [Migration Guide](../universal-tools/migration-guide.md) for all 40+ tool mappings.
