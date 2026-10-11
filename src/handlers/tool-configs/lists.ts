@@ -1,6 +1,8 @@
 /**
  * Lists-related tool configurations
  */
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
+
 import { AttioList, AttioListEntry } from '@/types/attio.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import {
@@ -45,7 +47,6 @@ import {
   normalizeListEntryMutation,
   normalizeListMemberships,
 } from '@/handlers/tool-configs/list-result-adapters.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import {
   InvalidCursorError,
   issueNextCursor,
@@ -325,32 +326,56 @@ export const listsToolConfigs = {
 
 // Lists tool definitions
 export const listsToolDefinitions = [
-  {
+  defineOperationTool({
     name: 'lists_list',
-    description: formatToolDescription({
-      capability:
-        'Retrieve all CRM lists (sales pipelines, lead stages, customer segments).',
-      boundaries: 'create or modify lists, only reads existing lists.',
-      constraints: 'Returns all lists visible to the authenticated workspace.',
-      recoveryHint: 'Use lists_get to inspect individual list schemas.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'read',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'offset', supported: false, cap: null },
+      },
+      guidance: {
+        capability: 'List every CRM list visible to the workspace.',
+        boundaries: 'create or modify lists.',
+        constraints:
+          'Returns all visible lists; no paging controls are exposed.',
+        recovery: 'Inspect one list with lists_get for its schema.',
+        alternatives: ['lists_get'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {},
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'records_get_list_memberships',
-    description: formatToolDescription({
-      capability:
-        'Find all lists containing a specific company or person record.',
-      boundaries: 'modify list memberships or retrieve list entries.',
-      constraints:
-        'Requires recordId; processes 5 lists in parallel by default (max 20).',
-      recoveryHint:
-        'If record not found, verify recordId with records_search first.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        action: 'read',
+        resourceTypes: ['lists', 'companies', 'people'],
+        authRequired: true,
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'offset', supported: false, cap: null },
+      },
+      guidance: {
+        capability: 'Find every list that contains one record.',
+        boundaries: 'change membership, or read list entries themselves.',
+        constraints:
+          'Requires recordId; walks 5 lists in parallel by default (max 20).',
+        recovery: 'Verify the record identifier with records_search first.',
+        alternatives: ['list_entries_filter_by_parent_id'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -382,17 +407,28 @@ export const listsToolDefinitions = [
       required: ['recordId'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'lists_get',
-    description: formatToolDescription({
-      capability:
-        'Retrieve schema and configuration for a specific list (stages, fields, attributes).',
-      boundaries: 'modify list structure or retrieve list entries.',
-      constraints: 'Requires valid list UUID or slug; accepts both formats.',
-      recoveryHint:
-        'Use lists_list to discover available list IDs and slugs first.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'read',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+      },
+      guidance: {
+        capability: 'Read the schema and configuration of one list.',
+        boundaries: 'change list structure or read its entries.',
+        constraints: 'Accepts a list UUID or slug.',
+        recovery: 'Discover identifiers with lists_list first.',
+        alternatives: ['list_entries_list', 'lists_create'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -405,16 +441,29 @@ export const listsToolDefinitions = [
       required: ['listId'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_list',
-    description: formatToolDescription({
-      capability: 'Retrieve records in a list with pagination.',
-      boundaries: 'filter entries or modify list memberships.',
-      constraints:
-        'Requires list UUID, not slug; default limit 20, API page caps apply. Continue the same query with next_cursor; never combine cursor with offset.',
-      recoveryHint: 'Use list_entries_filter for filtering.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'read',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'cursor', supported: true, cap: null },
+      },
+      guidance: {
+        capability: 'Page through the records held in one list.',
+        boundaries: 'filter entries or change memberships.',
+        constraints:
+          'Requires a list UUID (not a slug); default limit 20 under upstream page caps; continue with next_cursor only.',
+        recovery: 'Use the filter tools when a condition is needed.',
+        alternatives: ['list_entries_filter', 'list_entries_filter_advanced'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -443,73 +492,34 @@ export const listsToolDefinitions = [
       required: ['listId'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_filter',
-    description: `Filter list entries with flexible parameter modes. Auto-detects mode based on parameters provided.
-
-**Mode 1 - Simple Filtering (Single Attribute):**
-Filter entries by a single attribute condition.
-Required parameters: listId, attributeSlug, condition, value
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "attributeSlug": "status",
-  "condition": "equals",
-  "value": "active"
-}
-
-**Mode 2 - Advanced Filtering (Multi-Condition):**
-Filter entries with multiple conditions using AND/OR logic.
-Required parameters: listId, filters (object with filters array and matchAny flag)
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "filters": {
-    "filters": [
-      {"attribute": {"slug": "status"}, "condition": "equals", "value": "active"},
-      {"attribute": {"slug": "priority"}, "condition": "greater_than", "value": 5}
-    ],
-    "matchAny": false
-  }
-}
-
-**Mode 3 - Parent Attribute Filtering:**
-Filter entries by parent record attributes (e.g., company industry, person role).
-Required parameters: listId, parentObjectType, parentAttributeSlug, condition, value
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "parentObjectType": "companies",
-  "parentAttributeSlug": "categories",
-  "condition": "contains",
-  "value": "Technology"
-}
-
-**Mode 4 - Parent UUID Filtering:**
-Filter entries by exact parent record UUID (convenience mode, fastest).
-Required parameters: listId, parentRecordId
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "parentRecordId": "660e8400-e29b-41d4-a716-446655440001"
-}
-
-**Mode Detection:**
-The tool automatically detects which mode to use based on the parameters you provide.
-You must provide parameters for exactly ONE mode per call.
-
-**Pagination:**
-All modes support optional 'limit' and 'offset' parameters for pagination.
-
-**Migration Guide:**
-- Replaces: list_entries_filter_advanced → Use Mode 2 (filters parameter)
-- Replaces: list_entries_filter_by_parent → Use Mode 3 (parentObjectType + parentAttributeSlug)
-- Replaces: list_entries_filter_by_parent_id → Use Mode 4 (parentRecordId)`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'offset', supported: false, cap: null },
+      },
+      guidance: {
+        capability:
+          'Filter list entries by attribute, parent attribute, or parent record.',
+        boundaries: 'modify entries or search several lists at once.',
+        constraints:
+          'Mode auto-detects from the parameters supplied; exactly one mode per call. Offset-only live view; no continuation cursor.',
+        recovery: 'Confirm attribute slugs with records_discover_attributes.',
+        alternatives: [
+          'list_entries_list',
+          'list_entries_filter_advanced',
+          'list_entries_filter_by_parent_id',
+        ],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -657,25 +667,30 @@ All modes support optional 'limit' and 'offset' parameters for pagination.
       required: ['listId'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_filter_advanced',
-    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_filter'.
-
-Please use 'list_entries_filter' with Mode 2 (Advanced) parameters instead:
-- Pass a 'filters' object with 'filters' array and 'matchAny' flag
-- All functionality remains identical
-
-This tool will be removed in version 2.0.0.
-
----
-
-${formatToolDescription({
-  capability: 'Filter entries with multi-condition queries (AND/OR logic).',
-  boundaries: 'modify entries; read-only.',
-  constraints: 'Requires listId, filters array; matchAny for OR logic.',
-  recoveryHint: 'Use list_entries_filter for single conditions.',
-})}`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'offset', supported: false, cap: null },
+      },
+      guidance: {
+        capability:
+          '[DEPRECATED] Filter list entries with nested filter groups.',
+        boundaries: 'mutate entries or search across multiple lists.',
+        constraints:
+          'Requires listId and a filters structure. Offset-only live view; no continuation cursor.',
+        recovery: 'Falling back to single-attribute filtering is cheaper.',
+        alternatives: ['list_entries_filter', 'list_entries_list'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -762,24 +777,30 @@ ${formatToolDescription({
       required: ['listId', 'filters'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_add',
-    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_manage'.
-
-Please use 'list_entries_manage' with Mode 1 (Add) parameters instead:
-- Pass 'recordId', 'objectType', and optionally 'initialValues'
-- All functionality remains identical
-
-This tool will be removed in version 2.0.0.
-
-${formatToolDescription({
-  capability: 'Add company or person to list with optional initial values.',
-  boundaries: 'create records; record must exist first.',
-  requiresApproval: true,
-  constraints: 'Requires list UUID, record UUID, object type.',
-  recoveryHint: 'If not found, create the record first with records_create.',
-})}`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'write',
+        resourceTypes: ['lists', 'companies', 'people'],
+        readOnly: false,
+        destructive: false,
+        idempotent: true,
+      },
+      guidance: {
+        capability:
+          '[DEPRECATED] Add an existing record to a list with initial values.',
+        boundaries: 'create the record itself, or delete anything.',
+        constraints:
+          'May require explicit user approval from the host. Requires list UUID, record UUID, and object type; the record must exist first.',
+        recovery: 'Create the record, then add it to the list.',
+        alternatives: ['list_entries_manage', 'records_create'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -809,24 +830,29 @@ ${formatToolDescription({
       required: ['listId', 'recordId', 'objectType'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_remove',
-    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_manage'.
-
-Please use 'list_entries_manage' with Mode 2 (Remove) parameters instead:
-- Pass 'entryId' only (do not include 'attributes' or 'recordId')
-- All functionality remains identical
-
-This tool will be removed in version 2.0.0.
-
-${formatToolDescription({
-  capability: 'Remove company or person from list (membership only).',
-  boundaries: 'delete underlying record; membership only.',
-  requiresApproval: true,
-  constraints: 'Requires list UUID, entry UUID (not record UUID).',
-  recoveryHint: 'Use list_entries_list to find entry UUID.',
-})}`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'write',
+        resourceTypes: ['lists'],
+        readOnly: false,
+        destructive: true,
+        idempotent: true,
+      },
+      guidance: {
+        capability: '[DEPRECATED] Remove a membership entry from a list.',
+        boundaries: 'delete the underlying record; only membership changes.',
+        constraints:
+          'May require explicit user approval from the host. Requires listId and entryId (not the record UUID).',
+        recovery: 'Locate the entry identifier with list_entries_list.',
+        alternatives: ['list_entries_manage', 'list_entries_list'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -844,24 +870,29 @@ ${formatToolDescription({
       required: ['listId', 'entryId'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_update',
-    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_manage'.
-
-Please use 'list_entries_manage' with Mode 3 (Update) parameters instead:
-- Pass 'entryId' and 'attributes' parameters
-- All functionality remains identical
-
-This tool will be removed in version 2.0.0.
-
-${formatToolDescription({
-  capability: 'Update list entry attributes (stage, status, custom fields).',
-  boundaries: 'update record attributes; use records_update for that.',
-  requiresApproval: true,
-  constraints: 'Requires list UUID, entry UUID, attributes object.',
-  recoveryHint: 'Use lists_get for valid attributes and values.',
-})}`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'write',
+        resourceTypes: ['lists'],
+        readOnly: false,
+        destructive: false,
+        idempotent: true,
+      },
+      guidance: {
+        capability: '[DEPRECATED] Update attributes on an existing list entry.',
+        boundaries: 'update record attributes; use records_update for those.',
+        constraints:
+          'May require explicit user approval from the host. Requires listId, entryId, and an attributes object.',
+        recovery: 'Read valid attributes and values with lists_get.',
+        alternatives: ['list_entries_manage', 'records_update'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -892,56 +923,32 @@ ${formatToolDescription({
       required: ['listId', 'entryId', 'attributes'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_manage',
-    description: `Manage list entries with flexible action modes. Auto-detects action based on parameters provided.
-
-**Mode 1 - Add Entry (Add record to list):**
-Add a company or person record to a list with optional initial values.
-Required parameters: listId, recordId, objectType
-Optional parameters: initialValues
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "recordId": "660e8400-e29b-41d4-a716-446655440001",
-  "objectType": "companies",
-  "initialValues": {"stage": "Prospect"}
-}
-
-**Mode 2 - Remove Entry:**
-Remove an entry from a list.
-Required parameters: listId, entryId
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "entryId": "770e8400-e29b-41d4-a716-446655440002"
-}
-
-**Mode 3 - Update Entry:**
-Update attributes on an existing list entry.
-Required parameters: listId, entryId, attributes
-
-Example:
-{
-  "listId": "550e8400-e29b-41d4-a716-446655440000",
-  "entryId": "770e8400-e29b-41d4-a716-446655440002",
-  "attributes": {"stage": "Qualified"}
-}
-
-**Mode Detection:**
-The tool automatically detects which action to perform based on the parameters you provide.
-You must provide parameters for exactly ONE mode per call.
-
-**Migration Guide:**
-- Replaces: list_entries_add → Use Mode 1 (recordId + objectType)
-- Replaces: list_entries_remove → Use Mode 2 (entryId only)
-- Replaces: list_entries_update → Use Mode 3 (entryId + attributes)`,
-    annotations: {
-      readOnlyHint: false,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'write',
+        resourceTypes: ['lists', 'companies', 'people'],
+        readOnly: false,
+        destructive: true,
+        idempotent: false,
+      },
+      guidance: {
+        capability:
+          'Add, remove, or update list entries through one parameter-driven surface.',
+        boundaries:
+          'create records, change list configuration, or run more than one mode per call.',
+        constraints:
+          'Mode is inferred from the parameters given; supply parameters for exactly one mode.',
+        recovery: 'Re-read the list entries to confirm which mode applied.',
+        alternatives: ['list_entries_add', 'list_entries_remove'],
+      },
     },
+
     inputSchema: {
       type: 'object',
       properties: {
@@ -982,26 +989,32 @@ You must provide parameters for exactly ONE mode per call.
       required: ['listId'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_filter_by_parent',
-    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_filter'.
-
-Please use 'list_entries_filter' with Mode 3 (Parent Attribute) parameters instead:
-- Pass 'parentObjectType', 'parentAttributeSlug', 'condition', and 'value'
-- All functionality remains identical
-
-This tool will be removed in version 2.0.0.
-
----
-
-${formatToolDescription({
-  capability: 'Filter entries by parent record attributes (industry, role).',
-  boundaries: 'search multiple lists or modify records.',
-  constraints:
-    'Requires listId, parentObjectType, parentAttributeSlug, condition, value.',
-  recoveryHint: 'Use records_discover_attributes for valid slugs.',
-})}`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'offset', supported: false, cap: null },
+      },
+      guidance: {
+        capability: '[DEPRECATED] Filter entries by a parent record attribute.',
+        boundaries: 'search multiple lists, or modify records.',
+        constraints:
+          'Requires listId, parentObjectType, parentAttributeSlug, condition, and value. Offset-only live view; no continuation cursor.',
+        recovery: 'Verify parent attribute slugs before filtering.',
+        alternatives: [
+          'list_entries_filter',
+          'list_entries_filter_by_parent_id',
+        ],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1069,26 +1082,30 @@ ${formatToolDescription({
       ],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'list_entries_filter_by_parent_id',
-    description: `[DEPRECATED] This tool has been consolidated into 'list_entries_filter'.
-
-Please use 'list_entries_filter' with Mode 4 (Parent UUID) parameters instead:
-- Pass 'parentRecordId' parameter
-- All functionality remains identical (fastest filtering mode)
-
-This tool will be removed in version 2.0.0.
-
----
-
-${formatToolDescription({
-  capability: 'Filter entries by exact parent record UUID.',
-  boundaries: 'search multiple lists.',
-  constraints:
-    'Requires list UUID, record UUID; faster than attribute filtering.',
-  recoveryHint: 'Use records_get_list_memberships for workspace-wide search.',
-})}`,
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['lists'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'offset', supported: false, cap: null },
+      },
+      guidance: {
+        capability:
+          '[DEPRECATED] Filter entries by an exact parent record identifier.',
+        boundaries: 'search multiple lists.',
+        constraints:
+          'Requires listId and recordId; faster than attribute-based filtering. Offset-only live view; no continuation cursor.',
+        recovery: 'For workspace-wide membership, list memberships instead.',
+        alternatives: ['records_get_list_memberships', 'list_entries_filter'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1116,19 +1133,30 @@ ${formatToolDescription({
       required: ['listId', 'recordId'],
       additionalProperties: false,
     },
-  },
+  }),
   // Dedicated list configuration tools (Issue #1195)
-  {
+  defineOperationTool({
     name: 'lists_create',
-    description: formatToolDescription({
-      capability:
-        'Create a new CRM list (sales pipeline, recruiting tracker, support queue). Supports templates for quick setup with smart defaults.',
-      boundaries: 'update existing lists or manage list entries.',
-      constraints:
-        'Requires name and parent_object. Template expansion fills defaults before validation. Dry-run mode previews without creating.',
-      recoveryHint:
-        'Use lists_list to verify the list was created. Use lists_update_configuration to modify after creation.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'write',
+        resourceTypes: ['lists'],
+        readOnly: false,
+        destructive: false,
+        idempotent: false,
+      },
+      guidance: {
+        capability: 'Create a new CRM list, optionally from a template.',
+        boundaries: 'update an existing list or manage its entries.',
+        constraints:
+          'Requires name and parent_object; template defaults apply before validation; dry-run previews without creating.',
+        recovery: 'Confirm the result with lists_list, then configure it.',
+        alternatives: ['lists_update_configuration'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1195,18 +1223,30 @@ ${formatToolDescription({
       required: ['name', 'parent_object'],
       additionalProperties: false,
     },
-  },
-  {
+  }),
+  defineOperationTool({
     name: 'lists_update_configuration',
-    description: formatToolDescription({
-      capability:
-        'Update configuration of an existing list (name, description, custom fields). Detects immutable fields and provides clear errors.',
-      boundaries: 'change parent_object (immutable) or manage list entries.',
-      constraints:
-        'Requires listId. Immutable fields (parent_object) are rejected before the API call. Dry-run mode previews changes.',
-      recoveryHint:
-        'Use lists_get to inspect current configuration. Use lists_create for a different parent_object.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+        action: 'write',
+        resourceTypes: ['lists'],
+        readOnly: false,
+        destructive: true,
+        idempotent: true,
+      },
+      guidance: {
+        capability: 'Update configuration of an existing list.',
+        boundaries:
+          'change the immutable parent_object, or manage list entries.',
+        constraints:
+          'Requires listId; immutable fields are rejected before the API call; dry-run previews.',
+        recovery: 'Read the current configuration, then retry the patch.',
+        alternatives: ['lists_get', 'lists_create'],
+      },
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1257,5 +1297,5 @@ ${formatToolDescription({
       required: ['listId', 'attributes'],
       additionalProperties: false,
     },
-  },
+  }),
 ];

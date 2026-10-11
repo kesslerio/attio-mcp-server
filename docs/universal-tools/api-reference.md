@@ -22,6 +22,123 @@ enum UniversalResourceType {
 
 `records_search`, `records_search_advanced`, `records_search_by_timeframe`, `records_get_details`, `records_create`, `records_update`, and `records_delete` also accept custom object slugs discovered into the mapping configuration, such as `funds` or `investment_opportunities`.
 
+## Supported search inputs
+
+Unsupported inputs return a nonretryable `VALIDATION_ERROR` before an Attio request. The same rules apply to aliases and each query in a batch; batch item failures remain ordered, including duplicate inputs.
+
+| Route                                         | Supported inputs                                                                                                           | Rejected inputs                                                                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Companies, people, deals                      | Text query **or** attribute filters; content mode searches record attributes                                               | Text query combined with filters                                                                                            |
+| Generic records and configured custom objects | Attribute filters and empty-query listing                                                                                  | Nonempty text query; `list_membership` filter                                                                               |
+| Lists                                         | Text query; bounded content-mode filtering                                                                                 | Attribute filters                                                                                                           |
+| Tasks                                         | Listing; bounded text filtering with `search_type=content`                                                                 | Basic text query; attribute filters                                                                                         |
+| Notes through `records_search`                | Parent filters (`parent_object` / `parent_record_id`, or linked-record aliases); bounded text filtering within those notes | Workspace-wide search, nested attribute filters, conflicting parent aliases                                                 |
+| Timeframe / relationship Query API routes     | Their own object-record date or relationship criteria                                                                      | Additional text query or filters; task/list/note resources                                                                  |
+| `records_search_by_content`                   | No supported combinations currently                                                                                        | Every note/activity/interaction body search; use `notes_list` for a known record or `records_get_interactions` for metadata |
+| `records_batch_search`                        | `resource_type`, `queries`; `limit`/`offset` only apply to lists, records, tasks, and deals                                | Additional filter/sort controls; nonempty basic task or generic-record queries fail per item                                |
+
+The connector `search` defaults to companies, people, and lists; `type=all` selects the same three supported text-search resources. Use `type=companies`, `people`, or `lists` to narrow coverage. Each result identifies its resource type in `metadata.resource_type`. Tasks are excluded from `all`; explicit task text queries fail validation before any upstream work.
+
+`sort_by` and `sort_order` are unsupported and must be omitted. Explicit `sort` is supported only as `relevance` for strategy-based content queries; other requested ordering fails rather than returning provider order. `fields` and exact/partial `match_type` apply only to those content queries; fuzzy matching is unsupported. Omitted controls retain existing defaults. Record attribute content search is not CRM note-body search.
+
+Bounded searches continue to report `pagination.supported=false` and no cursor; a full page does not imply another page exists. Search correction adds no new note-search functionality. Updates can replace existing values, so universal and scoped update tools both advertise `destructiveHint=true`.
+
+## Detailed operation guidance
+
+These expanded references retain the full input, boundary, and recovery details linked from the concise descriptor guidance. Runtime discovery and the manifest both render the descriptor-owned guidance; this reference is not a runtime catalog.
+
+### Connector search guidance
+
+**`search`**
+
+Run the lightweight compatibility search used by connector clients such as ChatGPT.
+
+Never handle complex filters, batch queries, or rich record payloads.
+
+Requires a query string; omitted type or type=all searches companies, people, and lists. Select one of those types to narrow coverage; tasks are excluded from all and explicit task text queries fail before upstream work. Results identify their resource_type in metadata; limit caps at 25 results across the selected resources.
+
+Refine the query and repeat search; attribute filtering and continuation require full-mode record search tools.
+
+### Batch search guidance
+
+**`records_batch_search`**
+
+Run several searches together and return grouped outcomes per query.
+
+Never mutate or import data; use records_batch for writes.
+
+Provide a queries array (1-10 recommended) and resource_type; per-query failures are reported. limit/offset are forwarded only for lists, records, tasks, and deals; companies and people ignore them; no continuation cursor or universal page cap is guaranteed. Nonempty query-array searches for records and tasks fail per item before upstream calls. Additional filter and sort controls are rejected; use records_search for supported individual controls.
+
+Retry a failed query on its own with records_search.
+
+### Record write guidance
+
+**`records_create`**
+
+Create a record of any supported object type, including configured custom objects. Prefer companies_create or deals_create for common company/deal writes.
+
+Never update existing records, attach files, or bypass required fields.
+
+May require explicit user approval from the host. Requires resource_type plus record_data matching discovered schema; notes require content, parent_object, and parent_record_id in record_data; a write may be reported as uncertain, so read it back. Custom resource slugs must be configured in this server.
+
+Confirm required fields and enum values, then retry once with corrected values.
+
+**`records_update`**
+
+Patch fields on one existing company, person, deal, task, record, or configured custom object. Prefer companies_update or deals_update for common company/deal writes.
+
+Never create records, delete records, or manage list memberships.
+
+May require explicit user approval from the host. Requires resource_type, record_id, and record_data; partial updates are validated against schema; notes and lists cannot be updated here. Custom resource slugs must be configured in this server.
+
+Inspect current values first, then retry the same patch.
+
+### Records search guidance
+
+**`records_search`**
+
+Find records across any supported object type.
+
+Never create or modify records, or return more than one page per call.
+
+Cursor continuation is conditional: query/timeframe routes support it, as do empty-query object searches excluding tasks, lists, and notes. Nonempty text queries outside those routes and basic tasks/lists/notes searches are bounded and return pagination.supported=false with no cursor. Supported pages cap at 100; defaults vary by resource and route; never mix cursor with offset. Nested attribute filtering applies to companies, people, deals, records, and configured custom objects. Task and list routes reject filters; basic notes routes use only parent_object/parent_record_id (or linked_record_type/linked_record_id), not nested groups; workspace-wide note search is rejected. Explicit sort is accepted only as relevance for strategy-based content queries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server. On strategy-based routes, text query is rejected for records and configured custom objects; tasks accept it only with search_type=content. Companies, people, and deals reject text query when filters are supplied.
+
+If attributes are unknown or a page is empty, discover searchable fields.
+
+**`records_search_advanced`**
+
+Search object records with nested attribute filters; task, list, and note routes have restricted filtering.
+
+Never mutate records; use the write tools for that.
+
+The `records_search` restrictions above also apply to advanced search. `sort_by` and `sort_order` are rejected; scoring and caller-selected ordering are not provided.
+
+If filters are rejected, discover valid attributes.
+
+### Timeframe guidance
+
+**`records_search_by_timeframe`**
+
+Search object records by supported creation, modification, or interaction timestamps.
+
+Never change lifecycle state or schedule follow-ups.
+
+Requires resource_type plus a timeframe or explicit date boundaries. People and companies reject updated_at/modified_at timeframe searches; use created_at or last_interaction instead. Timeframe and relationship query routes target object-record endpoints, not task, list, or note endpoints, and reject additional filters or text query. Custom resource slugs must be configured in this server.
+
+If the window is too restrictive, search without it.
+
+### Batch guidance
+
+**`records_batch`**
+
+Run create/update/delete operations concurrently with outcomes indexed by input; legacy operation_type also supports get and search; note writes accept create and delete only, never update.
+
+Never replay successful items automatically, or skip host approval guardrails.
+
+May require explicit user approval from the host. Use scoped single-record tools for one company or deal write. Up to 100 operations; execution order is not guaranteed, so dependent writes must use separate calls; partial failures stay data. Writes ignore paging arguments; Search with queries forwards limit/offset for lists, records, tasks, and deals; companies and people retain the optimized bounded search path without paging controls. Legacy search rejects singular query, filters, and sort controls; without queries it forwards limit/offset to records_search; neither format provides a cursor. Lists are supported only by legacy get/search. Note writes accept create and delete only, never update; legacy get is also available; query-array searches reject notes, while search without queries also rejects unscoped notes. Custom resource slugs are rejected before execution. Nonempty query-array searches for records and tasks fail per item before upstream calls. Company, person, and deal searches reject text query combined with filters.
+
+Inspect each item outcome before considering a retry; never re-run successful writes.
+
 ## formatResult Architecture (Updated PR #483)
 
 See the [formatter contract](developer-guide.md#formatresult-architecture-update-pr-483)
@@ -31,7 +148,7 @@ for companion prose formatting.
 
 ### 1. records.search
 
-**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups. Strategy-based records/custom-object routes ignore text query; tasks use it only in content mode. Companies, people, and deals ignore query when filters are supplied.
+**Description**: Universal search across all resource types with flexible filtering and intelligent query parsing for multi-field lookups. Strategy-based records/custom-object routes reject text query; tasks use it only in content mode. Companies, people, and deals reject query when filters are supplied.
 
 **Consolidates**: `search-companies`, `search-people`, `list-records`, `list-tasks`
 
@@ -43,14 +160,13 @@ for companion prose formatting.
   query?: string,                    // Smart query string (names, emails, phones, domains)
   filters?: object,                  // Advanced filter conditions
   search_type?: 'basic' | 'content', // Search type (default: 'basic')
-  fields?: string[],                 // Fields to search (content search only)
-  match_type?: 'exact' | 'partial' | 'fuzzy', // Match type (default: 'partial')
-  sort?: 'relevance' | 'created' | 'modified' | 'name', // Sort order (default: 'name')
   limit?: number,                    // Max results (1-100; record-query defaults vary)
   offset?: number,                   // Pagination offset (default: 0)
   cursor?: string                    // See Collection Continuation
 }
 ```
+
+For `fields`, `match_type`, and `sort`, see [Supported search inputs](#supported-search-inputs). The runtime schema in `tools/list` is authoritative; accepting a value in the schema does not make it executable on every route.
 
 **Examples**:
 
@@ -359,7 +475,7 @@ await client.callTool('records.get_info', {
 
 ### 9. records.search_advanced
 
-**Description**: Nested attribute filtering for companies, people, deals, records, and configured custom objects. Basic task/list routes ignore filters; notes use only parent-object and parent-record filters, not nested groups. `sort_by` and `sort_order` are accepted but ignored; results use provider order. Timeframe routes reject modified/updated searches for people and companies and do not combine attribute filters or text queries. On strategy-based routes, records and configured custom objects ignore text query; tasks use query only in content mode. Companies, people, and deals ignore query when filters are supplied.
+**Description**: Nested attribute filtering for companies, people, deals, records, and configured custom objects. Basic task/list routes reject filters; notes use only parent-object and parent-record filters, not nested groups. `sort_by` and `sort_order` are rejected when explicitly supplied; omit them to use provider order. Timeframe routes reject modified/updated searches for people and companies and reject additional attribute filters or text queries. On strategy-based routes, records and configured custom objects reject text query; tasks use query only in content mode. Companies, people, and deals reject query when filters are supplied.
 
 **Consolidates**: `records.search_advanced-companies`, `records.search_advanced-people`
 
@@ -370,8 +486,8 @@ await client.callTool('records.get_info', {
   resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
   query?: string,                    // Search query string
   filters?: object,                  // Advanced filter conditions
-  sort_by?: string,                  // Accepted but ignored
-  sort_order?: 'asc' | 'desc',      // Accepted but ignored
+  sort_by?: string,                  // Unsupported; omit
+  sort_order?: 'asc' | 'desc',      // Unsupported; omit
   limit?: number,                    // Max results (1-100; see Collection Continuation defaults)
   offset?: number,                   // Pagination offset (default: 0)
   cursor?: string                    // See Collection Continuation
@@ -428,41 +544,9 @@ await client.callTool('records.search_by_relationship', {
 });
 ```
 
-### 11. records.search_by_content
+### 11. records_search_by_content
 
-**Description**: Content-based searches (notes, activity, interactions).
-
-**Consolidates**: `search-companies-by-notes`, `search-people-by-notes`, `search-people-by-activity`
-
-**Schema**:
-
-```typescript
-{
-  resource_type: 'companies' | 'people' | 'records' | 'tasks', // Required
-  content_type: 'notes' | 'activity' | 'interactions',        // Required
-  search_query: string,              // Required - Cannot be empty
-  limit?: number,                    // Max results (1-100, default: 10)
-  offset?: number                    // Pagination offset (default: 0)
-}
-```
-
-**Examples**:
-
-```typescript
-// Search companies by notes
-await client.callTool('records.search_by_content', {
-  resource_type: 'companies',
-  content_type: 'notes',
-  search_query: 'quarterly review',
-});
-
-// Search people by activity
-await client.callTool('records.search_by_content', {
-  resource_type: 'people',
-  content_type: 'activity',
-  search_query: 'demo scheduled',
-});
-```
+This name remains discoverable for compatibility, but all combinations of `resource_type`, `content_type`, and `search_query` return a nonretryable `VALIDATION_ERROR` without upstream work. It does not substitute company search for note search or last-month activity for a supplied query. Use `notes_list` for notes on a known record, or `records_get_interactions` for interaction metadata. Workspace-wide note-body search is deferred to a later minor release.
 
 ### 12. records.search_by_timeframe
 

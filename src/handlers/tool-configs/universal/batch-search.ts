@@ -1,3 +1,4 @@
+import { UniversalValidationError } from '@/handlers/tool-configs/universal/errors/validation-errors.js';
 import { extractResourceTypeFromFormatArgs } from '@/handlers/tool-configs/universal/core/utils.js';
 import { batchSearchResultContract } from '@/handlers/tools/result-schemas.js';
 import { normalizeBatch } from '@/handlers/tool-configs/universal/read-result-adapters.js';
@@ -5,12 +6,12 @@ import { normalizeBatch } from '@/handlers/tool-configs/universal/read-result-ad
  * Dedicated batch search tool configuration
  * Provides a clean API for batch search operations with multiple queries
  */
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 
 import {
   universalBatchSearch,
   UniversalBatchSearchResult,
 } from '@/api/operations/batch.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import {
   UniversalToolConfig,
   UniversalResourceType,
@@ -50,6 +51,25 @@ export const batchSearchConfig = {
         'records_batch_search',
         params
       );
+
+      for (const field of [
+        'query',
+        'filters',
+        'sort',
+        'sort_by',
+        'sort_order',
+        'search_type',
+        'fields',
+        'match_type',
+      ]) {
+        if (sanitizedParams[field] != null) {
+          throw new UniversalValidationError(
+            `records_batch_search does not support ${field}; use records_search for supported individual controls.`,
+            undefined,
+            { field }
+          );
+        }
+      }
 
       const { resource_type, queries, limit, offset } = sanitizedParams;
 
@@ -215,20 +235,35 @@ export const batchSearchSchema = {
 /**
  * Batch search tool definition for MCP protocol
  */
-export const batchSearchToolDefinition = {
+export const batchSearchToolDefinition = defineOperationTool({
   name: 'records_batch_search',
-  description: formatToolDescription({
-    capability:
-      'Execute multiple searches in parallel and return grouped results.',
-    boundaries:
-      'mutate or import data; use records_batch for write operations.',
-    constraints:
-      'Provide queries array (1–10 items recommended) and resource_type.',
-    recoveryHint: 'If queries fail, retry individually using records_search.',
-  }),
-  inputSchema: batchSearchSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      authRequired: true,
+      action: 'batch',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+      ],
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+      pagination: { kind: 'offset', supported: false, cap: null },
+    },
+    guidance: {
+      capability: 'Search in batches with per-query outcomes.',
+      boundaries: 'mutate/import; use records_batch.',
+      constraints:
+        'Requires resource_type, queries (1-10 recommended). limit/offset: lists/records/tasks/deals only; no cursor or universal cap. Nonempty records/tasks queries fail per item before upstream. Filter/sort controls rejected. See docs/universal-tools/api-reference.md#batch-search-guidance.',
+      recovery:
+        'Retry failures via records_search, also for supported individual controls.',
+      alternatives: ['records_batch', 'records_search'],
+    },
   },
-};
+  inputSchema: batchSearchSchema,
+});

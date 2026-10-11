@@ -382,37 +382,9 @@ The system now provides helpful context when field mapping occurs:
 
 ### 4. Query and Search Errors
 
-#### Error: "Search query cannot be empty"
+#### Unsupported search inputs
 
-**Cause**: Providing an empty string or undefined value for search queries.
-
-**Solution**:
-
-```typescript
-// ❌ Wrong - empty query
-await client.callTool('records.search', {
-  resource_type: 'companies',
-  query: '', // Empty string not allowed
-});
-
-await client.callTool('records.search_by_content', {
-  resource_type: 'people',
-  content_type: 'notes',
-  search_query: '', // Empty string not allowed
-});
-
-// ✅ Correct - meaningful query
-await client.callTool('records.search', {
-  resource_type: 'companies',
-  query: 'technology startup', // Meaningful search term
-});
-
-await client.callTool('records.search_by_content', {
-  resource_type: 'people',
-  content_type: 'notes',
-  search_query: 'quarterly review', // Specific search term
-});
-```
+Check the [supported-input matrix](api-reference.md#supported-search-inputs) before changing query text or retrying.
 
 #### Error: "No results found"
 
@@ -634,23 +606,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 
 #### Advanced Tools Validation
 
-**records.search_advanced**:
-
-```typescript
-{
-  resource_type: string,    // Required: 'companies' | 'people' | 'records' | 'tasks'
-  query?: string,           // Optional, but cannot be empty string if provided
-  filters?: object,         // Optional: complex filter structure
-  sort_by?: string,         // Optional: valid field name
-  sort_order?: string,      // Optional: 'asc' | 'desc' (default: 'asc')
-  limit?: number,           // Optional: 1-100 (default: 10)
-  offset?: number           // Optional: >= 0 (default: 0)
-}
-
-// ❌ Invalid examples
-{ resource_type: 'companies', sort_order: 'ascending' }  // Invalid sort_order
-{ resource_type: 'people', filters: 'invalid' }         // Filters must be object
-```
+**records.search_advanced**: See the [supported-input matrix](api-reference.md#supported-search-inputs).
 
 **records.search_by_relationship**:
 
@@ -667,21 +623,7 @@ Each universal tool has specific validation requirements. Understanding these ru
 { resource_type: 'people' }                                        // Missing related_resource_type
 ```
 
-**records.search_by_content**:
-
-```typescript
-{
-  resource_type: string,    // Required: 'companies' | 'people' (records/tasks not supported)
-  content_type: string,     // Required: 'notes' | 'activities' | 'comments'
-  search_query: string,     // Required: non-empty search string
-  date_range?: object       // Optional: date range for content
-}
-
-// ❌ Invalid examples
-{ resource_type: 'records', content_type: 'notes' }     // Records not supported
-{ resource_type: 'companies', search_query: '' }        // Empty search_query
-{ resource_type: 'people', content_type: 'messages' }   // Invalid content_type
-```
+**records.search_by_content**: See the [supported-input matrix](api-reference.md#supported-search-inputs) for limitations and alternatives.
 
 **records.search_by_timeframe**:
 
@@ -948,7 +890,6 @@ await client.callTool('records.get_info', {
 ```typescript
 await client.callTool('records.search_advanced', {
   resource_type: 'companies',
-  query: 'technology',
   filters: {
     and: [
       { attribute: 'employee_count', condition: 'between', value: [10, 100] },
@@ -1123,14 +1064,11 @@ console.log('Simple search worked:', simpleResult.length > 0);
 // Then add complexity gradually
 const complexResult = await client.callTool('records.search_advanced', {
   resource_type: 'companies',
-  query: 'technology',
   filters: {
     and: [
       { attribute: 'employee_count', condition: 'greater_than', value: 10 },
     ],
   },
-  sort_by: 'created_at',
-  sort_order: 'desc',
   limit: 10,
 });
 ```
@@ -1159,11 +1097,11 @@ const complexResult = await client.callTool('records.search_advanced', {
 **A**:
 
 - `records.search`: Basic search with simple filtering
-- `records.search_advanced`: Complex searches with sorting, advanced filters, and better performance optimization
+- `records.search_advanced`: Attribute filtering; see the [supported-input matrix](api-reference.md#supported-search-inputs) for accepted inputs.
 
 ### Q: Why can't I use empty query strings?
 
-**A**: Empty queries can cause performance issues and return too many irrelevant results. Always provide meaningful search terms.
+**A**: See the [supported-input matrix](api-reference.md#supported-search-inputs) for routes that support empty-query listing.
 
 ### Q: How do I handle large datasets?
 
@@ -1294,13 +1232,6 @@ const batchParams = {
   operation_type: 'search',
   query: 'Universal Test', // Required for search operations
   limit: 50,
-};
-
-// For content searches
-const contentParams = {
-  resource_type: 'people',
-  content_type: 'activity',
-  search_query: 'test interaction', // NOT empty string
 };
 ```
 

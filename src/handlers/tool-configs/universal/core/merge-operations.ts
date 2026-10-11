@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { mergeResultContract } from '@/handlers/tools/result-schemas.js';
 import { TOOL_NAMES } from '@/constants/tool-names.js';
 import type {
@@ -10,7 +11,6 @@ import {
 } from '@/handlers/tool-configs/universal/schemas.js';
 import { ErrorService } from '@/services/ErrorService.js';
 import { createErrorResult } from '@/utils/error-handler.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import { isValidUUID } from '@/utils/validation/uuid-validation.js';
 import {
   executeDealMerge,
@@ -222,22 +222,30 @@ export const mergeRecordsConfig: UniversalToolConfig<
     result as unknown as Record<string, unknown>,
 };
 
-export const mergeRecordsDefinition = {
+export const mergeRecordsDefinition = defineOperationTool({
   name: TOOL_NAMES.MERGE_RECORDS,
-  description: formatToolDescription({
-    capability:
-      'Preview and, after explicit confirmation, safely merge two Attio deal records using the native beta merge operation',
-    boundaries:
-      'merge people or companies, merge more than one pair, or retry an indeterminate native merge',
-    constraints:
-      'Dry-run defaults to true. Execute requires dry_run=false, confirm=true, and plan_fingerprint from that dry-run',
-    requiresApproval: true,
-    recoveryHint:
-      'For HTTP 202, wait and call records_get_details with new_record_id later; both original ids are unreadable after native merge',
-  }),
-  inputSchema: mergeRecordsSchema,
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: true,
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      action: 'merge',
+      resourceTypes: ['deals'],
+      authRequired: true,
+      readOnly: false,
+      destructive: true,
+      idempotent: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+    },
+    guidance: {
+      capability:
+        'Dry-run, then merge two deal records through the native merge endpoint.',
+      boundaries:
+        'merge people or companies, merge more than one pair, or retry an indeterminate native merge.',
+      constraints:
+        'May require explicit user approval from the host. Execute requires dry_run=false, confirm=true, and the plan_fingerprint from that dry-run; both source ids are unreadable afterwards.',
+      recovery:
+        'On HTTP 202 ambiguity, read the surviving record later instead of reissuing the merge.',
+      alternatives: ['records_update', 'records_delete'],
+    },
   },
-};
+  inputSchema: mergeRecordsSchema,
+});

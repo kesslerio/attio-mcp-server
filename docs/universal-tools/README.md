@@ -72,9 +72,9 @@ Universal tools are consolidated MCP operations that work across multiple resour
 
 **Advanced Operations (5 tools)**:
 
-- `records.search_advanced` - Complex searches with sorting
+- `records.search_advanced` - Attribute filtering; see the [supported-input matrix](api-reference.md#supported-search-inputs)
 - `records.search_by_relationship` - Cross-resource relationship searches
-- `records.search_by_content` - Content-based searches (notes, activity)
+- See the [supported-input matrix](api-reference.md#supported-search-inputs) for content-search limitations and alternatives
 - `records.search_by_timeframe` - Time-based searches
 - `records.batch` - Bulk operations on multiple records
 

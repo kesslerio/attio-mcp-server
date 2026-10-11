@@ -2,13 +2,13 @@
  * Advanced operations aggregator (barrel)
  * Exposes tool configs and definitions for universal advanced operations
  */
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 
-import { advancedSearchConfig } from './advanced-search.js';
-import { searchByRelationshipConfig } from './relationship-search.js';
-import { searchByContentConfig } from './content-search.js';
-import { searchByTimeframeConfig } from './timeframe-search.js';
-import { batchOperationsConfig } from './batch-operations.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
+import { advancedSearchConfig } from '@/handlers/tool-configs/universal/operations/advanced-search.js';
+import { searchByRelationshipConfig } from '@/handlers/tool-configs/universal/operations/relationship-search.js';
+import { searchByContentConfig } from '@/handlers/tool-configs/universal/operations/content-search.js';
+import { searchByTimeframeConfig } from '@/handlers/tool-configs/universal/operations/timeframe-search.js';
+import { batchOperationsConfig } from '@/handlers/tool-configs/universal/operations/batch-operations.js';
 
 import {
   advancedSearchSchema,
@@ -16,7 +16,7 @@ import {
   searchByContentSchema,
   searchByTimeframeSchema,
   batchOperationsSchema,
-} from '../schemas.js';
+} from '@/handlers/tool-configs/universal/schemas.js';
 
 export const advancedOperationsToolConfigs = {
   records_search_advanced: advancedSearchConfig,
@@ -27,89 +27,147 @@ export const advancedOperationsToolConfigs = {
 };
 
 export const advancedOperationsToolDefinitions = {
-  records_search_advanced: {
+  records_search_advanced: defineOperationTool({
     name: 'records_search_advanced',
-    description: formatToolDescription({
-      capability:
-        'Search companies, people, deals, or tasks with complex nested filters (e.g., find deals by owner+stage, companies by industry+location).',
-      boundaries: 'mutate records; use records_update or records_delete.',
-      constraints:
-        'Supports filter groups, scoring, pagination, and up to 100 items. Requires resource_type parameter.',
-      recoveryHint:
-        'If filters fail, fetch valid attributes via records_discover_attributes.',
-    }),
+    facts: {
+      operation: {
+        authRequired: true,
+        action: 'search',
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'lists',
+          'records',
+          'notes',
+        ],
+        customObjectSlugs: true,
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'cursor', supported: false, cap: 100 },
+      },
+      guidance: {
+        capability:
+          'Search object records with nested filters; task/list/note filtering is restricted.',
+        boundaries: 'mutate records; use write tools.',
+        constraints:
+          'Configured custom objects supported. Cursor support is conditional; cap 100; never mix cursor/offset. Resource, note-scope, timestamp, sort and strategy-query restrictions: docs/universal-tools/api-reference.md#records-search-guidance.',
+        recovery: 'Discover valid attributes if filters fail.',
+        alternatives: ['records_search', 'list_entries_filter_advanced'],
+      },
+    },
     inputSchema: advancedSearchSchema,
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
-  records_search_by_relationship: {
+  }),
+  records_search_by_relationship: defineOperationTool({
     name: 'records_search_by_relationship',
-    description: formatToolDescription({
-      capability:
-        'Search records using relationship anchors (list, company, people).',
-      boundaries: 'modify memberships; use list tools for writes.',
-      constraints: 'Requires resource_type and related resource identifier.',
-      recoveryHint: 'Use records_search to resolve IDs before calling.',
-    }),
+    facts: {
+      operation: {
+        customObjectSlugs: false,
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['companies', 'people', 'deals'],
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+      },
+      guidance: {
+        capability:
+          'Find people by company, companies by person, or deals by company or person.',
+        boundaries: 'change list memberships; use the list entry tools.',
+        constraints:
+          'Requires relationship_type and source_id; task and list relationships are unsupported; limit and offset are ignored.',
+        recovery: 'Resolve identifiers with records_search first.',
+        alternatives: ['records_get_list_memberships', 'list_entries_filter'],
+      },
+    },
     inputSchema: searchByRelationshipSchema,
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
-  records_search_by_content: {
+  }),
+  records_search_by_content: defineOperationTool({
     name: 'records_search_by_content',
-    description: formatToolDescription({
-      capability: 'Search record content (notes, activity, communications).',
-      boundaries: 'modify note content or attachments.',
-      constraints:
-        'Requires resource_type and content_query; optional fields array.',
-      recoveryHint:
-        'Narrow scope with fields or switch to records_search_advanced.',
-    }),
+    facts: {
+      operation: {
+        authRequired: true,
+        action: 'search',
+        resourceTypes: [],
+        customObjectSlugs: false,
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'none', supported: false, cap: null },
+      },
+      guidance: {
+        capability: 'Reject note/activity/interaction body searches.',
+        boundaries: 'search note/activity/communication text.',
+        constraints:
+          'Requires resource_type, content_type, search_query; all inputs fail validation, nonretryably, before upstream work.',
+        recovery:
+          'Use notes_list on a known record or records_get_interactions for metadata.',
+        alternatives: ['records_search_advanced', 'notes_list'],
+      },
+    },
     inputSchema: searchByContentSchema,
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
-  records_search_by_timeframe: {
+  }),
+  records_search_by_timeframe: defineOperationTool({
     name: 'records_search_by_timeframe',
-    description: formatToolDescription({
-      capability:
-        'Filter records by creation, update, or interaction timeframes.',
-      boundaries: 'modify lifecycle state or scheduling follow-ups.',
-      constraints:
-        'Requires resource_type; provide timeframe or explicit date boundaries.',
-      recoveryHint:
-        'Call records_search if timeframe filters are too restrictive.',
-    }),
+    facts: {
+      operation: {
+        authRequired: true,
+        action: 'search',
+        resourceTypes: ['companies', 'people', 'deals', 'records'],
+        customObjectSlugs: true,
+        readOnly: true,
+        destructive: false,
+        idempotent: true,
+        pagination: { kind: 'cursor', supported: true, cap: 100 },
+      },
+      guidance: {
+        capability:
+          'Search records by creation, modification or interaction time.',
+        boundaries: 'change lifecycle state or schedule follow-ups.',
+        constraints:
+          'Requires resource_type and timeframe/date bounds; custom slugs must be configured. No tasks/lists/notes, extra filters or text query. People/companies reject updated_at/modified_at; use created_at or last_interaction. See docs/universal-tools/api-reference.md#timeframe-guidance.',
+        recovery: 'Try without the window if too restrictive.',
+        alternatives: ['records_search', 'records_search_advanced'],
+      },
+    },
     inputSchema: searchByTimeframeSchema,
-    annotations: {
-      readOnlyHint: true,
-      idempotentHint: true,
-    },
-  },
-  records_batch: {
+  }),
+  records_batch: defineOperationTool({
     name: 'records_batch',
-    description: formatToolDescription({
-      capability:
-        'Execute batched record operations (create/update/delete/get/search).',
-      boundaries: 'ignore approval guardrails; hosts may require confirmation.',
-      requiresApproval: true,
-      constraints:
-        'Use scoped single-record tools for one company or deal write. operation_type must be specified for legacy payloads; operations arrays must use explicit create/update/delete entries.',
-      recoveryHint:
-        'Run records_search first to stage IDs or payloads for batching.',
-    }),
-    inputSchema: batchOperationsSchema,
-    annotations: {
-      readOnlyHint: false,
-      destructiveHint: true,
+    facts: {
+      operation: {
+        authRequired: true,
+        action: 'batch',
+        resourceTypes: [
+          'companies',
+          'people',
+          'deals',
+          'tasks',
+          'records',
+          'notes',
+        ],
+        customObjectSlugs: false,
+        readOnly: false,
+        destructive: true,
+        idempotent: false,
+        pagination: { kind: 'none', supported: false, cap: null },
+      },
+      guidance: {
+        capability:
+          'Run indexed concurrent create/update/delete; legacy get/search also supported.',
+        boundaries: 'replay successes or bypass host approval.',
+        constraints:
+          'Max 100; unordered; separate dependent writes. Partial failures stay data. Notes: create/delete, never update. Custom slugs rejected. Paging and search restrictions: docs/universal-tools/api-reference.md#batch-guidance.',
+        recovery:
+          'Inspect each outcome before retry; use scoped tools for single company/deal writes.',
+        alternatives: ['records_batch_search', 'records_create'],
+      },
     },
-  },
+    inputSchema: batchOperationsSchema,
+  }),
 };
 
 export {

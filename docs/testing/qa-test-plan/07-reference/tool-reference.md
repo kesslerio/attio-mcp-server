@@ -12,28 +12,28 @@
 | ----------------------- | ------------------------ | ------------------------------------------- | ---------------------------- |
 | **records.search**      | Find records by query    | `resource_type`, `query`                    | `limit`, `offset`, `filters` |
 | **records.get_details** | Retrieve specific record | `resource_type`, `record_id`                | `fields`                     |
-| **records_create**       | Create new record        | `resource_type`, `record_data`              | `return_details`             |
-| **records_update**       | Modify existing record   | `resource_type`, `record_id`, `record_data` | `return_details`             |
-| **records_delete**       | Remove record            | `resource_type`, `record_id`                | None                         |
+| **records_create**      | Create new record        | `resource_type`, `record_data`              | `return_details`             |
+| **records_update**      | Modify existing record   | `resource_type`, `record_id`, `record_data` | `return_details`             |
+| **records_delete**      | Remove record            | `resource_type`, `record_id`                | None                         |
 
 ### Schema & Discovery Tools (P1 Priority)
 
-| Tool Name                   | Purpose                  | Required Parameters                       | Optional Parameters                         |
-| --------------------------- | ------------------------ | ----------------------------------------- | ------------------------------------------- |
-| **records_get_attributes**          | Get resource schema      | `resource_type`                           | `categories`                                |
-| **records_discover_attributes**     | Dynamic schema discovery | `resource_type`                           | None                                        |
-| **records_get_info**       | Get specific info types  | `resource_type`, `record_id`, `info_type` | None                                        |
-| **records.search_advanced** | Complex filtering        | `resource_type`                           | `filters`, `sort_by`, `sort_order`, `limit` |
+| Tool Name                       | Purpose                  | Required Parameters                       | Optional Parameters                                                                                 |
+| ------------------------------- | ------------------------ | ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| **records_get_attributes**      | Get resource schema      | `resource_type`                           | `categories`                                                                                        |
+| **records_discover_attributes** | Dynamic schema discovery | `resource_type`                           | None                                                                                                |
+| **records_get_info**            | Get specific info types  | `resource_type`, `record_id`, `info_type` | None                                                                                                |
+| **records.search_advanced**     | Attribute filtering      | `resource_type`                           | See the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs) |
 
 ### Advanced Operations (P2 Priority)
 
-| Tool Name                          | Purpose              | Required Parameters                             | Optional Parameters               |
-| ---------------------------------- | -------------------- | ----------------------------------------------- | --------------------------------- |
-| **records.search_by_relationship** | Find related records | `relationship_type`, `source_id`                | `target_resource_type`, `limit`   |
-| **records.search_by_content**      | Content-based search | `resource_type`, `content_type`, `search_query` | `limit`                           |
-| **records.search_by_timeframe**    | Date range filtering | `resource_type`, `timeframe_type`               | `start_date`, `end_date`, `limit` |
-| **records.batch**                  | Bulk operations      | `resource_type`, `operation_type`               | `record_ids`, `operations`        |
-| **records.search_batch**           | Parallel searches    | `resource_type`, `queries`                      | `limit`                           |
+| Tool Name                          | Purpose              | Required Parameters                                                                                 | Optional Parameters               |
+| ---------------------------------- | -------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------- |
+| **records.search_by_relationship** | Find related records | `relationship_type`, `source_id`                                                                    | `target_resource_type`, `limit`   |
+| **records.search_by_content**      | Compatibility only   | See the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs) | —                                 |
+| **records.search_by_timeframe**    | Date range filtering | `resource_type`, `timeframe_type`                                                                   | `start_date`, `end_date`, `limit` |
+| **records.batch**                  | Bulk operations      | `resource_type`, `operation_type`                                                                   | `record_ids`, `operations`        |
+| **records.search_batch**           | Parallel searches    | `resource_type`, `queries`                                                                          | `limit`                           |
 
 ## Detailed Tool Specifications
 
@@ -187,31 +187,7 @@ mcp__attio__get-attributes resource_type="companies" categories='["contact","bus
 
 ### records.search_advanced
 
-**Purpose:** Execute complex searches with filtering and sorting
-
-**Parameters:**
-
-- `resource_type` (required): Target resource type
-- `filters` (optional): Array of filter objects with field, operator, value
-- `sort_by` (optional): Field name to sort by
-- `sort_order` (optional): "asc" or "desc"
-- `limit` (optional): Maximum results to return
-
-**Example Usage:**
-
-```bash
-mcp__attio__records.search_advanced resource_type="people" \
-  filters='[{"field": "job_title", "operator": "contains", "value": "Manager"}]' \
-  sort_by="name" sort_order="asc" limit=25
-```
-
-**Available Operators:**
-
-- `=`, `!=`: Exact match/not match
-- `>`, `>=`, `<`, `<=`: Numeric/date comparisons
-- `contains`, `starts_with`, `ends_with`: String matching
-- `in`, `not_in`: Array membership
-- `is_null`, `is_not_null`: Null checks
+See the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs) for supported filters and ordering restrictions.
 
 ---
 
@@ -300,7 +276,7 @@ mcp__attio__records.batch resource_type="people" \
 
 1. **Complex Search:** Use `records.search_advanced` with filters
 2. **Relationship Discovery:** Use `records.search_by_relationship`
-3. **Content Search:** Use `records.search_by_content` for text queries
+3. **Content Search:** See the [supported-input matrix](../../../universal-tools/api-reference.md#supported-search-inputs)
 4. **Batch Processing:** Use `records.batch` for efficiency
 
 ### Error Handling

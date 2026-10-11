@@ -1,6 +1,6 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { recordWriteResultContract } from '@/handlers/tools/result-schemas.js';
 import { TOOL_NAMES } from '@/constants/tool-names.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 import type { UniversalRecord } from '@/types/attio.js';
 
 import {
@@ -151,17 +151,29 @@ export const updateDealConfig = scopedUpdateConfig({
   resourceType: UniversalResourceType.DEALS,
 });
 
-export const createCompanyDefinition = {
+export const createCompanyDefinition = defineOperationTool({
   name: TOOL_NAMES.CREATE_COMPANY,
-  description: formatToolDescription({
-    capability: 'Create one company in Attio without choosing resource_type.',
-    boundaries: 'update existing companies or create deals, people, or tasks',
-    constraints:
-      'Requires record_data with company attribute API slugs such as name, domains, or website.',
-    requiresApproval: true,
-    recoveryHint:
-      'If fields are rejected, call records_discover_attributes with resource_type companies.',
-  }),
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['companies'],
+      authRequired: true,
+      readOnly: false,
+      destructive: false,
+      idempotent: false,
+    },
+    guidance: {
+      capability: 'Create one company without naming a resource_type.',
+      boundaries:
+        'update existing companies, or create deals, people, or tasks.',
+      constraints:
+        'May require explicit user approval from the host. Requires record_data using company attribute slugs such as name, domains, or website.',
+      recovery: 'Discover company attribute slugs, then retry the create.',
+      alternatives: ['records_create', 'companies_update'],
+    },
+  },
   inputSchema: scopedCreateSchema('Company', [
     {
       record_data: {
@@ -172,23 +184,30 @@ export const createCompanyDefinition = {
       return_details: true,
     },
   ]),
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-  },
-};
+});
 
-export const updateCompanyDefinition = {
+export const updateCompanyDefinition = defineOperationTool({
   name: TOOL_NAMES.UPDATE_COMPANY,
-  description: formatToolDescription({
-    capability: 'Update one company in Attio without choosing resource_type.',
-    boundaries: 'create records, delete records, or update deals',
-    constraints:
-      'Requires record_id and record_data with company attribute API slugs.',
-    requiresApproval: true,
-    recoveryHint:
-      'Call records_get_details or records_search for companies first to confirm the target company ID.',
-  }),
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['companies'],
+      authRequired: true,
+      readOnly: false,
+      destructive: true,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Update one company without naming a resource_type.',
+      boundaries: 'create records, delete records, or update deals.',
+      constraints:
+        'May require explicit user approval from the host. Requires record_id and record_data with company slugs.',
+      recovery: 'Confirm the company identifier before patching.',
+      alternatives: ['records_update', 'companies_create'],
+    },
+  },
   inputSchema: scopedUpdateSchema('Company', [
     {
       record_id: 'company-record-id',
@@ -199,23 +218,31 @@ export const updateCompanyDefinition = {
       return_details: true,
     },
   ]),
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: true,
-  },
-};
+});
 
-export const createDealDefinition = {
+export const createDealDefinition = defineOperationTool({
   name: TOOL_NAMES.CREATE_DEAL,
-  description: formatToolDescription({
-    capability: 'Create one deal in Attio without choosing resource_type.',
-    boundaries: 'update existing deals or create companies, people, or tasks',
-    constraints:
-      'Requires record_data with deal attribute API slugs such as name, stage, value, owner, or associated company/person references.',
-    requiresApproval: true,
-    recoveryHint:
-      'If stage or owner values are rejected, call records_discover_attributes or records_get_attribute_options for deals.',
-  }),
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['deals'],
+      authRequired: true,
+      readOnly: false,
+      destructive: false,
+      idempotent: false,
+    },
+    guidance: {
+      capability: 'Create one deal without naming a resource_type.',
+      boundaries:
+        'update existing deals, or create companies, people, or tasks.',
+      constraints:
+        'May require explicit user approval from the host. Requires record_data with deal slugs such as name, stage, value, owner, or linked references.',
+      recovery: 'List valid stage and owner options, then retry.',
+      alternatives: ['records_create', 'deals_update'],
+    },
+  },
   inputSchema: scopedCreateSchema('Deal', [
     {
       record_data: {
@@ -228,23 +255,30 @@ export const createDealDefinition = {
       return_details: true,
     },
   ]),
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: false,
-  },
-};
+});
 
-export const updateDealDefinition = {
+export const updateDealDefinition = defineOperationTool({
   name: TOOL_NAMES.UPDATE_DEAL,
-  description: formatToolDescription({
-    capability: 'Update one deal in Attio without choosing resource_type.',
-    boundaries: 'create records, delete records, or update companies',
-    constraints:
-      'Requires record_id and record_data with deal attribute API slugs.',
-    requiresApproval: true,
-    recoveryHint:
-      'Call records_search for deals first to confirm the target deal ID and current stage.',
-  }),
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'write',
+      resourceTypes: ['deals'],
+      authRequired: true,
+      readOnly: false,
+      destructive: true,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Update one deal without naming a resource_type.',
+      boundaries: 'create records, delete records, or update companies.',
+      constraints:
+        'May require explicit user approval from the host. Requires record_id and record_data with deal slugs.',
+      recovery: 'Read the deal and its current stage before patching.',
+      alternatives: ['records_update', 'records_merge', 'deals_create'],
+    },
+  },
   inputSchema: scopedUpdateSchema('Deal', [
     {
       record_id: 'deal-record-id',
@@ -256,8 +290,4 @@ export const updateDealDefinition = {
       return_details: true,
     },
   ]),
-  annotations: {
-    readOnlyHint: false,
-    destructiveHint: true,
-  },
-};
+});

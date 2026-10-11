@@ -10,14 +10,18 @@
  *    keep a second catalog in prose or in code.
  */
 import process from 'node:process';
+import { toolSchemaLintConfig } from '@/config/tool-schema-lint.js';
 import { TOOL_DEFINITIONS } from '@/handlers/tools/registry.js';
 import { findAdvertisedNameViolations } from '@/constants/tool-names.js';
 import {
-  CAPABILITY_CATALOG,
   CAPABILITY_MANIFEST_VERSION,
   buildCapabilityManifest,
 } from '@/handlers/tool-configs/universal/capabilities.js';
-import type { Tool } from '@modelcontextprotocol/server';
+import type { OperationTool as Tool } from '@/handlers/tool-types.js';
+import {
+  getToolsListPayload,
+  getCapabilityManifest,
+} from '@/utils/mcp-discovery.js';
 
 interface Violation {
   tool: string;
@@ -86,14 +90,11 @@ function validateTool(tool: Tool): Violation[] {
         severity: 'error',
       });
     }
-    // Issue #776 requires: purpose + boundaries + constraints + recovery hints
-    // This yields ~40-60 words (200-300 chars) for comprehensive descriptions
-    // Industry research shows enterprise tools average 500-1000 tokens, so 300 chars is reasonable
-    if (trimmed.length > 300) {
+    if (trimmed.length > toolSchemaLintConfig.descriptionMaxLength) {
       violations.push({
         tool: tool.name ?? '(unknown)',
         code: 'tool.description_length',
-        message: `Description too long (${trimmed.length} chars, limit 300)`,
+        message: `Description too long (${trimmed.length} chars, limit ${toolSchemaLintConfig.descriptionMaxLength})`,
         severity: 'error',
       });
     }
@@ -173,12 +174,7 @@ function validateCapabilityConsistency(tools: Tool[]): Violation[] {
 
   for (const tool of tools) {
     if (!tool.name) continue;
-    const entry = (
-      CAPABILITY_CATALOG as Record<
-        string,
-        (typeof CAPABILITY_CATALOG)[string] | undefined
-      >
-    )[tool.name];
+    const entry = tool.facts;
 
     if (!entry) {
       violations.push({
@@ -232,10 +228,7 @@ function validateCapabilityConsistency(tools: Tool[]): Violation[] {
 
     for (const alternative of entry.guidance.alternatives ?? []) {
       // Pointers must exist now, not in a remembered catalog.
-      const known =
-        registered.has(alternative) ||
-        Object.prototype.hasOwnProperty.call(CAPABILITY_CATALOG, alternative) ||
-        alternative === 'tools/list';
+      const known = registered.has(alternative) || alternative === 'tools/list';
       if (!known) {
         violations.push({
           tool: tool.name,
@@ -247,14 +240,19 @@ function validateCapabilityConsistency(tools: Tool[]): Violation[] {
     }
   }
 
-  // An entry that no longer has a descriptor is a second catalog's leftover.
-  for (const name of Object.keys(CAPABILITY_CATALOG)) {
-    if (!registered.has(name)) {
+  const ordinary = getToolsListPayload().tools;
+  const published = getCapabilityManifest();
+  for (const entry of published.tools) {
+    const tool = ordinary.find((candidate) => candidate.name === entry.name);
+    if (
+      !tool ||
+      tool.description !== entry.guidance?.summary ||
+      JSON.stringify(tool.annotations) !== JSON.stringify(entry.annotations)
+    ) {
       violations.push({
-        tool: name,
-        code: 'capability.orphan',
-        message:
-          'Capability entry exists for a tool the registry does not advertise',
+        tool: entry.name,
+        code: 'capability.projection_mismatch',
+        message: 'Ordinary discovery and manifest guidance or hints disagree',
         severity: 'error',
       });
     }

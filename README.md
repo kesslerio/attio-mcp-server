@@ -71,7 +71,7 @@ ChatGPT Pro/Plus users can access the Attio toolset through natural language usi
 
 - **Universal Contact Search**: Find people by any criteria using universal search tools
 - **Relationship Tracking**: Link people to companies with `records_search_by_relationship`
-- **Activity Timeline**: Track interactions with `records_search_by_content` and `records_search_by_timeframe`
+- **Activity Timeline**: Retrieve interaction metadata with `records_get_interactions`
 - **Advanced Filtering**: Multi-attribute search with universal filtering
 - **Bulk Operations**: Efficiently manage contacts with universal batch operations
 

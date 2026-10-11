@@ -1,3 +1,4 @@
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
 import { extractResourceTypeFromFormatArgs } from '@/handlers/tool-configs/universal/core/utils.js';
 import { detailedInfoResultContract } from '@/handlers/tools/result-schemas.js';
 import { assertReadSuccess } from '@/handlers/tool-configs/universal/read-result-adapters.js';
@@ -14,7 +15,6 @@ import {
   handleUniversalGetDetailedInfo,
   getSingularResourceType,
 } from '@/handlers/tool-configs/universal/shared-handlers.js';
-import { formatToolDescription } from '@/handlers/tools/standards/index.js';
 
 export const getDetailedInfoConfig: UniversalToolConfig<
   UniversalDetailedInfoParams,
@@ -96,18 +96,34 @@ export const getDetailedInfoConfig: UniversalToolConfig<
   },
 };
 
-export const getDetailedInfoDefinition = {
+export const getDetailedInfoDefinition = defineOperationTool({
   name: 'records_get_info',
-  description: formatToolDescription({
-    capability:
-      'Retrieve the full record using its standard resource endpoint.',
-    boundaries: 'search lists of records or mutate data.',
-    constraints: 'Requires resource_type and record_id.',
-    recoveryHint: 'Use records_get_details for enriched attribute formatting.',
-  }),
-  inputSchema: getDetailedInfoSchema,
-  annotations: {
-    readOnlyHint: true,
-    idempotentHint: true,
+  facts: {
+    operation: {
+      customObjectSlugs: false,
+      pagination: { kind: 'none', supported: false, cap: null },
+      action: 'read',
+      resourceTypes: [
+        'companies',
+        'people',
+        'deals',
+        'tasks',
+        'lists',
+        'records',
+      ],
+      authRequired: true,
+      readOnly: true,
+      destructive: false,
+      idempotent: true,
+    },
+    guidance: {
+      capability: 'Read the full record using its standard resource endpoint.',
+      boundaries: 'search record lists or mutate data.',
+      constraints:
+        'Requires resource_type and record_id; no info_type selector is applied.',
+      recovery: 'Use records_get_details for enriched attribute formatting.',
+      alternatives: ['records_get_details'],
+    },
   },
-};
+  inputSchema: getDetailedInfoSchema,
+});

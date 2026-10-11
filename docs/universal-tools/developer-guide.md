@@ -428,13 +428,18 @@ export function formatResourceType(
 
 ## Capability Metadata For A New Or Changed Tool
 
-Every advertised tool needs one authored capability entry, or discovery has to
-guess. That table is the only place operation semantics are written down.
+Every advertised tool owns its operation facts beside its input schema.
+`defineOperationTool` derives its description and MCP hints from those facts;
+ordinary discovery and the capability manifest project the same descriptor.
 
 ```typescript
-// src/handlers/tool-configs/universal/capabilities.ts
-export const CAPABILITY_CATALOG = {
-  records_duplicate: {
+// Beside the callable config and input schema for this operation
+import { defineOperationTool } from '@/handlers/tools/operation-descriptor.js';
+
+export const duplicateRecordDefinition = defineOperationTool({
+  name: 'records_duplicate',
+  inputSchema: duplicateRecordSchema,
+  facts: {
     operation: {
       action: 'write',
       resourceTypes: ['companies', 'people'],
@@ -453,24 +458,26 @@ export const CAPABILITY_CATALOG = {
       alternatives: ['records_create', 'records_get_details'],
     },
   },
-} as const;
+});
 ```
 
 The rules, and why they are shaped that way:
 
-- **The table keys are canonical names.** `tools/list` and the manifest both
-  come from the registry, so a tool with no entry is reported as `unannotated`
-  rather than described by a name match. Regex inference was removed on
-  purpose: a tool named `records_batch_search` that only searches must not be
-  assumed to write.
-- **The table does not duplicate names, descriptions, or schemas.** Those are
-  copied from the descriptor, so there is no second catalog that can drift.
-  `formatCapabilityGuidance` renders guidance in the same sentence shape
-  `formatToolDescription` uses for descriptions.
-- **Annotations must agree.** If a descriptor publishes `destructiveHint`, its
-  value has to equal the entry's `destructive` flag. `bun run lint:tools` fails
-  on a mismatch, a missing entry, an orphan entry, an invented `alternatives`
-  name, or a manifest that does not cover every registered tool.
+- **Facts belong to the descriptor.** Do not add a name-indexed catalog or a
+  separate hand-written description or read/write hint. Missing facts are
+  reported as `unannotated`, never inferred from the tool name.
+- **Both views are projections.** `getPermittedToolDescriptors` applies mode
+  restrictions and attaches the callable config's output schema. Ordinary
+  discovery strips internal `facts`; the manifest publishes its existing v1
+  operation/guidance shape. Neither projection calls Attio, stores a second
+  cache, or claims that the current credential has access.
+- **Edit supported-input advice once.** Change `facts.guidance.constraints`
+  beside the operation. Both the ordinary description and manifest guidance
+  update on the next discovery call. Alternative tool pointers are limited to
+  the permitted set, and aliases remain call-only.
+- **Annotations are derived.** `readOnlyHint`, `destructiveHint`, and
+  `idempotentHint` come from the operation facts. A descriptor may additionally
+  set `openWorldHint`; it must not maintain independent operation flags.
 - **Pagination states what the tool actually offers.** `kind: 'cursor'` means a
   sealed continuation token from this exact query; `offset` means a live view
   with concurrent-write drift. Conditional routes conservatively publish `supported: false`
@@ -487,13 +494,13 @@ The rules, and why they are shaped that way:
    `resultSchema` from the shared result contract).
 2. Add the canonical name to `TOOL_NAME_MIGRATION` (no `previous` unless it is
    genuinely a renamed prior default).
-3. Author the `CAPABILITY_CATALOG` entry above.
+3. Author the descriptor's `facts` object above.
 4. Run `bun run lint:tools`, then
    `bun run test:single test/handlers/tools/capability-manifest.test.ts
 test/utils/mcp-discovery.test.ts`.
 
 `scripts/tool-schema-lint.ts` checks registry, schema, annotation, and manifest
-consistency together, so a missing capability entry fails the same gate as a
+consistency together, so missing descriptor facts fail the same gate as a
 missing schema.
 
 ## Extending Universal Operations

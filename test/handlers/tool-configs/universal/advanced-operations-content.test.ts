@@ -31,96 +31,25 @@ describe('Universal Advanced Operations - Content & Timeframe Tests', () => {
   });
 
   describe('records_search_by_content tool', () => {
-    it('should search companies by notes content', async () => {
-      const mockResults = [
-        {
-          id: { record_id: 'comp-1' },
-          values: {
-            name: [{ value: 'Company with Notes' }],
-          },
-        },
-      ];
-
-      const { mockHandlers, mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
-
-      const params: ContentSearchParams = {
-        resource_type: UniversalResourceType.NOTES,
-        content_type: ContentSearchType.NOTES,
-        search_query: 'important meeting',
-        limit: 10,
-      };
-
-      const result = await searchByContentConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
-    });
-
-    it('should search people by notes content', async () => {
-      const mockResults = [
-        {
-          id: { record_id: 'person-1' },
-          values: {
-            name: [{ value: 'Person with Notes' }],
-          },
-        },
-      ];
-
-      const { mockHandlers, mockSearchService } = getMockInstances();
-      mockSearchService.searchRecords.mockResolvedValue(mockResults);
-
-      const params: ContentSearchParams = {
-        resource_type: UniversalResourceType.NOTES,
-        content_type: ContentSearchType.NOTES,
-        search_query: 'follow up',
-        limit: 5,
-      };
-
-      const result = await searchByContentConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(mockSearchService.searchRecords).toHaveBeenCalled();
-    });
-
-    it('should search people by activity content', async () => {
-      const mockResults = [
-        {
-          id: { record_id: 'person-1' },
-          values: {
-            name: [{ value: 'Active Person' }],
-          },
-        },
-      ];
-
-      const { mockSpecialized } = getMockInstances();
-      mockSpecialized.searchPeopleByActivity.mockResolvedValue(mockResults);
-
-      const params: ContentSearchParams = {
-        resource_type: UniversalResourceType.PEOPLE,
-        content_type: ContentSearchType.ACTIVITY,
-        search_query: 'activity search',
-      };
-
-      const result = await searchByContentConfig.handler(params);
-      expect(result).toEqual(mockResults);
-      expect(mockSpecialized.searchPeopleByActivity).toHaveBeenCalledWith({
-        dateRange: {
-          preset: 'last_month',
-        },
-        interactionType: 'any',
-      });
-    });
-
-    it('should handle unsupported interaction content search', async () => {
-      const params: ContentSearchParams = {
-        resource_type: UniversalResourceType.COMPANIES,
-        content_type: ContentSearchType.INTERACTIONS,
-        search_query: 'interaction search',
-      };
-
-      await expect(searchByContentConfig.handler(params)).rejects.toThrow(
-        /Interaction content search is not available via records_search_by_content/
-      );
-    });
+    it.each([
+      [UniversalResourceType.NOTES, ContentSearchType.NOTES],
+      [UniversalResourceType.PEOPLE, ContentSearchType.ACTIVITY],
+      [UniversalResourceType.COMPANIES, ContentSearchType.INTERACTIONS],
+    ])(
+      'rejects unsupported %s/%s without substituting a search',
+      async (resource_type, content_type) => {
+        const { mockSearchService, mockSpecialized } = getMockInstances();
+        await expect(
+          searchByContentConfig.handler({
+            resource_type,
+            content_type,
+            search_query: 'important meeting',
+          })
+        ).rejects.toThrow(/not supported/);
+        expect(mockSearchService.searchRecords).not.toHaveBeenCalled();
+        expect(mockSpecialized.searchPeopleByActivity).not.toHaveBeenCalled();
+      }
+    );
 
     it('should format content search results correctly', async () => {
       const mockResults = [

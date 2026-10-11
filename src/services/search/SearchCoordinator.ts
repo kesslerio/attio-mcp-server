@@ -1,3 +1,4 @@
+import { validateSearchInput } from '@/services/search/search-input-validation.js';
 /**
  * SearchCoordinator - Coordinates search type routing and execution
  *
@@ -31,6 +32,8 @@ export interface SearchRoutingParams {
   fields?: string[];
   match_type?: MatchType;
   sort?: SortType;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   relationship_target_type?: UniversalResourceType;
   relationship_target_id?: string;
   timeframe_attribute?: string;
@@ -76,6 +79,7 @@ export class SearchCoordinator {
   static async executeSearch(
     params: SearchRoutingParams
   ): Promise<UniversalRecordResult[]> {
+    validateSearchInput(params);
     const {
       resource_type,
       query,

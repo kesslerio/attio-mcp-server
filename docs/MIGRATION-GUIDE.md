@@ -33,50 +33,50 @@ The map below is the only migration map. It is defined in `src/constants/tool-na
 
 ### Prior name to canonical name
 
-| Prior name (call-only until v3.0.0) | Canonical name                     |
-| ----------------------------------- | ---------------------------------- |
-| `search_records`                    | `records_search`                   |
-| `get_record_details`                | `records_get_details`              |
-| `create_record`                     | `records_create`                   |
-| `update_record`                     | `records_update`                   |
-| `upsert_record`                     | `records_upsert`                   |
-| `delete_record`                     | `records_delete`                   |
-| `merge_records`                     | `records_merge`                    |
-| `create_company`                    | `companies_create`                 |
-| `update_company`                    | `companies_update`                 |
-| `create_deal`                       | `deals_create`                     |
-| `update_deal`                       | `deals_update`                     |
-| `get_record_attributes`             | `records_get_attributes`           |
-| `discover_record_attributes`        | `records_discover_attributes`      |
-| `get_record_attribute_options`      | `records_get_attribute_options`    |
-| `get_record_info`                   | `records_get_info`                 |
-| `get_record_interactions`           | `records_get_interactions`         |
-| `create_note`                       | `notes_create`                     |
-| `list_notes`                        | `notes_list`                       |
-| `search_records_advanced`           | `records_search_advanced`          |
-| `search_records_by_relationship`    | `records_search_by_relationship`   |
-| `search_records_by_content`         | `records_search_by_content`        |
-| `search_records_by_timeframe`       | `records_search_by_timeframe`      |
-| `batch_records`                     | `records_batch`                    |
-| `batch_search_records`              | `records_batch_search`             |
-| `get-lists`                         | `lists_list`                       |
-| `get-record-list-memberships`       | `records_get_list_memberships`     |
-| `get-list-details`                  | `lists_get`                        |
-| `get-list-entries`                  | `list_entries_list`                |
-| `filter-list-entries`               | `list_entries_filter`              |
-| `advanced-filter-list-entries`      | `list_entries_filter_advanced`     |
-| `add-record-to-list`                | `list_entries_add`                 |
-| `remove-record-from-list`           | `list_entries_remove`              |
-| `update-list-entry`                 | `list_entries_update`              |
-| `manage-list-entry`                 | `list_entries_manage`              |
-| `filter-list-entries-by-parent`     | `list_entries_filter_by_parent`    |
-| `filter-list-entries-by-parent-id`  | `list_entries_filter_by_parent_id` |
-| `create-list`                       | `lists_create`                     |
-| `update-list-configuration`         | `lists_update_configuration`       |
-| `list-workspace-members`            | `workspace_members_list`           |
-| `search-workspace-members`          | `workspace_members_search`         |
-| `get-workspace-member`              | `workspace_members_get`            |
-| `smithery_debug_config`             | `diagnostics_get`                  |
+| Prior name (call-only until v3.0.0) | Canonical name                                                                     |
+| ----------------------------------- | ---------------------------------------------------------------------------------- |
+| `search_records`                    | `records_search`                                                                   |
+| `get_record_details`                | `records_get_details`                                                              |
+| `create_record`                     | `records_create`                                                                   |
+| `update_record`                     | `records_update`                                                                   |
+| `upsert_record`                     | `records_upsert`                                                                   |
+| `delete_record`                     | `records_delete`                                                                   |
+| `merge_records`                     | `records_merge`                                                                    |
+| `create_company`                    | `companies_create`                                                                 |
+| `update_company`                    | `companies_update`                                                                 |
+| `create_deal`                       | `deals_create`                                                                     |
+| `update_deal`                       | `deals_update`                                                                     |
+| `get_record_attributes`             | `records_get_attributes`                                                           |
+| `discover_record_attributes`        | `records_discover_attributes`                                                      |
+| `get_record_attribute_options`      | `records_get_attribute_options`                                                    |
+| `get_record_info`                   | `records_get_info`                                                                 |
+| `get_record_interactions`           | `records_get_interactions`                                                         |
+| `create_note`                       | `notes_create`                                                                     |
+| `list_notes`                        | `notes_list`                                                                       |
+| `search_records_advanced`           | `records_search_advanced`                                                          |
+| `search_records_by_relationship`    | `records_search_by_relationship`                                                   |
+| `search_records_by_content`         | [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs) |
+| `search_records_by_timeframe`       | `records_search_by_timeframe`                                                      |
+| `batch_records`                     | `records_batch`                                                                    |
+| `batch_search_records`              | `records_batch_search`                                                             |
+| `get-lists`                         | `lists_list`                                                                       |
+| `get-record-list-memberships`       | `records_get_list_memberships`                                                     |
+| `get-list-details`                  | `lists_get`                                                                        |
+| `get-list-entries`                  | `list_entries_list`                                                                |
+| `filter-list-entries`               | `list_entries_filter`                                                              |
+| `advanced-filter-list-entries`      | `list_entries_filter_advanced`                                                     |
+| `add-record-to-list`                | `list_entries_add`                                                                 |
+| `remove-record-from-list`           | `list_entries_remove`                                                              |
+| `update-list-entry`                 | `list_entries_update`                                                              |
+| `manage-list-entry`                 | `list_entries_manage`                                                              |
+| `filter-list-entries-by-parent`     | `list_entries_filter_by_parent`                                                    |
+| `filter-list-entries-by-parent-id`  | `list_entries_filter_by_parent_id`                                                 |
+| `create-list`                       | `lists_create`                                                                     |
+| `update-list-configuration`         | `lists_update_configuration`                                                       |
+| `list-workspace-members`            | `workspace_members_list`                                                           |
+| `search-workspace-members`          | `workspace_members_search`                                                         |
+| `get-workspace-member`              | `workspace_members_get`                                                            |
+| `smithery_debug_config`             | `diagnostics_get`                                                                  |
 
 ### Examples
 
@@ -151,14 +151,14 @@ Legacy resource-specific tools have been removed. Universal operations now handl
 
 ### Advanced Universal Tools
 
-| Operation              | Universal Tool                   | Legacy Equivalents                                                     |
-| ---------------------- | -------------------------------- | ---------------------------------------------------------------------- |
-| Advanced search        | `records_search_advanced`        | `advanced-search-companies`, `advanced-search-people`                  |
-| Search by relationship | `records_search_by_relationship` | `search-companies-by-people`, `search-people-by-company`               |
-| Search by content      | `records_search_by_content`      | `search-companies-by-notes`, `search-people-by-notes`                  |
-| Search by timeframe    | `records_search_by_timeframe`    | `search-people-by-creation-date`, `search-people-by-modification-date` |
-| Batch operations       | `records_batch`                  | `batch-create-companies`, `batch-update-companies`                     |
-| Batch search           | `records_batch_search`           | `batch-search-companies`                                               |
+| Operation              | Universal Tool                                                                     | Legacy Equivalents                                                     |
+| ---------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Advanced search        | `records_search_advanced`                                                          | `advanced-search-companies`, `advanced-search-people`                  |
+| Search by relationship | `records_search_by_relationship`                                                   | `search-companies-by-people`, `search-people-by-company`               |
+| Search by content      | [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs) | `search-companies-by-notes`, `search-people-by-notes`                  |
+| Search by timeframe    | `records_search_by_timeframe`                                                      | `search-people-by-creation-date`, `search-people-by-modification-date` |
+| Batch operations       | `records_batch`                                                                    | `batch-create-companies`, `batch-update-companies`                     |
+| Batch search           | `records_batch_search`                                                             | `batch-search-companies`                                               |
 
 ## Migration Examples
 
@@ -277,42 +277,42 @@ Legacy resource-specific tools have been removed. Universal operations now handl
 
 ### Company Tools
 
-| Legacy Tool                   | Universal Tool                   | Resource Type |
-| ----------------------------- | -------------------------------- | ------------- |
-| `search-companies`            | `records_search`                 | `companies`   |
-| `get-company-details`         | `records_get_details`            | `companies`   |
-| `create-company`              | `records_create`                 | `companies`   |
-| `update-company`              | `records_update`                 | `companies`   |
-| `delete-company`              | `records_delete`                 | `companies`   |
-| `get-company-attributes`      | `records_get_attributes`         | `companies`   |
-| `discover-company-attributes` | `records_discover_attributes`    | `companies`   |
-| `get-company-basic-info`      | `records_get_info`               | `companies`   |
-| `get-company-contact-info`    | `records_get_info`               | `companies`   |
-| `get-company-business-info`   | `records_get_info`               | `companies`   |
-| `get-company-social-info`     | `records_get_info`               | `companies`   |
-| `advanced-search-companies`   | `records_search_advanced`        | `companies`   |
-| `search-companies-by-notes`   | `records_search_by_content`      | `companies`   |
-| `search-companies-by-people`  | `records_search_by_relationship` | `companies`   |
-| `batch-create-companies`      | `records_batch`                  | `companies`   |
-| `batch-update-companies`      | `records_batch`                  | `companies`   |
-| `batch-delete-companies`      | `records_batch`                  | `companies`   |
-| `batch-search-companies`      | `records_batch_search`           | `companies`   |
-| `batch-get-company-details`   | `records_batch`                  | `companies`   |
+| Legacy Tool                   | Universal Tool                                                                     | Resource Type |
+| ----------------------------- | ---------------------------------------------------------------------------------- | ------------- |
+| `search-companies`            | `records_search`                                                                   | `companies`   |
+| `get-company-details`         | `records_get_details`                                                              | `companies`   |
+| `create-company`              | `records_create`                                                                   | `companies`   |
+| `update-company`              | `records_update`                                                                   | `companies`   |
+| `delete-company`              | `records_delete`                                                                   | `companies`   |
+| `get-company-attributes`      | `records_get_attributes`                                                           | `companies`   |
+| `discover-company-attributes` | `records_discover_attributes`                                                      | `companies`   |
+| `get-company-basic-info`      | `records_get_info`                                                                 | `companies`   |
+| `get-company-contact-info`    | `records_get_info`                                                                 | `companies`   |
+| `get-company-business-info`   | `records_get_info`                                                                 | `companies`   |
+| `get-company-social-info`     | `records_get_info`                                                                 | `companies`   |
+| `advanced-search-companies`   | `records_search_advanced`                                                          | `companies`   |
+| `search-companies-by-notes`   | [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs) | `companies`   |
+| `search-companies-by-people`  | `records_search_by_relationship`                                                   | `companies`   |
+| `batch-create-companies`      | `records_batch`                                                                    | `companies`   |
+| `batch-update-companies`      | `records_batch`                                                                    | `companies`   |
+| `batch-delete-companies`      | `records_batch`                                                                    | `companies`   |
+| `batch-search-companies`      | `records_batch_search`                                                             | `companies`   |
+| `batch-get-company-details`   | `records_batch`                                                                    | `companies`   |
 
 ### People Tools
 
-| Legacy Tool                          | Universal Tool                   | Resource Type |
-| ------------------------------------ | -------------------------------- | ------------- |
-| `search-people`                      | `records_search`                 | `people`      |
-| `get-person-details`                 | `records_get_details`            | `people`      |
-| `create-person`                      | `records_create`                 | `people`      |
-| `advanced-search-people`             | `records_search_advanced`        | `people`      |
-| `search-people-by-company`           | `records_search_by_relationship` | `people`      |
-| `search-people-by-activity`          | `records_search_by_content`      | `people`      |
-| `search-people-by-notes`             | `records_search_by_content`      | `people`      |
-| `search-people-by-creation-date`     | `records_search_by_timeframe`    | `people`      |
-| `search-people-by-modification-date` | `records_search_by_timeframe`    | `people`      |
-| `search-people-by-last-interaction`  | `records_search_by_timeframe`    | `people`      |
+| Legacy Tool                          | Universal Tool                                                                     | Resource Type |
+| ------------------------------------ | ---------------------------------------------------------------------------------- | ------------- |
+| `search-people`                      | `records_search`                                                                   | `people`      |
+| `get-person-details`                 | `records_get_details`                                                              | `people`      |
+| `create-person`                      | `records_create`                                                                   | `people`      |
+| `advanced-search-people`             | `records_search_advanced`                                                          | `people`      |
+| `search-people-by-company`           | `records_search_by_relationship`                                                   | `people`      |
+| `search-people-by-activity`          | [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs) | `people`      |
+| `search-people-by-notes`             | [supported-input matrix](universal-tools/api-reference.md#supported-search-inputs) | `people`      |
+| `search-people-by-creation-date`     | `records_search_by_timeframe`                                                      | `people`      |
+| `search-people-by-modification-date` | `records_search_by_timeframe`                                                      | `people`      |
+| `search-people-by-last-interaction`  | `records_search_by_timeframe`                                                      | `people`      |
 
 ### Task Tools
 

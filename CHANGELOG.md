@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Search requests now reject unsupported query/filter/sort combinations before upstream work, including aliases and batches; note and activity body searches no longer substitute unrelated results, and update hints consistently indicate that values can be replaced (#1313)
+- Connector search preserves query-only calls by searching companies, people, and lists by default (also `type=all`); explicit task queries fail validation before upstream work instead of returning unfiltered tasks (#1313)
+
 - **Install scripts are now source-safe** — `install-claude-desktop.sh` runs its installer flow only when executed, not when sourced, so function-level tests and shell sourcing no longer trigger a live install run
 - **List 403 errors keep their Attio error code** — `createList`/`updateList` no longer flatten 403 responses into message-only errors, so agents get plan-upgrade or token-scope guidance instead of "Retry the operation"; client-side access validation failures are likewise categorized as `unsupported_input` instead of unexpected API failures (#1148)
 - **Deal stage titles with `>` are preserved** — `InputSanitizer` no longer strips standalone angle brackets, so values like `Not Qualified (MQL > SQL)` reach Attio byte-for-byte, and an explicit update with an invalid stage now returns an error instead of silently falling back to `ATTIO_DEFAULT_DEAL_STAGE` (#1277)
