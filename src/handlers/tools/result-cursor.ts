@@ -19,8 +19,7 @@ import {
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
-import { getContextApiKey } from '@/api/client-context.js';
-import { resolveCredentialScope } from '@/utils/client-resolver.js';
+import { resolveAttioCredential } from '@/api/client-context.js';
 
 /** Continuation failures use the stable INVALID_CURSOR execution code. */
 export class InvalidCursorError extends Error {
@@ -170,8 +169,8 @@ function stableStringify(value: unknown): string {
  * fingerprint. Raw credentials are never returned, encoded, or logged.
  */
 export function credentialScopeFingerprint(): string {
-  // Same request-context/environment precedence as the Attio client resolver.
-  const resolved = getContextApiKey() || resolveCredentialScope();
+  // Same active-principal decision as the Attio client.
+  const resolved = resolveAttioCredential();
   const { fingerprint } = ensureCursorKeys();
   return (
     createHmac('sha256', fingerprint)

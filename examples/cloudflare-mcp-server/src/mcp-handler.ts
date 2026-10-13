@@ -8,7 +8,7 @@
 import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
 import { getToolsListPayload } from '../../../dist/utils/mcp-discovery.js';
 import { executeToolRequest } from '../../../dist/handlers/tools/dispatcher.js';
-import { ClientCache } from '../../../dist/api/client-cache.js';
+import { runWithClientContext } from '../../../dist/api/client-context.js';
 
 /**
  * MCP JSON-RPC request structure
@@ -72,26 +72,6 @@ const CAPABILITIES = {
 /**
  * MCP error codes
  */
-
-let toolExecutionLock: Promise<void> = Promise.resolve();
-
-async function runToolCallWithLock<T>(work: () => Promise<T>): Promise<T> {
-  const previousLock = toolExecutionLock;
-  let releaseLock: () => void = () => undefined;
-
-  toolExecutionLock = new Promise<void>((resolve) => {
-    releaseLock = resolve;
-  });
-
-  await previousLock;
-
-  try {
-    return await work();
-  } finally {
-    releaseLock();
-  }
-}
-
 const ErrorCodes = {
   ParseError: -32700,
   InvalidRequest: -32600,
@@ -170,47 +150,22 @@ export function createMcpHandler(config: { attioToken: string }) {
       };
     }
 
-    return runToolCallWithLock(async () => {
-      // Clear shared client cache before injecting per-request credentials
-      ClientCache.clearInstance();
+    const request: CallToolRequest = {
+      method: 'tools/call',
+      params: {
+        name,
+        arguments: args || {},
+      },
+    };
 
-      const previousApiKey = process.env.ATTIO_API_KEY;
-      const previousAccessToken = process.env.ATTIO_ACCESS_TOKEN;
-
-      process.env.ATTIO_API_KEY = attioToken;
-      process.env.ATTIO_ACCESS_TOKEN = attioToken;
-
-      try {
-        const request: CallToolRequest = {
-          method: 'tools/call',
-          params: {
-            name,
-            arguments: args || {},
-          },
-        };
-
-        const result = await executeToolRequest(request);
-
-        // The shared dispatcher owns sanitization and result validation. Preserve
-        // its complete result, including structuredContent and protocol metadata.
-        return result;
-      } finally {
-        // Ensure no per-request credentials remain cached after execution
-        ClientCache.clearInstance();
-
-        if (previousApiKey === undefined) {
-          delete process.env.ATTIO_API_KEY;
-        } else {
-          process.env.ATTIO_API_KEY = previousApiKey;
-        }
-
-        if (previousAccessToken === undefined) {
-          delete process.env.ATTIO_ACCESS_TOKEN;
-        } else {
-          process.env.ATTIO_ACCESS_TOKEN = previousAccessToken;
-        }
-      }
-    });
+    // The verified session credential lives only in this call's request-local
+    // context, so concurrent calls neither wait on nor see each other's
+    // credential, and the process environment is never written.
+    // The shared dispatcher owns sanitization and result validation. Preserve
+    // its complete result, including structuredContent and protocol metadata.
+    return runWithClientContext({ ATTIO_API_KEY: attioToken }, () =>
+      executeToolRequest(request)
+    );
   }
 
   /**

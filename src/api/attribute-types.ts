@@ -2,7 +2,7 @@
  * Attribute type detection and management for Attio attributes
  */
 import { getLazyAttioClient } from '@/api/lazy-client.js';
-import { getContextApiKey } from '@/api/client-context.js';
+import { resolveAttioCredential } from '@/api/client-context.js';
 import { createHash } from 'node:crypto';
 import {
   validateLocationValue,
@@ -63,15 +63,12 @@ export interface AttioAttributeMetadata {
  *
  * Attribute metadata is workspace data in multi-tenant deployments: caching it
  * under the object slug alone could serve one tenant another tenant's fields.
- * Keys therefore carry a fingerprint of the effective credential, resolved
- * through the same precedence as the Attio client; the raw credential is never
- * stored or logged. The full scope resolver is imported lazily inside the
- * function because client-resolver pulls the Attio client module graph, and an
- * eager edge here would re-order that graph at import time.
+ * Keys therefore carry a fingerprint of the active principal's credential,
+ * resolved by the same decision as the Attio client; the raw credential is
+ * never stored or logged.
  */
 async function credentialCacheScope(): Promise<string> {
-  const { resolveCredentialScope } = await import('@/utils/client-resolver.js');
-  const resolved = getContextApiKey() || resolveCredentialScope();
+  const resolved = resolveAttioCredential();
   return (
     createHash('sha256')
       // codeql[js/insufficient-password-hash] CWE-916 / alert 141: API-key scope fingerprint for cache isolation, not password storage; raw credentials are never cached or logged.

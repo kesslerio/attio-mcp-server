@@ -198,27 +198,103 @@ describe('Attio client context fallback', () => {
       );
     });
 
-    it('should cache failed context getter attempts', async () => {
-      const mockGetApiKey = vi.fn().mockImplementation(() => {
-        throw new Error('Persistent failure');
-      });
-
-      const { setGlobalContext } = await import('@/api/lazy-client.js');
-      setGlobalContext({
-        getApiKey: mockGetApiKey,
-        ATTIO_API_KEY: 'fallback-key-12345',
-      });
-
+    it('never carries a getter failure over to another principal', async () => {
+      const { withGlobalContext } = await import('@/api/lazy-client.js');
       const { getContextApiKey } =
         await import('../../src/api/client-context.js');
 
-      // First call should attempt getApiKey
-      getContextApiKey();
-      expect(mockGetApiKey).toHaveBeenCalledTimes(1);
+      const failing = vi.fn(() => {
+        throw new Error('Persistent failure');
+      });
+      await expect(
+        withGlobalContext({ getApiKey: failing }, async () =>
+          getContextApiKey()
+        )
+      ).resolves.toBeUndefined();
 
-      // Second call should be cached and not call getApiKey again immediately
-      getContextApiKey();
-      expect(mockGetApiKey).toHaveBeenCalledTimes(1);
+      const healthy = vi.fn(() => 'tenant-b-key-12345');
+      await expect(
+        withGlobalContext({ getApiKey: healthy }, async () =>
+          getContextApiKey()
+        )
+      ).resolves.toBe('tenant-b-key-12345');
+      expect(healthy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('Request-local credential resolution', () => {
+    it('fails closed inside a request context instead of using the environment', async () => {
+      process.env.ATTIO_API_KEY = 'host-env-key-12345';
+      const { withGlobalContext } = await import('@/api/lazy-client.js');
+      const { resolveAttioCredential } =
+        await import('../../src/api/client-context.js');
+      const { createAttioClient, getAttioClient } =
+        await import('@/api/attio-client.js');
+
+      expect(resolveAttioCredential()).toBe('host-env-key-12345');
+      await withGlobalContext(
+        {
+          getApiKey: () => {
+            throw new Error('lost credential');
+          },
+        },
+        async () => {
+          expect(resolveAttioCredential()).toBeUndefined();
+          expect(() => createAttioClient({})).toThrow(/context configuration/);
+          expect(() => getAttioClient()).toThrow();
+        }
+      );
+      expect(process.env.ATTIO_API_KEY).toBe('host-env-key-12345');
+    });
+
+    it('keeps request clients out of the process-wide cache', async () => {
+      const { withGlobalContext } = await import('@/api/lazy-client.js');
+      const { ClientCache } = await import('@/api/client-cache.js');
+      const { getAttioClient } = await import('@/api/attio-client.js');
+
+      const [clientA, clientB] = await Promise.all(
+        ['tenant-a-key-12345', 'tenant-b-key-12345'].map((key) =>
+          withGlobalContext({ ATTIO_API_KEY: key }, async () => {
+            await new Promise((resolve) => setTimeout(resolve, 0));
+            return getAttioClient();
+          })
+        )
+      );
+      expect(clientA.defaults.headers.Authorization).toBe(
+        'Bearer tenant-a-key-12345'
+      );
+      expect(clientB.defaults.headers.Authorization).toBe(
+        'Bearer tenant-b-key-12345'
+      );
+      expect(ClientCache.hasInstance()).toBe(false);
+    });
+
+    it('drops the request context when the operation throws or is cancelled', async () => {
+      const { withGlobalContext } = await import('@/api/lazy-client.js');
+      const { hasRequestContext, resolveAttioCredential } =
+        await import('../../src/api/client-context.js');
+
+      await expect(
+        withGlobalContext({ ATTIO_API_KEY: 'tenant-a-key-12345' }, async () => {
+          throw new Error('formatter failed');
+        })
+      ).rejects.toThrow('formatter failed');
+
+      const controller = new AbortController();
+      const cancelled = withGlobalContext(
+        { ATTIO_API_KEY: 'tenant-a-key-12345' },
+        () =>
+          new Promise((_, reject) =>
+            controller.signal.addEventListener('abort', () =>
+              reject(controller.signal.reason)
+            )
+          )
+      );
+      controller.abort(new Error('cancelled'));
+      await expect(cancelled).rejects.toThrow('cancelled');
+
+      expect(hasRequestContext()).toBe(false);
+      expect(resolveAttioCredential()).toBeUndefined();
     });
   });
 
@@ -277,7 +353,6 @@ describe('Attio client context fallback', () => {
       expect(stats.hasFallbackStorage).toBe(true);
       expect(stats.hasApiKeyGetter).toBe(true);
       expect(stats.hasDirectApiKey).toBe(true);
-      expect(stats.failedContextCacheSize).toBe(0);
     });
 
     it('should validate API keys properly', async () => {
@@ -362,7 +437,6 @@ describe('Attio client context fallback', () => {
         'Attempting API key/token resolution',
         {
           hasContext: true,
-          shouldSkipGetter: false,
         }
       );
       expect(mockScopedDebug).toHaveBeenCalledWith(
@@ -405,7 +479,6 @@ describe('Attio client context fallback', () => {
         'Attempting API key/token resolution',
         {
           hasContext: true,
-          shouldSkipGetter: false,
         }
       );
       expect(mockScopedDebug).toHaveBeenCalledWith(

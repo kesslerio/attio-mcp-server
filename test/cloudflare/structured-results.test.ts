@@ -1,20 +1,17 @@
 /** Offline workerd acceptance: real Worker, built core, mocked Attio HTTP only. */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { execFileSync } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
-import { builtinModules } from 'node:module';
-import { webcrypto } from 'node:crypto';
-import { build } from 'esbuild';
-import { Miniflare } from 'miniflare';
+import type { Miniflare } from 'miniflare';
 import { AjvJsonSchemaValidator } from '@modelcontextprotocol/sdk/validation/ajv';
 import type { CallToolResult, Tool } from '@modelcontextprotocol/sdk/types.js';
 import { CompanyMockFactory } from '@test/utils/mock-factories/CompanyMockFactory.js';
+import {
+  createWorkerHarness,
+  postRpc,
+  type WorkerHarness,
+} from './worker-harness.js';
 
 const company = CompanyMockFactory.create({ name: 'Worker fixture' });
 const recordId = company.id.record_id;
-const encryptionKey = 'ab'.repeat(32);
 const bearer = 'fixture-session';
 const attioToken = 'fixture-attio-token';
 
@@ -24,68 +21,23 @@ type Rpc = {
 };
 
 describe('Worker serialized structured results', () => {
-  let directory: string;
-  const workers: Miniflare[] = [];
+  let harness: WorkerHarness;
   let writes = 0;
   let requests = 0;
   let loseWriteResponse: false | 'invalid-json' | 'disconnect' = false;
 
   beforeAll(async () => {
-    directory = await mkdtemp(join(tmpdir(), 'attio-worker-results-'));
-    // Build every time: stale or missing dist must never make this test pass.
-    execFileSync('bun', ['run', 'build'], {
-      cwd: process.cwd(),
-      timeout: 120_000,
-      stdio: 'pipe',
-    });
+    harness = await createWorkerHarness();
   }, 150_000);
 
   afterAll(async () => {
-    await Promise.all(workers.map((worker) => worker.dispose()));
-    if (directory) await rm(directory, { recursive: true, force: true });
+    await harness?.dispose();
   });
 
-  async function start(text = true, mode = 'full') {
-    const scriptPath = join(directory, `worker-${workers.length}.mjs`);
-    await build({
-      entryPoints: [resolve('examples/cloudflare-mcp-server/worker.ts')],
-      outfile: scriptPath,
-      bundle: true,
-      format: 'esm',
-      platform: 'browser',
-      conditions: ['workerd', 'browser'],
-      // The example deliberately imports dist, not Vitest's mocked source graph.
-      plugins: [
-        {
-          name: 'worker-node-builtins',
-          setup(builder) {
-            builder.onResolve({ filter: /.*/ }, ({ path }) => {
-              if (path.startsWith('node:') || builtinModules.includes(path)) {
-                return {
-                  path: path.startsWith('node:') ? path : `node:${path}`,
-                  external: true,
-                };
-              }
-            });
-          },
-        },
-      ],
-      banner: {
-        js: `${text ? 'delete process.env.MCP_TEXT_RESULTS' : "process.env.MCP_TEXT_RESULTS = 'false'"}; process.env.ATTIO_MCP_TOOL_MODE = ${JSON.stringify(mode)}; process.env.LOG_LEVEL = 'error';`,
-      },
-    });
-    const worker = new Miniflare({
-      modules: true,
-      modulesRoot: directory,
-      scriptPath,
-      compatibilityDate: '2026-07-30',
-      compatibilityFlags: ['nodejs_compat'],
-      kvNamespaces: ['TOKEN_STORE'],
-      bindings: {
-        TOKEN_ENCRYPTION_KEY: encryptionKey,
-        WORKER_URL: 'https://worker.example',
-      },
-      // No request can reach live Attio (or any other external origin).
+  function start(text = true, mode = 'full') {
+    return harness.start({
+      banner: `${text ? 'delete process.env.MCP_TEXT_RESULTS' : "process.env.MCP_TEXT_RESULTS = 'false'"}; process.env.ATTIO_MCP_TOOL_MODE = ${JSON.stringify(mode)}; process.env.LOG_LEVEL = 'error';`,
+      sessions: { [bearer]: attioToken },
       outboundService: async (request) => {
         requests++;
         expect(request.headers.get('Authorization')).toBe(
@@ -125,37 +77,6 @@ describe('Worker serialized structured results', () => {
         );
       },
     });
-    workers.push(worker);
-    // Seed only a synthetic encrypted session, using the storage wire format.
-    const kv = await worker.getKVNamespace('TOKEN_STORE');
-    const key = await webcrypto.subtle.importKey(
-      'raw',
-      Buffer.from(encryptionKey, 'hex'),
-      'AES-GCM',
-      false,
-      ['encrypt']
-    );
-    const iv = webcrypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = await webcrypto.subtle.encrypt(
-      { name: 'AES-GCM', iv },
-      key,
-      new TextEncoder().encode(
-        JSON.stringify({
-          accessToken: attioToken,
-          expiresAt: Math.floor(Date.now() / 1000) + 3600,
-          tokenType: 'Bearer',
-        })
-      )
-    );
-    await kv.put(
-      `token:session:${bearer}`,
-      JSON.stringify({
-        version: 1,
-        iv: Buffer.from(iv).toString('base64'),
-        ciphertext: Buffer.from(ciphertext).toString('base64'),
-      })
-    );
-    return worker;
   }
 
   async function rpc(
@@ -164,14 +85,7 @@ describe('Worker serialized structured results', () => {
     params = {}
   ): Promise<Rpc> {
     // Use the listening HTTP socket, including real JSON encode/decode on both sides.
-    const response = await fetch(new URL('/mcp', await worker.ready), {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${bearer}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }),
-    });
+    const response = await postRpc(worker, bearer, method, params);
     expect(response.status).toBe(200);
     expect(response.headers.get('MCP-Protocol-Version')).toBe('2024-11-05');
     return response.json();

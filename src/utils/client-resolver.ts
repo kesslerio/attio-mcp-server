@@ -5,7 +5,7 @@
 
 import { AxiosInstance } from 'axios';
 import * as AttioClientModule from '../api/attio-client.js';
-import { getContextApiKey } from '../api/client-context.js';
+import { resolveAttioCredential } from '../api/client-context.js';
 import { ClientConfig } from '../api/client-config.js';
 import { createScopedLogger } from './logger.js';
 
@@ -71,20 +71,15 @@ function assertAxiosInstance(
 }
 
 function resolveApiKey(): string | undefined {
-  return (
-    getContextApiKey() ||
-    process.env.ATTIO_API_KEY ||
-    process.env.ATTIO_ACCESS_TOKEN
-  );
+  return resolveAttioCredential();
 }
 
 /**
  * Effective credential scope for cross-request binding (U5/KTD6).
  *
- * Continuation tokens fingerprint the credential resolved through this exact
- * request-context/environment precedence so a cursor issued under one tenant
- * cannot be replayed under another. Returns the resolved credential value
- * itself; callers must fingerprint it and never encode or log the raw value.
+ * Uses resolveAttioCredential, which owns active-principal resolution and is
+ * also used directly by continuation tokens. Returns the credential itself;
+ * callers must fingerprint it and never encode or log the raw value.
  */
 export function resolveCredentialScope(): string | undefined {
   return resolveApiKey();

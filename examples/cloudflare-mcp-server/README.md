@@ -27,20 +27,29 @@ for required connector content. Protocol errors remain JSON-RPC errors.
 From the repository root, with dependencies installed:
 
 ```bash
-bun run test:single test/cloudflare/structured-results.test.ts
+bun run test:single test/cloudflare/structured-results.test.ts test/cloudflare/credential-concurrency.test.ts
 ```
 
-This suite rebuilds `dist`, bundles the actual example Worker, and sends serialized
+These suites rebuild `dist`, bundle the actual example Worker, and send serialized
 HTTP requests through local Miniflare/workerd. Only upstream Attio HTTP responses
 are synthetic; encrypted session lookup, dispatch, schema validation, and Worker
 serialization execute normally. It checks read/write output schemas, prose
 opt-out, connector content, mode denials, and one mutation after an invalid or
 interrupted upstream response.
 
+Each tool call runs with its session's Attio credential in request-local context.
+The Worker never writes `ATTIO_API_KEY`/`ATTIO_ACCESS_TOKEN` and does not serialize
+tool calls, so tenants do not wait on each other. A request context without a
+usable credential fails instead of inheriting a host credential or cached client.
+The credential-concurrency suite holds one tenant's upstream call open while
+others read, write, and page, and
+asserts every upstream request carries its own tenant's credential, a failing tenant
+leaves later principals unaffected, and continuation cursors stay bound to the
+issuing principal.
+
 The test runtime uses Node.js 22+ and workerd compatibility date `2026-07-30` for
 Node built-in support. It does not certify the older Wrangler template's build
-polyfills or any deployed Worker. This hotfix retains MCP `2024-11-05` and the
-credential execution lock. Live Attio verification and deployment are separate
+polyfills or any deployed Worker. The Worker still speaks MCP `2024-11-05`. Live Attio verification and deployment are separate
 release gates; this offline suite performs no live CRM writes.
 
 ## Prerequisites

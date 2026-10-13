@@ -9,6 +9,7 @@ import type { CreateService, CreateServiceFactory } from './types.js';
 import { AttioCreateService } from './attio-create.service.js';
 import { MockCreateService } from './mock-create.service.js';
 import { debug } from '../../utils/logger.js';
+import { resolveAttioCredential } from '@/api/client-context.js';
 
 /**
  * Determines if mock data should be used based on environment flags
@@ -55,9 +56,9 @@ export function getCreateService(): CreateService {
     return new MockCreateService();
   }
 
-  // Fail fast if real API requested but no credentials available
-  // Issue #928: Support both ATTIO_API_KEY and ATTIO_ACCESS_TOKEN (OAuth alternative)
-  if (!process.env.ATTIO_API_KEY && !process.env.ATTIO_ACCESS_TOKEN) {
+  // Fail fast if real API requested but the active principal has no credential
+  // (request context, else ATTIO_API_KEY / ATTIO_ACCESS_TOKEN; Issue #928)
+  if (!resolveAttioCredential()) {
     throw new Error(
       'ATTIO_API_KEY is required for real API calls. Set USE_MOCK_DATA=true to use mock data instead.'
     );
