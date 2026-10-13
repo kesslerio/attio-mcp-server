@@ -673,7 +673,7 @@ describe('Consolidated list_entries_filter Tool', () => {
   });
 
   describe('Backward Compatibility', () => {
-    it('should maintain 100% compatibility with original list_entries_filter calls', async () => {
+    it('should preserve original filter arguments with bounded result disclosure', async () => {
       // This is the exact same call structure as the original list_entries_filter tool
       const originalCallStructure: CallToolRequest = {
         method: 'tools/call',
@@ -708,6 +708,7 @@ describe('Consolidated list_entries_filter Tool', () => {
         data: mockListEntries,
         count: 1,
         next_cursor: null,
+        pagination: { supported: false, truncated: true },
       });
     });
 
@@ -906,38 +907,50 @@ describe('Consolidated list_entries_filter Tool', () => {
       );
     });
 
-    it('keeps an empty page an array with count 0', async () => {
-      vi.mocked(filterListEntries).mockResolvedValue([]);
-      const request: CallToolRequest = {
-        method: 'tools/call',
-        params: {
-          name: 'list_entries_filter',
-          arguments: {
-            listId: mockListId,
-            attributeSlug: 'status',
-            condition: 'equals',
-            value: 'active',
+    it.each([undefined, false, true])(
+      'keeps empty pages with count 0 and completeness evidence %s',
+      async (truncated) => {
+        // An empty bounded result alone cannot establish upstream completeness.
+        const entries: AttioListEntry[] = [];
+        if (truncated !== undefined) {
+          Object.defineProperty(entries, 'truncated', { value: truncated });
+        }
+        vi.mocked(filterListEntries).mockResolvedValue(entries);
+        const request: CallToolRequest = {
+          method: 'tools/call',
+          params: {
+            name: 'list_entries_filter',
+            arguments: {
+              listId: mockListId,
+              attributeSlug: 'status',
+              condition: 'equals',
+              value: 'active',
+            },
           },
-        },
-      };
-
-      const result = (await handleFilterListEntriesOperation(
-        request,
-        realConfig
-      )) as CallToolResult & {
-        structuredContent: {
-          data: unknown[];
-          count: number;
-          next_cursor: null;
         };
-      };
 
-      expect(result.isError).toBe(false);
-      expect(result.structuredContent).toEqual({
-        data: [],
-        count: 0,
-        next_cursor: null,
-      });
-    });
+        const result = (await handleFilterListEntriesOperation(
+          request,
+          realConfig
+        )) as CallToolResult & {
+          structuredContent: {
+            data: unknown[];
+            count: number;
+            next_cursor: null;
+          };
+        };
+
+        expect(result.isError).toBe(false);
+        expect(result.structuredContent).toEqual({
+          data: [],
+          count: 0,
+          next_cursor: null,
+          pagination: { supported: false, truncated: truncated ?? true },
+        });
+        expect(JSON.parse(result.content[0].text as string)).toEqual(
+          result.structuredContent
+        );
+      }
+    );
   });
 });

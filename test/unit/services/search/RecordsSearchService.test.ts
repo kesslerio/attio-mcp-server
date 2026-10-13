@@ -5,7 +5,11 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RecordsSearchService } from '@/services/search/RecordsSearchService.js';
-import { AuthenticationError, RateLimitError } from '@/errors/api-errors.js';
+import {
+  AuthenticationError,
+  RateLimitError,
+  ResourceNotFoundError,
+} from '@/errors/api-errors.js';
 
 // Mock the Attio client module
 vi.mock('@/api/attio-client.js', () => ({
@@ -18,11 +22,6 @@ vi.mock('@/api/lazy-client.js', () => ({
   getLazyAttioClient: vi.fn(() => ({
     post: vi.fn(),
   })),
-}));
-
-// Mock listObjectRecords
-vi.mock('@/objects/records/index.js', () => ({
-  listObjectRecords: vi.fn().mockResolvedValue([]),
 }));
 
 // Mock ValidationService
@@ -38,7 +37,6 @@ vi.mock('@/services/ValidationService.js', () => ({
 }));
 
 import * as LazyClientModule from '@/api/lazy-client.js';
-import { listObjectRecords } from '@/objects/records/index.js';
 import { ValidationService } from '@/services/ValidationService.js';
 
 describe('RecordsSearchService', () => {
@@ -51,16 +49,20 @@ describe('RecordsSearchService', () => {
   });
 
   describe('searchRecordsObjectType', () => {
-    it('should return records from listObjectRecords', async () => {
+    it('should return records from the records query endpoint', async () => {
       const mockRecords = [{ id: { record_id: 'rec1' } }];
-      vi.mocked(listObjectRecords).mockResolvedValue(mockRecords as any);
+      const mockPost = vi
+        .fn()
+        .mockResolvedValue({ data: { data: mockRecords } });
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
+        post: mockPost,
+      } as never);
 
       const results = await RecordsSearchService.searchRecordsObjectType(10, 0);
 
       expect(results).toEqual(mockRecords);
-      expect(listObjectRecords).toHaveBeenCalledWith('records', {
-        pageSize: 10,
-        page: 1,
+      expect(mockPost).toHaveBeenCalledWith('/objects/records/records/query', {
+        limit: 10,
       });
     });
 
@@ -74,19 +76,65 @@ describe('RecordsSearchService', () => {
       );
 
       expect(results).toEqual([]);
-      expect(listObjectRecords).not.toHaveBeenCalled();
+      expect(LazyClientModule.getLazyAttioClient).not.toHaveBeenCalled();
     });
 
-    it('should calculate correct page number from offset', async () => {
-      const mockRecords = [{ id: { record_id: 'rec1' } }];
-      vi.mocked(listObjectRecords).mockResolvedValue(mockRecords as any);
+    it.each([20, 25])(
+      'should forward exact offset %s without page rounding',
+      async (offset) => {
+        const mockRecords = [{ id: { record_id: 'rec1' } }];
+        const mockPost = vi
+          .fn()
+          .mockResolvedValue({ data: { data: mockRecords } });
+        vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
+          post: mockPost,
+        } as never);
 
-      await RecordsSearchService.searchRecordsObjectType(10, 20);
+        const filters = { status: 'active' };
+        const results = await RecordsSearchService.searchRecordsObjectType(
+          10,
+          offset,
+          filters
+        );
 
-      expect(listObjectRecords).toHaveBeenCalledWith('records', {
-        pageSize: 10,
-        page: 3, // (20 / 10) + 1 = 3
-      });
+        expect(results).toEqual(mockRecords);
+        expect(mockPost).toHaveBeenCalledWith(
+          '/objects/records/records/query',
+          {
+            limit: 10,
+            offset,
+            filter: filters,
+          }
+        );
+      }
+    );
+
+    it('should distinguish a successful empty query from a missing object', async () => {
+      const mockPost = vi
+        .fn()
+        .mockResolvedValueOnce({ data: { data: [] } })
+        .mockRejectedValueOnce({ response: { status: 404 } });
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
+        post: mockPost,
+      } as never);
+
+      await expect(
+        RecordsSearchService.searchRecordsObjectType()
+      ).resolves.toEqual([]);
+      await expect(
+        RecordsSearchService.searchRecordsObjectType()
+      ).rejects.toThrow(ResourceNotFoundError);
+      expect(mockPost).toHaveBeenCalledTimes(2);
+      expect(mockPost).toHaveBeenNthCalledWith(
+        1,
+        '/objects/records/records/query',
+        { limit: 10 }
+      );
+      expect(mockPost).toHaveBeenNthCalledWith(
+        2,
+        '/objects/records/records/query',
+        { limit: 10 }
+      );
     });
   });
 
