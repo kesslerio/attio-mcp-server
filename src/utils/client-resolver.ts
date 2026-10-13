@@ -77,10 +77,9 @@ function resolveApiKey(): string | undefined {
 /**
  * Effective credential scope for cross-request binding (U5/KTD6).
  *
- * Continuation tokens fingerprint the credential resolved through this exact
- * request-context/environment precedence so a cursor issued under one tenant
- * cannot be replayed under another. Returns the resolved credential value
- * itself; callers must fingerprint it and never encode or log the raw value.
+ * Uses resolveAttioCredential, which owns active-principal resolution and is
+ * also used directly by continuation tokens. Returns the credential itself;
+ * callers must fingerprint it and never encode or log the raw value.
  */
 export function resolveCredentialScope(): string | undefined {
   return resolveApiKey();

@@ -39,7 +39,8 @@ export function setClientContext(context: Record<string, unknown>): void {
 }
 
 /**
- * Clears any stored context data from both WeakMap and fallback storage.
+ * Clears legacy WeakMap and fallback storage; active request-local contexts
+ * remain owned by runWithClientContext.
  */
 export function clearClientContext(): void {
   if (contextKey) {
@@ -51,7 +52,7 @@ export function clearClientContext(): void {
 
 /**
  * Returns the currently stored context (if any).
- * Prioritizes WeakMap storage over fallback storage.
+ * Prioritizes request-local storage, then legacy WeakMap and fallback storage.
  */
 export function getClientContext(): Record<string, unknown> | null {
   const requestContext = requestContextStorage.getStore();

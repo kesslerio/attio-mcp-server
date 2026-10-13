@@ -39,8 +39,10 @@ interrupted upstream response.
 
 Each tool call runs with its session's Attio credential in request-local context.
 The Worker never writes `ATTIO_API_KEY`/`ATTIO_ACCESS_TOKEN` and does not serialize
-tool calls, so tenants do not wait on each other. The credential-concurrency suite
-holds one tenant's upstream call open while others read, write, and page, and
+tool calls, so tenants do not wait on each other. A request context without a
+usable credential fails instead of inheriting a host credential or cached client.
+The credential-concurrency suite holds one tenant's upstream call open while
+others read, write, and page, and
 asserts every upstream request carries its own tenant's credential, a failing tenant
 leaves later principals unaffected, and continuation cursors stay bound to the
 issuing principal.
