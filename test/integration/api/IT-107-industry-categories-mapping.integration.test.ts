@@ -2,7 +2,7 @@
  * IT-107: Industry categories mapping regression coverage.
  */
 
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createCompany, getCompanyDetails } from '@/objects/companies/index.js';
 import { initializeAttioClient, getAttioClient } from '@/api/attio-client.js';
 import { IntegrationFixtures } from '@test/utils/integration-fixtures.js';
@@ -17,7 +17,7 @@ describe.skipIf(!runIntegrationTests || !industryMappingEnabled)(
   () => {
     let fixtures: IntegrationFixtures;
 
-    beforeAll(() => {
+    beforeEach(() => {
       const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
       fixtures = new IntegrationFixtures(getAttioClient());
