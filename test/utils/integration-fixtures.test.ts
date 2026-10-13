@@ -205,13 +205,17 @@ describe('IntegrationFixtures ownership contract', () => {
       });
       const cleanup = fixtures.cleanup();
       const laterWrite = vi.fn();
-      await expect(fixtures.create(kind, laterWrite)).rejects.toThrow(/cleanup/);
+      await expect(fixtures.create(kind, laterWrite)).rejects.toThrow(
+        /cleanup/
+      );
       expect(api.delete).not.toHaveBeenCalled();
       finish();
       await creation;
       await cleanup;
       expect(api.records.size).toBe(0);
-      await expect(fixtures.create(kind, laterWrite)).rejects.toThrow(/cleanup/);
+      await expect(fixtures.create(kind, laterWrite)).rejects.toThrow(
+        /cleanup/
+      );
       expect(laterWrite).not.toHaveBeenCalled();
     }
   );
@@ -247,7 +251,12 @@ describe('IntegrationFixtures ownership contract', () => {
 
   it.each([
     { active: false },
-    { active: true, token_level: 'workspace', client_id: 'invalid', aud: 'invalid' },
+    {
+      active: true,
+      token_level: 'workspace',
+      client_id: 'invalid',
+      aud: 'invalid',
+    },
     { active: true, token_level: 'workspace', client_id: token, aud: listId },
     { active: true, token_level: 'app', client_id: token, aud: token },
   ])('denies writes for unresolvable identity %j', async (identity) => {
@@ -256,7 +265,9 @@ describe('IntegrationFixtures ownership contract', () => {
     api.get.mockResolvedValue({ data: identity });
     const fixtures = new IntegrationFixtures(api);
     const write = vi.fn();
-    await expect(fixtures.create('company', write)).rejects.toThrow(/actor UUID/);
+    await expect(fixtures.create('company', write)).rejects.toThrow(
+      /actor UUID/
+    );
     await fixtures.cleanup();
     expect(write).not.toHaveBeenCalled();
     expect(api.delete).not.toHaveBeenCalled();

@@ -90,9 +90,8 @@ export class IntegrationFixtures {
     if (this.closing) throw new Error('Integration fixture cleanup has begun');
     const name = `IT-${this.token}-${this.marker}-${++this.sequence}`;
     const result = await create(name);
-    const id = object(object(result).id)[
-      kind === 'company' ? 'record_id' : 'list_id'
-    ];
+    const id =
+      object(object(result).id)[kind === 'company' ? 'record_id' : 'list_id'];
     if (typeof id !== 'string' || !uuid.test(id)) {
       throw new Error(
         `Fixture ${kind} creation returned no valid ID; cannot safely clean up`
@@ -103,7 +102,9 @@ export class IntegrationFixtures {
       id,
       name,
       path:
-        kind === 'company' ? `/objects/companies/records/${id}` : `/lists/${id}`,
+        kind === 'company'
+          ? `/objects/companies/records/${id}`
+          : `/lists/${id}`,
     };
     // Register before assertions so partial setup remains eligible for safe cleanup.
     this.owned.push(fixture);
@@ -113,9 +114,8 @@ export class IntegrationFixtures {
 
   private assertOwnership(value: unknown, fixture: OwnedFixture): void {
     const record = object(value);
-    const id = object(record.id)[
-      fixture.kind === 'company' ? 'record_id' : 'list_id'
-    ];
+    const id =
+      object(record.id)[fixture.kind === 'company' ? 'record_id' : 'list_id'];
     const values = object(record.values);
     const names = values.name;
     const name =
