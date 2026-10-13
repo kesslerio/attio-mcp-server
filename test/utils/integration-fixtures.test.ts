@@ -186,15 +186,20 @@ describe('IntegrationFixtures ownership contract', () => {
       const api = fakeApi();
       const fixtures = new IntegrationFixtures(api);
       let finish!: () => void;
-      const deferred = new Promise<void>((resolve) => { finish = resolve; });
+      const deferred = new Promise<void>((resolve) => {
+        finish = resolve;
+      });
       const creation = fixtures.create(kind, async (name) => {
         await deferred;
-        const record = kind === 'company' ? company(name) : {
-          ...ListMockFactory.create({ name }),
-          id: { list_id: listId },
-          name,
-          created_by_actor: { type: 'api-token', id: token },
-        };
+        const record =
+          kind === 'company'
+            ? company(name)
+            : {
+                ...ListMockFactory.create({ name }),
+                id: { list_id: listId },
+                name,
+                created_by_actor: { type: 'api-token', id: token },
+              };
         api.records.set(kind === 'company' ? path : `/lists/${listId}`, record);
         return record;
       });
@@ -215,11 +220,19 @@ describe('IntegrationFixtures ownership contract', () => {
     vi.stubEnv('WORKSPACE_API_UUID', '');
     const api = fakeApi();
     api.records.set('/self', {
-      active: true, token_level: 'workspace', client_id: token, aud: token,
-      workspace_id: listId, authorized_by_workspace_member_id: recordId,
+      active: true,
+      token_level: 'workspace',
+      client_id: token,
+      aud: token,
+      workspace_id: listId,
+      authorized_by_workspace_member_id: recordId,
     });
-    api.get.mockImplementation(async (request) => ({ data: request === '/self'
-      ? api.records.get(request) : { data: api.records.get(request) } }));
+    api.get.mockImplementation(async (request) => ({
+      data:
+        request === '/self'
+          ? api.records.get(request)
+          : { data: api.records.get(request) },
+    }));
     const fixtures = new IntegrationFixtures(api);
     await fixtures.create('company', async (name) => {
       expect(api.get).toHaveBeenCalledWith('/self');
@@ -253,13 +266,25 @@ describe('IntegrationFixtures ownership contract', () => {
     vi.stubEnv('WORKSPACE_API_UUID', '');
     const api = fakeApi();
     let finish!: (value: { data: unknown }) => void;
-    api.get.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    api.get.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        })
+    );
     const fixtures = new IntegrationFixtures(api);
     const write = vi.fn();
     const creation = fixtures.create('company', write);
     const denied = expect(creation).rejects.toThrow(/cleanup/);
     const cleanup = fixtures.cleanup();
-    finish({ data: { active: true, token_level: 'workspace', client_id: token, aud: token } });
+    finish({
+      data: {
+        active: true,
+        token_level: 'workspace',
+        client_id: token,
+        aud: token,
+      },
+    });
     await denied;
     await cleanup;
     expect(write).not.toHaveBeenCalled();
