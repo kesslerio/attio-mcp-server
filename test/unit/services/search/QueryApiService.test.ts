@@ -72,7 +72,7 @@ describe('QueryApiService', () => {
       );
     });
 
-    it('should return empty array for ResourceNotFoundError', async () => {
+    it('should reject missing objects with ResourceNotFoundError', async () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 404, data: { error: 'Not found' } },
       });
@@ -80,13 +80,13 @@ describe('QueryApiService', () => {
         post: mockPost,
       } as any);
 
-      const results = await QueryApiService.searchByRelationship(
-        UniversalResourceType.COMPANIES,
-        UniversalResourceType.PEOPLE,
-        'invalid-uuid'
-      );
-
-      expect(results.data).toEqual([]);
+      await expect(
+        QueryApiService.searchByRelationship(
+          UniversalResourceType.COMPANIES,
+          UniversalResourceType.PEOPLE,
+          'target-uuid-123'
+        )
+      ).rejects.toThrow(ResourceNotFoundError);
     });
 
     it('should throw AuthenticationError on 401', async () => {
@@ -157,7 +157,7 @@ describe('QueryApiService', () => {
       });
     });
 
-    it('should return empty array on not found', async () => {
+    it('should reject missing objects with ResourceNotFoundError', async () => {
       const mockPost = vi.fn().mockRejectedValue({
         response: { status: 404, data: { error: 'Not found' } },
       });
@@ -165,16 +165,13 @@ describe('QueryApiService', () => {
         post: mockPost,
       } as any);
 
-      const results = await QueryApiService.searchByTimeframe(
-        UniversalResourceType.COMPANIES,
-        {
+      await expect(
+        QueryApiService.searchByTimeframe(UniversalResourceType.COMPANIES, {
           resourceType: UniversalResourceType.COMPANIES,
           attribute: 'created_at',
           operator: 'between',
-        }
-      );
-
-      expect(results.data).toEqual([]);
+        })
+      ).rejects.toThrow(ResourceNotFoundError);
     });
 
     it('should reject unsupported modified timeframe queries for people', async () => {
@@ -213,7 +210,13 @@ describe('QueryApiService', () => {
           startDate: '2024-01-01',
           operator: 'greater_than',
         })
-      ).rejects.toThrow(/Timeframe query rejected by Attio/);
+      ).rejects.toMatchObject({
+        statusCode: 400,
+        endpoint: '/objects/people/records/query',
+        method: 'POST',
+        message: 'Filter cannot omit field for Attribute: last_interaction.',
+        details: { code: 'missing_sort_field' },
+      });
     });
   });
 
@@ -288,6 +291,48 @@ describe('QueryApiService', () => {
           'test query'
         )
       ).rejects.toThrow(ServerError);
+    });
+  });
+
+  describe.each([
+    {
+      name: 'relationship',
+      search: () =>
+        QueryApiService.searchByRelationship(
+          UniversalResourceType.COMPANIES,
+          UniversalResourceType.PEOPLE,
+          'target-uuid-123'
+        ),
+    },
+    {
+      name: 'timeframe',
+      search: () =>
+        QueryApiService.searchByTimeframe(UniversalResourceType.COMPANIES, {
+          resourceType: UniversalResourceType.COMPANIES,
+          attribute: 'created_at',
+          operator: 'between',
+        }),
+    },
+    {
+      name: 'content',
+      search: () =>
+        QueryApiService.searchByContent(
+          UniversalResourceType.COMPANIES,
+          'test query'
+        ),
+    },
+  ])('$name page contract', ({ search }) => {
+    it('returns an empty page for a successful query with no matches', async () => {
+      const mockPost = vi.fn().mockResolvedValue({ data: { data: [] } });
+      vi.mocked(LazyClientModule.getLazyAttioClient).mockReturnValue({
+        post: mockPost,
+      } as never);
+
+      await expect(search()).resolves.toEqual({
+        data: [],
+        upstreamCursor: null,
+      });
+      expect(mockPost).toHaveBeenCalledOnce();
     });
   });
 });

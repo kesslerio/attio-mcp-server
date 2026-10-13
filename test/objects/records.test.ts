@@ -9,13 +9,13 @@ import {
   batchUpdateObjectRecords,
   formatRecordAttribute,
   formatRecordAttributes,
-} from '../../src/objects/records';
-import * as attioOperations from '../../src/api/operations/index';
-import { getAttioClient } from '../../src/api/attio-client';
-import { AttioRecord, RecordAttributes } from '../../src/types/attio';
+} from '@/objects/records/index.js';
+import * as attioOperations from '@/api/operations/index.js';
+import { getAttioClient } from '@/api/attio-client.js';
+import { AttioRecord, RecordAttributes } from '@/types/attio.js';
 
 // Mock the attio-operations module
-vi.mock('../../src/api/operations/index');
+vi.mock('@/api/operations/index.js');
 
 describe('Records API', () => {
   // Sample mock data
@@ -75,44 +75,31 @@ describe('Records API', () => {
       expect(result).toEqual(mockRecord);
     });
 
-    it('should handle errors and use fallback implementation if needed', async () => {
+    it('should preserve uncertain create failures without a fallback write', async () => {
       // Mock data
       const mockAttributes = {
         name: 'Test Record',
         description: 'This is a test record',
       };
 
-      // Mock the createRecord function to throw an error that's a non-Error object
-      // This will bypass the error instanceof Error check
-      vi.mocked(attioOperations.createRecord).mockImplementation(() => {
-        // Return a Promise that rejects with a non-Error object
-        return Promise.reject({ message: 'API error' });
-      });
+      // A non-Error rejection without an HTTP response cannot prove no write occurred.
+      const failure = { message: 'API error' };
+      vi.mocked(attioOperations.createRecord).mockRejectedValue(failure);
 
-      // Mock the direct API call for fallback
+      // A successful second write must never mask the uncertain first outcome.
       mockPost.mockResolvedValue({
         data: {
           data: mockRecord,
         },
       });
 
-      // Call the function
-      const result = await createObjectRecord<AttioRecord>(
-        'companies',
-        mockAttributes
-      );
+      await expect(
+        createObjectRecord<AttioRecord>('companies', mockAttributes)
+      ).rejects.toBe(failure);
 
       // Assertions
-      expect(attioOperations.createRecord).toHaveBeenCalled();
-      expect(mockApiClient.post).toHaveBeenCalledWith(
-        '/objects/companies/records',
-        {
-          data: {
-            values: mockAttributes,
-          },
-        }
-      );
-      expect(result).toEqual(mockRecord);
+      expect(attioOperations.createRecord).toHaveBeenCalledOnce();
+      expect(mockApiClient.post).not.toHaveBeenCalled();
     });
   });
 
