@@ -3,12 +3,9 @@
  */
 
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import {
-  createCompany,
-  getCompanyDetails,
-  deleteCompany,
-} from '@/objects/companies/index.js';
-import { initializeAttioClient } from '@/api/attio-client.js';
+import { createCompany, getCompanyDetails } from '@/objects/companies/index.js';
+import { initializeAttioClient, getAttioClient } from '@/api/attio-client.js';
+import { IntegrationFixtures } from '@test/utils/integration-fixtures.js';
 import { shouldRunIntegrationTests } from '@test/utils/integration-guards.js';
 
 const runIntegrationTests = shouldRunIntegrationTests();
@@ -18,36 +15,28 @@ const industryMappingEnabled =
 describe.skipIf(!runIntegrationTests || !industryMappingEnabled)(
   'IT-107: Industry categories mapping',
   () => {
-    const testCompanies: string[] = [];
+    let fixtures: IntegrationFixtures;
 
     beforeAll(() => {
       const apiKey = process.env.ATTIO_API_KEY as string;
       initializeAttioClient(apiKey);
+      fixtures = new IntegrationFixtures(getAttioClient());
     });
 
     afterEach(async () => {
-      for (const companyId of testCompanies) {
-        try {
-          await deleteCompany(companyId);
-        } catch (error) {
-          console.error('Failed to delete test company', error);
-        }
-      }
-      testCompanies.length = 0;
+      await fixtures?.cleanup();
     });
 
     it('IT-107.1: maps industries to list-backed categories on create', async () => {
       const testIndustry = 'Software & Technology';
       const companyData = {
-        name: `Industry Mapping Test ${Date.now()}`,
         industry: testIndustry,
       };
 
-      const createdCompany = await createCompany(companyData);
-      expect(createdCompany?.id?.record_id).toBeDefined();
-      if (createdCompany?.id?.record_id) {
-        testCompanies.push(createdCompany.id.record_id);
-      }
+      const createdCompany = await fixtures.create('company', (name) =>
+        createCompany({ ...companyData, name })
+      );
+      expect(createdCompany.id.record_id).toBeDefined();
 
       const companyDetails = await getCompanyDetails(
         createdCompany.id!.record_id

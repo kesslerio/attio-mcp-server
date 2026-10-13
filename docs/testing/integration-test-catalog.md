@@ -103,13 +103,15 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 **IT-302: List Membership Operations**
 
-- IT-302.0: Requires TEST_LIST_ID and TEST_COMPANY_ID configuration【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L63-L104】
-- IT-302.1: Adds list membership with required parameters【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L121-L134】
-- IT-302.2: Adds list membership with parent object context【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L136-L153】
-- IT-302.3: Adds list membership with entry values【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L155-L169】
-- IT-302.4: Adds list membership with all parameters【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L171-L186】
-- IT-302.5: Surfaces validation errors for missing record_id【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L175-L183】
-- IT-302.6: Surfaces validation errors for missing resource_type【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L185-L194】
+- IT-302.1: Adds an owned company to an owned list through `list_entries_manage`, with omitted and explicit empty initial values, then reads membership back
+- IT-302.2: Rejects missing `recordId` or `objectType` without changing membership
+
+**IT-401: Universal Lists**
+
+- IT-401.1: Reads the owned list by UUID and slug using legacy and universal services
+- IT-401.2: Checks list-native search results without requiring a populated workspace
+- IT-401.3: Checks pagination of the unique fixture-name query
+- IT-401.4: Rejects a nonexistent list identifier
 
 ---
 
@@ -152,3 +154,7 @@ All integration suites now rely on the shared `shouldRunIntegrationTests()` help
 - **Issue #834**: Phase 3 migration implementation (file renaming)
 - **PR #827**: Audit documentation and catalog creation
 - **PR #804**: Test relocation that exposed naming inconsistencies
+
+## Real-API smoke and fixture isolation
+
+`bun run test:integration:smoke` selects five live API cases; `bun run test:integration:full` runs the full tier. `bun run test:smoke` remains mocked unit coverage. IT-401 replaces the unguarded universal-list suite. Writing integration suites own their fixtures and require `WORKSPACE_API_UUID` in addition to `ATTIO_API_KEY`; see [integration setup and cleanup](../../test/integration/README.md).
