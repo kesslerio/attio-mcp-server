@@ -4,11 +4,9 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 ## 📋 Quick Reference
 
-- **Total Integration Tests**: 8 suites (IT-XXX naming complete)
 - **ID Prefix**: `IT-XXX` (Integration Test)
 - **Location**: `test/integration/`
-- **Execution**: `npm run test:integration`
-- **Prerequisites**: `ATTIO_API_KEY` environment variable
+- **Execution and prerequisites**: See [integration setup](../../test/integration/README.md#-running-integration-tests)
 
 ## 🎯 IT-XXX Taxonomy
 
@@ -20,11 +18,11 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 | ---------- | ------------------------ | ---------------------------------------------------------- | ----------------------------- | -------- | ------------ |
 | **IT-001** | Batch Company Operations | `core/IT-001-batch-company-operations.integration.test.ts` | `shouldRunIntegrationTests()` | Platform | ✅ Completed |
 
-**Description**: Validates batch create, update, and delete operations for company records. Tests chunking behavior, error handling, and API response consistency.
+**Description**: Updates three run-owned companies in a batch and reads back their descriptions; setup and teardown create and safely delete the fixtures.
 
 **Test Cases**:
 
-- IT-001.1: Updates multiple companies in a batch【F:test/integration/core/IT-001-batch-company-operations.integration.test.ts†L82-L117】
+- IT-001.1: Updates multiple companies in a batch ([suite](../../test/integration/core/IT-001-batch-company-operations.integration.test.ts))
 
 ---
 
@@ -59,15 +57,17 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 **IT-106: Attribute Validation**
 
-- IT-106.1: Fetches live attribute metadata【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L60-L68】
-- IT-106.2: Validates company creation with type coercion【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L71-L86】
-- IT-106.3: Validates company updates with type coercion【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L89-L112】
-- IT-106.4: Validates individual attribute updates【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L115-L134】
-- IT-106.5: Rejects invalid attribute values【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L140-L153】
+See the [attribute validation suite](../../test/integration/api/IT-106-attribute-validation.integration.test.ts).
+
+- IT-106.1: Fetches live attribute metadata
+- IT-106.2: Validates company creation with type coercion
+- IT-106.3: Validates company updates with type coercion
+- IT-106.4: Validates individual attribute updates
+- IT-106.5: Rejects invalid attribute values
 
 **IT-107: Industry Categories Mapping**
 
-- IT-107.1: Maps industries to list-backed categories on create【F:test/integration/api/IT-107-industry-categories-mapping.integration.test.ts†L30-L69】
+- IT-107.1: Maps industries to list-backed categories on create ([suite](../../test/integration/api/IT-107-industry-categories-mapping.integration.test.ts))
 
 ---
 
@@ -110,7 +110,7 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 - IT-401.1: Reads the owned list by UUID and slug using legacy and universal services
 - IT-401.2: Checks list-native search results without requiring a populated workspace
-- IT-401.3: Checks pagination of the unique fixture-name query
+- IT-401.3: Finds the owned list by its unique fixture name on the first page and verifies the second page is empty
 - IT-401.4: Rejects a nonexistent list identifier
 
 ---
@@ -119,7 +119,6 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 | Aspect          | Integration (IT-XXX)       | E2E (TC-XXX)                               |
 | --------------- | -------------------------- | ------------------------------------------ |
-| **Test Count**  | 8 suites                   | 38+ test cases                             |
 | **Scope**       | API operations, edge cases | Complete workflows                         |
 | **Catalog**     | This document              | [MCP README](../../test/e2e/mcp/README.md) |
 | **Numbering**   | IT-001, IT-105, IT-201...  | TC-001, TC-L01, TC-D01...                  |
@@ -157,4 +156,5 @@ All integration suites now rely on the shared `shouldRunIntegrationTests()` help
 
 ## Real-API smoke and fixture isolation
 
-`bun run test:integration:smoke` selects five live API cases; `bun run test:integration:full` runs the full tier. `bun run test:smoke` remains mocked unit coverage. IT-401 replaces the unguarded universal-list suite. Writing integration suites own their fixtures and derive their API-token actor UUID through `GET /self` using `ATTIO_API_KEY` when `WORKSPACE_API_UUID` is absent; see [integration setup and cleanup](../../test/integration/README.md).
+See [integration setup and cleanup](../../test/integration/README.md) for tier
+selection, credentials, and fixture ownership requirements.
