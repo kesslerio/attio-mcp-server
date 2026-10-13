@@ -229,6 +229,9 @@ jobs:
       - name: Process lifecycle regression tests
         run: bun run test:lifecycle
 
+      - name: Integration workflow regression tests (offline)
+        run: bun test scripts/ci/integration-workflow.test.ts
+
       - name: Performance budget check
         if: matrix.node-version == '22.x'
         run: |
@@ -237,15 +240,44 @@ jobs:
             bun run perf:budgets -- --tests-only
           fi
 
-  # Job 4: Integration Tests (conditional)
-  integration-tests:
-    name: Integration Tests
+  # Check availability without checking out or executing PR code with secrets.
+  integration-prerequisites:
+    name: Integration Prerequisites
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     needs: [change-analysis]
     if: |
       needs.change-analysis.outputs.needs-integration == 'true' ||
       contains(github.event.pull_request.labels.*.name, 'run-integration-tests')
+    outputs:
+      available: ${{ steps.availability.outputs.available }}
+    steps:
+      - name: Check integration availability
+        id: availability
+        env:
+          UNTRUSTED_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          ATTIO_API_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && secrets.ATTIO_TEST_API_KEY || '' }}
+        run: |
+          if [ "$UNTRUSTED_FORK" = "true" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Integration verification unavailable: untrusted fork; real API tests not exercised." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ -z "$ATTIO_API_KEY" ]; then
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Integration verification unavailable: ATTIO_TEST_API_KEY is missing; real API tests not exercised." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Selected integration verification requires ATTIO_TEST_API_KEY; no real API tests ran. Configure the test credential separately before rerunning."
+            exit 1
+          fi
+          echo "available=true" >> "$GITHUB_OUTPUT"
+
+  # Job 4: Only an admitted run can report Integration Tests success.
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [integration-prerequisites]
+    if: needs.integration-prerequisites.outputs.available == 'true'
 
     steps:
       - name: Checkout code
@@ -271,12 +303,7 @@ jobs:
         env:
           ATTIO_API_KEY: ${{ secrets.ATTIO_TEST_API_KEY }}
           ATTIO_WORKSPACE_ID: ${{ secrets.ATTIO_TEST_WORKSPACE_ID }}
-        run: |
-          if [ -z "$ATTIO_API_KEY" ]; then
-            echo "⚠️ Integration tests skipped: ATTIO_TEST_API_KEY not available"
-            exit 0
-          fi
-          bun run test:integration
+        run: bun run test:integration
 
   # Job 5: Build Verification (skip for docs-only changes)
   build:
@@ -395,6 +422,8 @@ jobs:
         lint-and-typecheck,
         smart-tests,
         build-verification-status,
+        integration-prerequisites,
+        integration-tests,
       ]
     if: |
       always() &&
@@ -434,13 +463,18 @@ jobs:
             const jobs = {
               'Lint & Type Check': '${{ needs.lint-and-typecheck.result }}',
               'Smart Tests': '${{ needs.smart-tests.result }}',
-              'Build Verification': '${{ needs.build-verification-status.result }}'
+              'Build Verification': '${{ needs.build-verification-status.result }}',
+              'Integration Prerequisites': '${{ needs.integration-prerequisites.result }}',
+              'Integration Tests': '${{ needs.integration-tests.result }}'
             };
 
             summary += '\n## 🔍 Job Results\n\n';
             for (const [job, result] of Object.entries(jobs)) {
               const emoji = result === 'success' ? '✅' : result === 'failure' ? '❌' : result === 'skipped' ? '⏭️' : '⚠️';
               summary += `${emoji} **${job}**: ${result}\n`;
+            }
+            if (jobs['Integration Tests'] === 'skipped') {
+              summary += '\nReal API integration tests were not exercised (not selected or verification unavailable).\n';
             }
 
             // Time savings

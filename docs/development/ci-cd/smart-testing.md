@@ -42,9 +42,9 @@ const selection = analyzer.getAffectedTests('main');
 - **Trigger**: API/service changes
 
 #### Integration Tests (`npm run test:integration`)
-- **Target**: < 10 minutes execution
-- **Coverage**: Real API validation
-- **Trigger**: On-demand or API changes
+
+See [Integration verification in CI](../../testing/integration-ci.md) for
+selection, runtime limits, and credential availability reporting.
 
 ### 3. Performance Budget System
 

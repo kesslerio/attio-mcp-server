@@ -36,12 +36,9 @@ The CI/CD pipeline consists of three main workflows:
   - Codecov upload (Node 20.x only)
 
 #### 3. Integration Tests
-- **Runtime**: ~30-45 minutes
-- **Triggers**: Push events or PRs with `run-integration-tests` label
-- **Requirements**: `ATTIO_TEST_API_KEY` and `ATTIO_TEST_WORKSPACE_ID` secrets
-- **Tasks**:
-  - Real API integration tests
-  - Test result artifact upload
+
+See [Integration verification in CI](testing/integration-ci.md) for the active
+`smart-ci.yml` selection, prerequisites, and unavailable-verification reporting.
 
 #### 4. Build Verification
 - **Runtime**: ~10-15 minutes
@@ -150,10 +147,9 @@ The CI/CD pipeline consists of three main workflows:
 ### Required Secrets
 
 #### For Integration Tests
-```
-ATTIO_TEST_API_KEY - Test API key for integration tests
-ATTIO_TEST_WORKSPACE_ID - Test workspace ID
-```
+
+See [Integration verification in CI](testing/integration-ci.md) for test secrets
+and admission requirements.
 
 #### For Coverage Reporting
 ```
@@ -265,7 +261,9 @@ npm run build              # Production build
 ### Manual Interventions
 
 #### Trigger Integration Tests on PR
-Add the `run-integration-tests` label to any PR to force integration test execution.
+
+See [Integration verification in CI](testing/integration-ci.md) for label-based
+selection and the trust and credential checks required before execution.
 
 #### Skip CI Checks
 Add `[ci skip]` to commit messages to bypass CI pipeline (not recommended for main branches).

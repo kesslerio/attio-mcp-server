@@ -232,7 +232,7 @@ Tests run automatically in CI with these stages:
 
 1. **Lint & Type Check** - Code quality
 2. **Unit Tests** - Fast, mocked tests
-3. **Integration Tests** - On PR to main or with label
+3. **Integration Tests** - See [CI selection and prerequisites](testing/integration-ci.md)
 4. **Coverage Report** - Test coverage metrics
 
 ### Running Tests Locally Like CI
