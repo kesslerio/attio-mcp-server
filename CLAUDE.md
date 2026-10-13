@@ -165,7 +165,7 @@ PIPELINE STAGES:
 
 1. **Lint & Type Check**: ESLint (see **Quality Gates** threshold) + TypeScript validation
 2. **Unit Tests**: Coverage tests only (no duplicate runs)
-3. **Integration Tests**: On-demand with label or main branch
+3. **Integration Tests**: See [CI selection and prerequisites](docs/testing/integration-ci.md)
 4. **Build Verification**: Ensure artifacts created correctly
 5. **Security Audit**: Dependency vulnerability scanning
 

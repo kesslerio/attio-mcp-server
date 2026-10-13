@@ -2,7 +2,9 @@
 
 - **Runtime limit**: 30 minutes, plus the prerequisite check
 - **Selection**: API/service/handler changes or the `run-integration-tests` PR label
-- **Requirements**: `ATTIO_TEST_API_KEY` and `ATTIO_TEST_WORKSPACE_ID` secrets
+- **Admission requirement**: `ATTIO_TEST_API_KEY` secret for a trusted run
+- **Test environment**: `ATTIO_TEST_WORKSPACE_ID` is also passed to the test job;
+  the prerequisite check does not validate it
 - **Tasks**:
   - Credential availability check
   - Real API integration tests
@@ -25,3 +27,8 @@ Run the offline workflow boundary tests with
 `bun test scripts/ci/integration-workflow.test.ts`. They execute the prerequisite
 shell with synthetic values and stub the test runner; they provide no live API
 coverage.
+
+The regression tests also execute the PR summary script with synthetic job
+results and a stub GitHub client, checking both new and updated comments. The
+summary lists prerequisite and test results separately and explicitly says real
+API tests were not exercised when the test job is skipped.
