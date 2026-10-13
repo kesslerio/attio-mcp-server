@@ -157,4 +157,4 @@ All integration suites now rely on the shared `shouldRunIntegrationTests()` help
 
 ## Real-API smoke and fixture isolation
 
-`bun run test:integration:smoke` selects five live API cases; `bun run test:integration:full` runs the full tier. `bun run test:smoke` remains mocked unit coverage. IT-401 replaces the unguarded universal-list suite. Writing integration suites own their fixtures and require `WORKSPACE_API_UUID` in addition to `ATTIO_API_KEY`; see [integration setup and cleanup](../../test/integration/README.md).
+`bun run test:integration:smoke` selects five live API cases; `bun run test:integration:full` runs the full tier. `bun run test:smoke` remains mocked unit coverage. IT-401 replaces the unguarded universal-list suite. Writing integration suites own their fixtures and derive their API-token actor UUID through `GET /self` using `ATTIO_API_KEY` when `WORKSPACE_API_UUID` is absent; see [integration setup and cleanup](../../test/integration/README.md).

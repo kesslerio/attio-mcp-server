@@ -74,6 +74,14 @@ describe.skipIf(!shouldRunIntegrationTests())('IT-401: Universal lists', () => {
   });
 
   it('IT-401.3: filters before paginating without comparing changing snapshots', async () => {
+    const firstPage = await UniversalSearchService.searchRecords({
+      resource_type: UniversalResourceType.LISTS,
+      query: listName,
+      limit: 1,
+      offset: 0,
+    });
+    expect(firstPage).toHaveLength(1);
+    expect(firstPage[0]).toMatchObject({ id: { list_id: listId } });
     const results = await UniversalSearchService.searchRecords({
       resource_type: UniversalResourceType.LISTS,
       query: listName,

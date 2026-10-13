@@ -11,7 +11,7 @@ function fakeApi() {
   const records = new Map<string, unknown>();
   return {
     records,
-    get: vi.fn(async (path: string) => {
+    get: vi.fn(async (path: string): Promise<{ data: unknown }> => {
       if (!records.has(path)) throw { response: { status: 404 } };
       return { data: { data: records.get(path) } };
     }),
@@ -180,6 +180,92 @@ describe('IntegrationFixtures ownership contract', () => {
     expect(api.records.size).toBe(0);
   });
 
+  it.each(['company', 'list'] as const)(
+    'waits for pending %s creation and denies later writes during cleanup',
+    async (kind) => {
+      const api = fakeApi();
+      const fixtures = new IntegrationFixtures(api);
+      let finish!: () => void;
+      const deferred = new Promise<void>((resolve) => { finish = resolve; });
+      const creation = fixtures.create(kind, async (name) => {
+        await deferred;
+        const record = kind === 'company' ? company(name) : {
+          ...ListMockFactory.create({ name }),
+          id: { list_id: listId },
+          name,
+          created_by_actor: { type: 'api-token', id: token },
+        };
+        api.records.set(kind === 'company' ? path : `/lists/${listId}`, record);
+        return record;
+      });
+      const cleanup = fixtures.cleanup();
+      const laterWrite = vi.fn();
+      await expect(fixtures.create(kind, laterWrite)).rejects.toThrow(/cleanup/);
+      expect(api.delete).not.toHaveBeenCalled();
+      finish();
+      await creation;
+      await cleanup;
+      expect(api.records.size).toBe(0);
+      await expect(fixtures.create(kind, laterWrite)).rejects.toThrow(/cleanup/);
+      expect(laterWrite).not.toHaveBeenCalled();
+    }
+  );
+
+  it('derives the workspace token actor before creation without another secret', async () => {
+    vi.stubEnv('WORKSPACE_API_UUID', '');
+    const api = fakeApi();
+    api.records.set('/self', {
+      active: true, token_level: 'workspace', client_id: token, aud: token,
+      workspace_id: listId, authorized_by_workspace_member_id: recordId,
+    });
+    api.get.mockImplementation(async (request) => ({ data: request === '/self'
+      ? api.records.get(request) : { data: api.records.get(request) } }));
+    const fixtures = new IntegrationFixtures(api);
+    await fixtures.create('company', async (name) => {
+      expect(api.get).toHaveBeenCalledWith('/self');
+      expect(name).toContain(token);
+      const record = company(name);
+      api.records.set(path, record);
+      return record;
+    });
+    await fixtures.cleanup();
+    expect(api.delete).toHaveBeenCalledWith(path);
+  });
+
+  it.each([
+    { active: false },
+    { active: true, token_level: 'workspace', client_id: 'invalid', aud: 'invalid' },
+    { active: true, token_level: 'workspace', client_id: token, aud: listId },
+    { active: true, token_level: 'app', client_id: token, aud: token },
+  ])('denies writes for unresolvable identity %j', async (identity) => {
+    vi.stubEnv('WORKSPACE_API_UUID', '');
+    const api = fakeApi();
+    api.get.mockResolvedValue({ data: identity });
+    const fixtures = new IntegrationFixtures(api);
+    const write = vi.fn();
+    await expect(fixtures.create('company', write)).rejects.toThrow(/actor UUID/);
+    await fixtures.cleanup();
+    expect(write).not.toHaveBeenCalled();
+    expect(api.delete).not.toHaveBeenCalled();
+  });
+
+  it('denies creation when cleanup starts during identity resolution', async () => {
+    vi.stubEnv('WORKSPACE_API_UUID', '');
+    const api = fakeApi();
+    let finish!: (value: { data: unknown }) => void;
+    api.get.mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    const fixtures = new IntegrationFixtures(api);
+    const write = vi.fn();
+    const creation = fixtures.create('company', write);
+    const denied = expect(creation).rejects.toThrow(/cleanup/);
+    const cleanup = fixtures.cleanup();
+    finish({ data: { active: true, token_level: 'workspace', client_id: token, aud: token } });
+    await denied;
+    await cleanup;
+    expect(write).not.toHaveBeenCalled();
+    expect(api.delete).not.toHaveBeenCalled();
+  });
+
   it('uses a unique run marker even with the same token', async () => {
     const first = new IntegrationFixtures(fakeApi());
     const second = new IntegrationFixtures(fakeApi());
@@ -191,7 +277,6 @@ describe('IntegrationFixtures ownership contract', () => {
   it.each([
     ['ATTIO_API_KEY', ''],
     ['ATTIO_API_KEY', ' '],
-    ['WORKSPACE_API_UUID', ''],
     ['WORKSPACE_API_UUID', 'invalid'],
     ['SKIP_INTEGRATION_TESTS', 'true'],
   ])('rejects %s=%s before any API operation', (key, value) => {

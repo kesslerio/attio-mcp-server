@@ -55,9 +55,11 @@ describe.skipIf(!runTests)('IT-XXX: <Title>', () => {
 ### Prerequisites
 
 Use a dedicated test workspace. Live suites require `ATTIO_API_KEY`; writing
-suites also require `WORKSPACE_API_UUID`, the UUID of that API token's actor
-(not the workspace UUID). Missing/blank API keys skip live suites, and
-`SKIP_INTEGRATION_TESTS=true` skips the entire tier. A missing/invalid actor UUID
+suites resolve the API-token actor UUID from `GET /self` before creation when
+`WORKSPACE_API_UUID` is absent. Only active workspace tokens are accepted; their
+`client_id` and `aud` identify the token, never the workspace or authorizing member.
+An explicitly supplied `WORKSPACE_API_UUID` must be that token actor UUID. Missing/blank API keys skip live suites, and
+`SKIP_INTEGRATION_TESTS=true` skips the entire tier. An invalid supplied or unresolvable actor UUID
 fails writing-suite setup before creation rather than silently skipping coverage.
 
 ### Commands

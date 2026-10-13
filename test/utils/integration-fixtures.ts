@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { shouldRunIntegrationTests } from '@test/utils/integration-guards.js';
 
 interface FixtureApi {
-  get(path: string): Promise<{ data: { data: unknown } }>;
+  get(path: string): Promise<{ data: unknown }>;
   delete(path: string): Promise<unknown>;
 }
 
@@ -22,7 +22,10 @@ const object = (value: unknown): Record<string, unknown> =>
 
 /** Run-local fixtures: never discover deletion candidates by querying a workspace. */
 export class IntegrationFixtures {
-  private readonly token: string;
+  private token: string | undefined;
+  private identity: Promise<void> | undefined;
+  private readonly pending = new Set<Promise<unknown>>();
+  private closing = false;
   private readonly marker: string;
   private readonly owned: OwnedFixture[] = [];
   private sequence = 0;
@@ -34,13 +37,13 @@ export class IntegrationFixtures {
       );
     }
     const token = process.env.WORKSPACE_API_UUID;
-    if (!token || !uuid.test(token)) {
+    if (token && !uuid.test(token)) {
       throw new Error(
         'Integration fixture writes require a valid WORKSPACE_API_UUID (API token actor ID)'
       );
     }
     this.token = token;
-    this.marker = `IT-${token}-${randomUUID()}`;
+    this.marker = randomUUID();
   }
 
   /** The callback must CREATE a new resource, never assert/upsert an existing one. */
@@ -48,7 +51,42 @@ export class IntegrationFixtures {
     kind: FixtureKind,
     create: (name: string) => Promise<T>
   ): Promise<T> {
-    const name = `${this.marker}-${++this.sequence}`;
+    if (this.closing) throw new Error('Integration fixture cleanup has begun');
+    const operation = this.createOwned(kind, create);
+    this.pending.add(operation);
+    try {
+      return await operation;
+    } finally {
+      this.pending.delete(operation);
+    }
+  }
+
+  private async resolveIdentity(): Promise<void> {
+    const response = await this.api.get('/self');
+    const identity = object(response.data);
+    const token = identity.client_id;
+    if (
+      identity.active !== true ||
+      identity.token_level !== 'workspace' ||
+      typeof token !== 'string' ||
+      !uuid.test(token) ||
+      identity.aud !== token
+    ) {
+      throw new Error('Integration fixture API-token actor UUID could not be resolved');
+    }
+    this.token = token;
+  }
+
+  private async createOwned<T>(
+    kind: FixtureKind,
+    create: (name: string) => Promise<T>
+  ): Promise<T> {
+    if (!this.token) {
+      this.identity ??= this.resolveIdentity();
+      await this.identity;
+    }
+    if (this.closing) throw new Error('Integration fixture cleanup has begun');
+    const name = `IT-${this.token}-${this.marker}-${++this.sequence}`;
     const result = await create(name);
     const id = object(object(result).id)[
       kind === 'company' ? 'record_id' : 'list_id'
@@ -105,12 +143,14 @@ export class IntegrationFixtures {
   }
 
   async cleanup(): Promise<void> {
+    this.closing = true;
+    await Promise.allSettled([...this.pending]);
     const failures: string[] = [];
     // Lists first when created after their parent records; delete only recorded IDs.
     for (const fixture of [...this.owned].reverse()) {
       try {
         const response = await this.api.get(fixture.path);
-        this.assertOwnership(response.data.data, fixture);
+        this.assertOwnership(object(response.data).data, fixture);
         await this.api.delete(fixture.path);
       } catch (error) {
         if (object(object(error).response).status !== 404) {
