@@ -6,7 +6,6 @@ import {
   ProtocolError,
   ProtocolErrorCode,
 } from '@modelcontextprotocol/server';
-import { ResourceType } from '@/types/attio.js';
 
 // Import utilities
 import {
@@ -40,31 +39,10 @@ import { createSecureToolErrorResult } from '@/utils/secure-error-handler.js';
 
 // Import operation handlers
 import {
-  handleBasicSearch,
-  handleSearchByEmail,
-  handleSearchByPhone,
-  handleSearchByDomain,
-  handleSmartSearch,
-} from '@/handlers/tools/dispatcher/operations/search.js';
-import { handleAdvancedSearch } from '@/handlers/tools/dispatcher/operations/advanced-search.js';
-import { handleDetailsOperation } from '@/handlers/tools/dispatcher/operations/details.js';
-import {
-  handleNotesOperation,
-  handleCreateNoteOperation,
-} from '@/handlers/tools/dispatcher/operations/notes.js';
-import {
   handleGetListsOperation,
   handleCreateListOperation,
   handleUpdateListConfigurationOperation,
 } from '@/handlers/tools/dispatcher/operations/lists.js';
-
-// Import CRUD operation handlers
-import {
-  handleCreateOperation,
-  handleUpdateOperation,
-  handleUpdateAttributeOperation,
-  handleDeleteOperation,
-} from '@/handlers/tools/dispatcher/operations/crud.js';
 
 // Import List operation handlers (additional operations from emergency fix)
 import {
@@ -81,35 +59,9 @@ import {
   handleGetRecordListMembershipsOperation,
 } from '@/handlers/tools/dispatcher/operations/lists.js';
 
-// Import Batch operation handlers
-import {
-  handleBatchUpdateOperation,
-  handleBatchCreateOperation,
-  handleBatchDeleteOperation,
-  handleBatchSearchOperation,
-  handleBatchGetDetailsOperation,
-} from '@/handlers/tools/dispatcher/operations/batch.js';
-
-// Import Record operation handlers
-import {
-  handleListOperation,
-  handleGetOperation,
-} from '@/handlers/tools/dispatcher/operations/records.js';
-import {
-  handleInfoOperation,
-  handleFieldsOperation,
-  handleGetAttributesOperation,
-  handleDiscoverAttributesOperation,
-} from '@/handlers/tools/dispatcher/misc-operations.js';
-
 // Import tool type definitions
 import {
   ToolConfig,
-  SearchToolConfig,
-  AdvancedSearchToolConfig,
-  DetailsToolConfig,
-  NotesToolConfig,
-  CreateNoteToolConfig,
   GetListsToolConfig,
   CreateListToolConfig,
   UpdateListConfigurationToolConfig,
@@ -273,60 +225,6 @@ export async function executeToolRequest(request: CallToolRequest) {
       // No general-resource branch: the relationship configs that only
       // registered behind the removed legacy flag are gone, so every
       // remaining call is handled by its operation adapter below.
-    } else if (toolType === 'search') {
-      result = await handleBasicSearch(
-        request,
-        toolConfig as SearchToolConfig,
-        resourceType as ResourceType
-      );
-    } else if (toolType === 'searchByEmail') {
-      result = await handleSearchByEmail(
-        request,
-        toolConfig as SearchToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'searchByPhone') {
-      result = await handleSearchByPhone(
-        request,
-        toolConfig as SearchToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'searchByCompany') {
-      // Use the tool config's own handler and format the result
-      const rawResult = await (toolConfig as ToolConfig).handler(
-        request.params.arguments as unknown as Record<string, unknown>
-      );
-      const formattedResult =
-        toolConfig.formatResult?.(rawResult) ||
-        JSON.stringify(rawResult, null, 2);
-      result = {
-        content: [{ type: 'text', text: formattedResult }],
-        isError: false,
-      };
-    } else if (toolType === 'smartSearch') {
-      result = await handleSmartSearch(
-        request,
-        toolConfig as SearchToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'details') {
-      result = await handleDetailsOperation(
-        request,
-        toolConfig as DetailsToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'notes') {
-      result = await handleNotesOperation(
-        request,
-        toolConfig as NotesToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'createNote') {
-      result = await handleCreateNoteOperation(
-        request,
-        toolConfig as CreateNoteToolConfig,
-        resourceType
-      );
     } else if (toolType === 'getLists') {
       result = await handleGetListsOperation(
         request,
@@ -342,56 +240,6 @@ export async function executeToolRequest(request: CallToolRequest) {
         request,
         toolConfig as UpdateListConfigurationToolConfig
       );
-
-      // Handle CRUD operations (from emergency fix)
-    } else if (toolType === 'create') {
-      result = await handleCreateOperation(
-        request,
-        toolConfig as ToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'update') {
-      result = await handleUpdateOperation(
-        request,
-        toolConfig as ToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'updateAttribute') {
-      result = await handleUpdateAttributeOperation(
-        request,
-        toolConfig as ToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'delete') {
-      result = await handleDeleteOperation(
-        request,
-        toolConfig as ToolConfig,
-        resourceType
-      );
-
-      // Handle additional info operations (from emergency fix)
-    } else if (
-      toolType === 'basicInfo' ||
-      toolType === 'businessInfo' ||
-      toolType === 'contactInfo' ||
-      toolType === 'socialInfo' ||
-      toolType === 'json'
-    ) {
-      result = await handleInfoOperation(request, toolConfig, resourceType);
-    } else if (toolType === 'fields') {
-      result = await handleFieldsOperation(request, toolConfig, resourceType);
-    } else if (toolType === 'getAttributes') {
-      result = await handleGetAttributesOperation(
-        request,
-        toolConfig,
-        resourceType
-      );
-    } else if (toolType === 'discoverAttributes') {
-      result = await handleDiscoverAttributesOperation(request, toolConfig);
-    } else if (toolType === 'customFields') {
-      result = await handleInfoOperation(request, toolConfig, resourceType);
-
-      // Handle List operations (from emergency fix)
     } else if (toolType === 'addRecordToList') {
       result = await handleAddRecordToListOperation(request, toolConfig);
     } else if (toolType === 'removeRecordFromList') {
@@ -426,53 +274,6 @@ export async function executeToolRequest(request: CallToolRequest) {
         request,
         toolConfig
       );
-
-      // Handle Batch operations (from emergency fix)
-    } else if (toolType === 'batchUpdate') {
-      result = await handleBatchUpdateOperation(
-        request,
-        toolConfig,
-        resourceType
-      );
-    } else if (toolType === 'batchCreate') {
-      result = await handleBatchCreateOperation(
-        request,
-        toolConfig,
-        resourceType
-      );
-    } else if (toolType === 'batchDelete') {
-      result = await handleBatchDeleteOperation(
-        request,
-        toolConfig,
-        resourceType
-      );
-    } else if (toolType === 'batchSearch') {
-      result = await handleBatchSearchOperation(
-        request,
-        toolConfig,
-        resourceType
-      );
-    } else if (toolType === 'batchGetDetails') {
-      result = await handleBatchGetDetailsOperation(
-        request,
-        toolConfig,
-        resourceType
-      );
-
-      // Handle other advanced search operations (from emergency fix)
-    } else if (toolType === 'advancedSearch') {
-      result = await handleAdvancedSearch(
-        request,
-        toolConfig as AdvancedSearchToolConfig,
-        resourceType
-      );
-    } else if (toolType === 'searchByDomain') {
-      result = await handleSearchByDomain(
-        request,
-        toolConfig as SearchToolConfig,
-        resourceType
-      );
-
       // Handle workspace member operations (Issue #684)
     } else if (
       toolType === 'listWorkspaceMembers' ||
@@ -493,12 +294,6 @@ export async function executeToolRequest(request: CallToolRequest) {
           isError: false,
         };
       }
-
-      // Handle generic record operations
-    } else if (toolType === 'list') {
-      result = await handleListOperation(request, toolConfig as ToolConfig);
-    } else if (toolType === 'get') {
-      result = await handleGetOperation(request, toolConfig as ToolConfig);
     } else {
       // Placeholder for other operations - will be extracted to modules later
       throw new Error(
