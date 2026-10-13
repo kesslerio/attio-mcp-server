@@ -10,51 +10,32 @@ import {
   clearAttributeCache,
 } from '@/api/attribute-types.js';
 import { ResourceType } from '@/types/attio.js';
+import { IntegrationFixtures } from '@test/utils/integration-fixtures.js';
 import { shouldRunIntegrationTests } from '@test/utils/integration-guards.js';
 
 const runIntegrationTests = shouldRunIntegrationTests();
-const TEST_COMPANY_PREFIX = 'ValidationTest_';
-
-const generateUniqueName = () =>
-  `${TEST_COMPANY_PREFIX}${Math.floor(Math.random() * 100000)}`;
-
-async function createTestCompany(attributes: Record<string, unknown>) {
-  const companyData = { name: generateUniqueName(), ...attributes };
-  const api = getAttioClient();
-  const response = await api.post(
-    `/objects/${ResourceType.COMPANIES}/records`,
-    { values: companyData }
-  );
-  return response.data.data.id.record_id as string;
-}
-
-async function deleteTestCompany(companyId: string) {
-  const api = getAttioClient();
-  await api.delete(`/objects/${ResourceType.COMPANIES}/records/${companyId}`);
-}
-
-async function cleanupTestCompanies() {
-  const api = getAttioClient();
-  const response = await api.get(
-    `/objects/${ResourceType.COMPANIES}/records?limit=100`
-  );
-  const companies = response.data.data || [];
-  const testCompanies = companies.filter((company: any) =>
-    company.values?.name?.[0]?.value?.startsWith?.(TEST_COMPANY_PREFIX)
-  );
-
-  for (const company of testCompanies) {
-    await deleteTestCompany(company.id.record_id);
-  }
-}
-
 describe.skipIf(!runIntegrationTests)('IT-106: Attribute validation', () => {
-  beforeAll(async () => {
+  let fixtures: IntegrationFixtures;
+  const createTestCompany = async (attributes: Record<string, unknown>) => {
+    const company = await fixtures.create('company', async (name) => {
+      const response = await getAttioClient().post(
+        '/objects/companies/records',
+        {
+          data: { values: { ...attributes, name } },
+        }
+      );
+      return response.data.data;
+    });
+    return company.id.record_id as string;
+  };
+
+  beforeAll(() => {
+    fixtures = new IntegrationFixtures(getAttioClient());
     clearAttributeCache();
   });
 
   afterAll(async () => {
-    await cleanupTestCompanies();
+    await fixtures?.cleanup();
   });
 
   it('IT-106.1: fetches live attribute metadata', async () => {
@@ -70,8 +51,7 @@ describe.skipIf(!runIntegrationTests)('IT-106: Attribute validation', () => {
 
   it('IT-106.2: validates company creation with type coercion', async () => {
     const companyData = {
-      name: generateUniqueName(),
-      website: 'https://example.com',
+      name: 'Attribute validation fixture',
       is_customer: 'true',
       company_size: '100',
       description: 'Test company',
@@ -83,12 +63,11 @@ describe.skipIf(!runIntegrationTests)('IT-106: Attribute validation', () => {
 
     const companyId = await createTestCompany(validated);
     expect(companyId).toBeDefined();
-    await deleteTestCompany(companyId);
   });
 
   it('IT-106.3: validates company updates with type coercion', async () => {
     const companyId = await createTestCompany({
-      name: generateUniqueName(),
+      name: 'Attribute validation fixture',
       company_size: 50,
     });
 
@@ -102,18 +81,19 @@ describe.skipIf(!runIntegrationTests)('IT-106: Attribute validation', () => {
 
     const api = getAttioClient();
     await api.patch(`/objects/${ResourceType.COMPANIES}/records/${companyId}`, {
-      values: validated,
+      data: { values: validated },
     });
 
     const response = await api.get(
       `/objects/${ResourceType.COMPANIES}/records/${companyId}`
     );
     expect(response.data.data).toBeDefined();
-    await deleteTestCompany(companyId);
   });
 
   it('IT-106.4: validates individual attribute updates', async () => {
-    const companyId = await createTestCompany({ name: generateUniqueName() });
+    const companyId = await createTestCompany({
+      name: 'Attribute validation fixture',
+    });
     const attributeName = 'company_size';
     const attributeValue = '300';
 
@@ -127,19 +107,18 @@ describe.skipIf(!runIntegrationTests)('IT-106: Attribute validation', () => {
 
     const api = getAttioClient();
     await api.patch(`/objects/${ResourceType.COMPANIES}/records/${companyId}`, {
-      values: { [attributeName]: validatedValue },
+      data: { values: { [attributeName]: validatedValue } },
     });
 
     const response = await api.get(
       `/objects/${ResourceType.COMPANIES}/records/${companyId}`
     );
     expect(response.data.data).toBeDefined();
-    await deleteTestCompany(companyId);
   });
 
   it('IT-106.5: rejects invalid attribute values', async () => {
     const invalidData = {
-      name: generateUniqueName(),
+      name: 'Attribute validation fixture',
       company_size: 'not-a-number',
     };
 

@@ -1,199 +1,88 @@
-/**
- * IT-302: List membership operations via universal tools
- *
- * Validates the records_update tool workflow for adding list memberships to
- * company records using live Attio APIs.
- */
-
-import { afterAll, describe, expect, it, vi } from 'vitest';
-import type { CallToolRequest } from '@modelcontextprotocol/sdk/types.js';
+/** IT-302: List membership tools against run-owned company and list fixtures. */
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { CallToolResultSchema } from '@modelcontextprotocol/core';
+import type { CallToolRequest } from '@modelcontextprotocol/server';
 import { getAttioClient } from '@/api/attio-client.js';
 import { executeToolRequest } from '@/handlers/tools/dispatcher.js';
+import { createCompany } from '@/objects/companies/index.js';
+import { createList } from '@/objects/lists/base.js';
+import { getListEntries } from '@/objects/lists/entries.js';
+import { IntegrationFixtures } from '@test/utils/integration-fixtures.js';
 import { shouldRunIntegrationTests } from '@test/utils/integration-guards.js';
 
-vi.mock('axios', async () => {
-  const actual = await vi.importActual('axios');
-  const shouldMock =
-    !process.env.ATTIO_API_KEY || process.env.SKIP_INTEGRATION_TESTS === 'true';
-
-  if (shouldMock) {
-    return {
-      default: {
-        create: vi.fn(() => ({
-          get: vi.fn().mockResolvedValue({ data: { data: {} } }),
-          post: vi.fn().mockResolvedValue({
-            data: {
-              data: {
-                id: { entry_id: 'mock-entry-id' },
-                record_id: process.env.TEST_COMPANY_ID || 'mock-record-id',
-                values: { stage: 'Mock Stage' },
-              },
-            },
-          }),
-          delete: vi.fn().mockResolvedValue({ data: {} }),
-          interceptors: {
-            request: { use: vi.fn() },
-            response: { use: vi.fn() },
-          },
-        })),
-      },
-    };
-  }
-
-  return actual;
-});
-
-const runIntegrationTests = shouldRunIntegrationTests();
-
-const TEST_LIST_ID = process.env.TEST_LIST_ID ?? '';
-const TEST_RECORD_ID = process.env.TEST_COMPANY_ID ?? '';
-const testConfigComplete = TEST_LIST_ID !== '' && TEST_RECORD_ID !== '';
-
-const CONFIG_ERROR_MESSAGE = `
-⚠️  Integration test configuration missing!
-
-To run these tests, set TEST_LIST_ID and TEST_COMPANY_ID in your environment.
-Refer to docs/testing.md for configuration details.
-`;
-
-describe.skipIf(!runIntegrationTests)(
+describe.skipIf(!shouldRunIntegrationTests())(
   'IT-302: List membership operations',
   () => {
-    if (!testConfigComplete) {
-      it.skip('IT-302.0: requires TEST_LIST_ID and TEST_COMPANY_ID configuration', () => {
-        console.error(CONFIG_ERROR_MESSAGE);
-      });
-      return;
-    }
-
-    let createdEntryId: string | undefined;
-
+    let fixtures: IntegrationFixtures;
+    let testListId: string;
+    let testRecordId: string;
+    beforeAll(async () => {
+      fixtures = new IntegrationFixtures(getAttioClient());
+      const company = await fixtures.create('company', (name) =>
+        createCompany({ name })
+      );
+      testRecordId = company.id.record_id;
+      const list = await fixtures.create('list', (name) =>
+        createList({
+          name,
+          parent_object: 'companies',
+          workspace_access: 'full-access',
+        })
+      );
+      testListId = list.id.list_id;
+    }, 30000);
+    // Deleting the owned list removes its entries before the owned company.
     afterAll(async () => {
-      if (!createdEntryId) return;
+      await fixtures?.cleanup();
+    }, 30000);
 
-      try {
-        const api = getAttioClient();
-        await api.delete(`/lists/${TEST_LIST_ID}/entries/${createdEntryId}`);
-        console.log(`Cleaned up test entry ${createdEntryId}`);
-      } catch (error: unknown) {
-        console.error('Error during cleanup:', error);
-      }
-    });
-
-    const createToolRequest = (
-      overrides: Partial<CallToolRequest['params']['arguments']> = {}
-    ) =>
-      ({
-        method: 'tools/call',
-        params: {
-          name: 'records_update',
-          arguments: {
-            resource_type: 'records',
-            record_id: TEST_RECORD_ID,
-            record_data: {
-              list_memberships: {
-                [TEST_LIST_ID]: {},
-              },
-            },
-            ...overrides,
-          },
+    // records_update no longer accepts list_memberships; use the maintained tool.
+    const request = (
+      overrides: Record<string, unknown> = {}
+    ): CallToolRequest => ({
+      method: 'tools/call',
+      params: {
+        name: 'list_entries_manage',
+        arguments: {
+          listId: testListId,
+          recordId: testRecordId,
+          objectType: 'companies',
+          ...overrides,
         },
-      }) satisfies CallToolRequest;
+      },
+    });
 
-    const recordCreatedFrom = async (request: CallToolRequest) => {
-      const result = await executeToolRequest(request);
-      expect(result).toBeDefined();
-      expect(result.isError).toBeFalsy();
-      expect(result.content).toBeDefined();
-
-      if (Array.isArray(result.content) && result.content[0]?.text) {
-        const entryIdMatch = result.content[0].text.match(
-          /Entry ID: ([a-zA-Z0-9_-]+)/
+    it.each([undefined, {}])(
+      'IT-302.1: adds an owned membership with initial values %s',
+      async (initialValues) => {
+        const result = CallToolResultSchema.parse(
+          await executeToolRequest(
+            request(initialValues ? { initialValues } : {})
+          )
         );
-        if (entryIdMatch && entryIdMatch[1]) {
-          createdEntryId = entryIdMatch[1];
-        }
+        expect(result.isError).toBeFalsy();
+        const entries = await getListEntries(testListId);
+        expect(entries).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ parent_record_id: testRecordId }),
+          ])
+        );
       }
+    );
 
-      return result;
-    };
-
-    it('IT-302.1: adds list membership with required parameters', async () => {
-      await recordCreatedFrom(createToolRequest());
-    });
-
-    it('IT-302.2: adds list membership with parent object context', async () => {
-      await recordCreatedFrom(
-        createToolRequest({
-          record_data: {
-            list_memberships: {
-              [TEST_LIST_ID]: {
-                parent_object: 'companies',
-              },
-            },
-          },
-        })
-      );
-    });
-
-    it('IT-302.3: adds list membership with entry values', async () => {
-      await recordCreatedFrom(
-        createToolRequest({
-          record_data: {
-            list_memberships: {
-              [TEST_LIST_ID]: {
-                entry_values: {
-                  stage: 'Test Stage',
-                  priority: 'High',
-                },
-              },
-            },
-          },
-        })
-      );
-    });
-
-    it('IT-302.4: adds list membership with all parameters', async () => {
-      await recordCreatedFrom(
-        createToolRequest({
-          record_data: {
-            list_memberships: {
-              [TEST_LIST_ID]: {
-                parent_object: 'companies',
-                entry_values: {
-                  stage: 'Complete Test',
-                  priority: 'Critical',
-                  notes: 'This is a test with all parameters',
-                },
-              },
-            },
-          },
-        })
-      );
-    });
-
-    it('IT-302.5: surfaces validation errors for missing record_id', async () => {
-      const resultNoRecordId = await executeToolRequest(
-        createToolRequest({ record_id: undefined as unknown as string })
-      );
-
-      expect(resultNoRecordId).toBeDefined();
-      expect(resultNoRecordId.isError).toBeTruthy();
-      expect(resultNoRecordId.content?.[0]?.text || '').toMatch(
-        /record_id.*required|missing.*parameter/i
-      );
-    });
-
-    it('IT-302.6: surfaces validation errors for missing resource_type', async () => {
-      const resultNoResourceType = await executeToolRequest(
-        createToolRequest({ resource_type: undefined as unknown as string })
-      );
-
-      expect(resultNoResourceType).toBeDefined();
-      expect(resultNoResourceType.isError).toBeTruthy();
-      expect(resultNoResourceType.content?.[0]?.text || '').toMatch(
-        /resource_type.*required|missing.*parameter/i
-      );
-    });
+    it.each(['recordId', 'objectType'])(
+      'IT-302.2: rejects a missing %s without adding a membership',
+      async (field) => {
+        const before = await getListEntries(testListId);
+        const result = CallToolResultSchema.parse(
+          await executeToolRequest(request({ [field]: undefined }))
+        );
+        expect(result.isError).toBe(true);
+        const after = await getListEntries(testListId);
+        expect(after.map((entry) => entry.id?.entry_id).sort()).toEqual(
+          before.map((entry) => entry.id?.entry_id).sort()
+        );
+      }
+    );
   }
 );

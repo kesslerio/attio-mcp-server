@@ -48,49 +48,90 @@ describe.skipIf(!runTests)('IT-XXX: <Title>', () => {
 - **IT-100–IT-199**: API validation and edge cases
 - **IT-200–IT-299**: Platform services (rate limiting, queues, caching)
 - **IT-300–IT-399**: Advanced features (filters, relationships, batch ops)
-- **IT-400+**: Reserved for future categories
+- **IT-400+**: Universal list contracts and future categories
 
 ## 🚀 Running Integration Tests
 
 ### Prerequisites
 
-```bash
-# Required: Set your Attio API key
-export ATTIO_API_KEY=your_api_key_here
-
-# Optional: Skip integration tests
-export SKIP_INTEGRATION_TESTS=true
-```
+Use a dedicated test workspace. Live suites require `ATTIO_API_KEY`; writing
+suites resolve the API-token actor UUID from `GET /self` before creation when
+`WORKSPACE_API_UUID` is absent. Only active workspace tokens are accepted; their
+`client_id` and `aud` identify the token, never the workspace or authorizing member.
+An explicitly supplied `WORKSPACE_API_UUID` must be that token actor UUID.
+Missing/blank API keys skip live suites, and `SKIP_INTEGRATION_TESTS=true` skips
+the entire tier. An invalid supplied or unresolvable actor UUID fails
+writing-suite setup before creation rather than silently skipping coverage.
 
 ### Commands
 
 ```bash
-# Run all integration tests
-npm run test:integration
+# Mocked unit smoke: no live API signal
+bun run test:smoke
 
-# Run specific suite
-npm test test/integration/api/IT-105-advanced-search-validation.integration.test.ts
+# Five real-API cases, serialized; target under two minutes
+bun run test:integration:smoke
 
-# Run with verbose output
-npm run test:integration -- --reporter=verbose
+# Full integration tier (test:integration remains a compatible alias)
+bun run test:integration:full
+bun run test:integration
+
+# Run one live suite through the integration config, without global unit mocks
+bun run test:integration:full -- test/integration/api/IT-105-advanced-search-validation.integration.test.ts
+
+# Safe collection/skip check; does not verify live behavior
+ATTIO_API_KEY='' SKIP_INTEGRATION_TESTS=true bun run test:integration:smoke
 ```
+
+The live smoke selects IT-101.1/101.2 (search), IT-001.1 (owned company batch
+update), IT-106.1 (metadata), and the default full-access list creation case.
+It inherits the full tier's real client and aliases, has no mock setup, and does
+not retry failures. IT-201 is deterministic and is deliberately excluded from
+live smoke. Smoke performs CRM writes in its fixtures and therefore requires
+a dedicated test workspace and a resolvable API-token actor identity as described
+above. The two-minute target is a budget, not a measured
+live-run guarantee; API latency and cleanup also count.
+
+### Owned fixtures and cleanup
+
+Writing suites (IT-001, IT-106, IT-107, IT-302, IT-401 and list access-control)
+use `IntegrationFixtures` in `test/utils/integration-fixtures.ts`. Create new
+resources through its callback, using the supplied exact name; never assert or
+upsert existing workspace resources. The name includes the token UUID, a random
+run UUID, and a sequence. The helper records returned IDs before assertions,
+so teardown can clean partial setup and failed test runs. List membership tests
+use the maintained `list_entries_manage` tool (the old
+`records_update` membership payload is no longer supported). They
+create their own company and list; deleting that list also removes its entries.
+They require no `TEST_LIST_ID`, `TEST_COMPANY_ID`, or custom list attributes.
+
+Cleanup permanently closes the fixture instance to new creations and waits for
+pending creations to settle before checking registered IDs. A creation awaiting
+identity resolution cannot start a write after cleanup begins. IT-107 creates a
+fresh fixture instance in `beforeEach` so each retry has its own cleanup lifecycle.
+See the offline lifecycle contracts in [integration-fixtures.test.ts](../utils/integration-fixtures.test.ts).
+
+Cleanup only fetches IDs registered in this fixture instance. Immediately before
+deletion it checks the returned ID, exact tagged name, and API-token creator
+(`values.created_by` for companies, `created_by_actor` for lists). It never scans
+by a shared name prefix, and never accepts an attribute's last updater as the
+resource creator. Unknown or changed ownership prevents deletion and fails
+teardown, while other owned resources are still attempted. Already absent
+resources are harmless; other API errors fail teardown and retain the ID for a
+retry. No workspace-wide cleanup script runs automatically.
+
+Run this tier in an isolated workspace without concurrent human edits. Attio
+read-then-delete is not transactional: a rename between verification and delete
+cannot be locked by the test helper. A killed process or a create response lost
+before its ID is received may leave a fixture behind. Review its exact run tag
+and API-token creator manually before cleanup; never broaden the deletion filter.
+The full tier retains workspace-specific attribute prerequisites in IT-106
+(`is_customer` and `company_size`) and the opt-in industry-mapping suite.
+Tests cover allowed and denied cleanup using a local fake API.
 
 ## 📊 Current Test Inventory
 
 The migration to IT-XXX naming is complete. Refer to the [Integration Test Catalog](../../docs/testing/integration-test-catalog.md) for the authoritative index.
-
-### Active Suites
-
-| IT ID  | File Path                                                                         | Description                                    |
-| ------ | --------------------------------------------------------------------------------- | ---------------------------------------------- |
-| IT-001 | `test/integration/core/IT-001-batch-company-operations.integration.test.ts`       | Batch company CRUD operations                  |
-| IT-101 | `test/integration/api/IT-101-advanced-search-api.integration.test.ts`             | Advanced search API coverage                   |
-| IT-105 | `test/integration/api/IT-105-advanced-search-validation.integration.test.ts`      | Advanced search validation edge cases          |
-| IT-106 | `test/integration/api/IT-106-attribute-validation.integration.test.ts`            | Attribute validation with live API             |
-| IT-107 | `test/integration/api/IT-107-industry-categories-mapping.integration.test.ts`     | Industry categories field mapping              |
-| IT-201 | `test/integration/services/IT-201-rate-limiting.integration.test.ts`              | Rate limiting behavior (deterministic)         |
-| IT-301 | `test/integration/advanced/IT-301-relationship-filters.integration.test.ts`       | Relationship filter validation                 |
-| IT-302 | `test/integration/advanced/IT-302-list-membership-operations.integration.test.ts` | List membership operations via universal tools |
 
 ## 🔄 Integration vs E2E Tests
 
@@ -99,7 +140,7 @@ The migration to IT-XXX naming is complete. Refer to the [Integration Test Catal
 | **Scope**       | Individual API operations              | Complete workflows                 |
 | **Focus**       | Edge cases, validation, error handling | User scenarios, tool orchestration |
 | **Environment** | Live Attio API                         | Live Attio API + MCP protocol      |
-| **Execution**   | `npm run test:integration`             | `npm run test:e2e`                 |
+| **Execution**   | `bun run test:integration:full`        | `bun run test:e2e`                 |
 | **ID Prefix**   | IT-XXX                                 | TC-XXX                             |
 | **Location**    | `test/integration/`                    | `test/e2e/`                        |
 

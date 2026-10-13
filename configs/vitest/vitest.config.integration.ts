@@ -22,16 +22,11 @@ export default defineConfig({
     ],
     globals: true,
     testTimeout: 60000, // Extended timeout for API calls
-    hookTimeout: 10000, // Extended timeout for setup/cleanup
+    hookTimeout: 30000, // Allow owned-fixture setup and verified cleanup
     // No setupFiles - avoid global mocks for integration tests
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        minForks: 1,
-        maxForks: 1, // Single fork for API rate limiting
-        singleFork: true, // Force sequential execution
-      },
-    },
+    fileParallelism: false,
+    maxWorkers: 1,
     // Retry failed tests once for API flakiness
     retry: 1,
     // Environment variables

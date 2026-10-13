@@ -56,6 +56,8 @@
     "test:debug:issue-781": "E2E_MODE=true vitest --config configs/vitest/vitest.config.debug.ts --run --reporter=verbose --testTimeout=300000",
     "test:ci": "E2E_MODE=true vitest --config configs/vitest/vitest.config.ts --run --reporter=verbose",
     "test:integration": "vitest --config configs/vitest/vitest.config.integration.ts --run",
+    "test:integration:smoke": "vitest --config configs/vitest/vitest.config.integration-smoke.ts --run",
+    "test:integration:full": "vitest --config configs/vitest/vitest.config.integration.ts --run",
     "test:integration:only": "vitest --config configs/vitest/vitest.config.integration.ts --run test/integration/",
     "test:integration:watch": "vitest --config configs/vitest/vitest.config.integration.ts --watch",
     "test:integration:real-api": "vitest --config configs/vitest/vitest.config.integration.ts --run test/integration/real-api-integration.test.ts",

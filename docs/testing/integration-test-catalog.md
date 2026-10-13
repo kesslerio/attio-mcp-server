@@ -4,11 +4,9 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 ## 📋 Quick Reference
 
-- **Total Integration Tests**: 8 suites (IT-XXX naming complete)
 - **ID Prefix**: `IT-XXX` (Integration Test)
 - **Location**: `test/integration/`
-- **Execution**: `npm run test:integration`
-- **Prerequisites**: `ATTIO_API_KEY` environment variable
+- **Execution and prerequisites**: See [integration setup](../../test/integration/README.md#-running-integration-tests)
 
 ## 🎯 IT-XXX Taxonomy
 
@@ -20,11 +18,11 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 | ---------- | ------------------------ | ---------------------------------------------------------- | ----------------------------- | -------- | ------------ |
 | **IT-001** | Batch Company Operations | `core/IT-001-batch-company-operations.integration.test.ts` | `shouldRunIntegrationTests()` | Platform | ✅ Completed |
 
-**Description**: Validates batch create, update, and delete operations for company records. Tests chunking behavior, error handling, and API response consistency.
+**Description**: Updates three run-owned companies in a batch and reads back their descriptions; setup and teardown create and safely delete the fixtures.
 
 **Test Cases**:
 
-- IT-001.1: Updates multiple companies in a batch【F:test/integration/core/IT-001-batch-company-operations.integration.test.ts†L82-L117】
+- IT-001.1: Updates multiple companies in a batch ([suite](../../test/integration/core/IT-001-batch-company-operations.integration.test.ts))
 
 ---
 
@@ -59,15 +57,17 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 **IT-106: Attribute Validation**
 
-- IT-106.1: Fetches live attribute metadata【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L60-L68】
-- IT-106.2: Validates company creation with type coercion【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L71-L86】
-- IT-106.3: Validates company updates with type coercion【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L89-L112】
-- IT-106.4: Validates individual attribute updates【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L115-L134】
-- IT-106.5: Rejects invalid attribute values【F:test/integration/api/IT-106-attribute-validation.integration.test.ts†L140-L153】
+See the [attribute validation suite](../../test/integration/api/IT-106-attribute-validation.integration.test.ts).
+
+- IT-106.1: Fetches live attribute metadata
+- IT-106.2: Validates company creation with type coercion
+- IT-106.3: Validates company updates with type coercion
+- IT-106.4: Validates individual attribute updates
+- IT-106.5: Rejects invalid attribute values
 
 **IT-107: Industry Categories Mapping**
 
-- IT-107.1: Maps industries to list-backed categories on create【F:test/integration/api/IT-107-industry-categories-mapping.integration.test.ts†L30-L69】
+- IT-107.1: Maps industries to list-backed categories on create ([suite](../../test/integration/api/IT-107-industry-categories-mapping.integration.test.ts))
 
 ---
 
@@ -103,13 +103,15 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 **IT-302: List Membership Operations**
 
-- IT-302.0: Requires TEST_LIST_ID and TEST_COMPANY_ID configuration【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L63-L104】
-- IT-302.1: Adds list membership with required parameters【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L121-L134】
-- IT-302.2: Adds list membership with parent object context【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L136-L153】
-- IT-302.3: Adds list membership with entry values【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L155-L169】
-- IT-302.4: Adds list membership with all parameters【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L171-L186】
-- IT-302.5: Surfaces validation errors for missing record_id【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L175-L183】
-- IT-302.6: Surfaces validation errors for missing resource_type【F:test/integration/advanced/IT-302-list-membership-operations.integration.test.ts†L185-L194】
+- IT-302.1: Adds an owned company to an owned list through `list_entries_manage`, with omitted and explicit empty initial values, then reads membership back
+- IT-302.2: Rejects missing `recordId` or `objectType` without changing membership
+
+**IT-401: Universal Lists**
+
+- IT-401.1: Reads the owned list by UUID and slug using legacy and universal services
+- IT-401.2: Checks list-native search results without requiring a populated workspace
+- IT-401.3: Finds the owned list by its unique fixture name on the first page and verifies the second page is empty
+- IT-401.4: Rejects a nonexistent list identifier
 
 ---
 
@@ -117,7 +119,6 @@ Complete catalog of integration tests using the **IT-XXX** naming taxonomy. This
 
 | Aspect          | Integration (IT-XXX)       | E2E (TC-XXX)                               |
 | --------------- | -------------------------- | ------------------------------------------ |
-| **Test Count**  | 8 suites                   | 38+ test cases                             |
 | **Scope**       | API operations, edge cases | Complete workflows                         |
 | **Catalog**     | This document              | [MCP README](../../test/e2e/mcp/README.md) |
 | **Numbering**   | IT-001, IT-105, IT-201...  | TC-001, TC-L01, TC-D01...                  |
@@ -152,3 +153,8 @@ All integration suites now rely on the shared `shouldRunIntegrationTests()` help
 - **Issue #834**: Phase 3 migration implementation (file renaming)
 - **PR #827**: Audit documentation and catalog creation
 - **PR #804**: Test relocation that exposed naming inconsistencies
+
+## Real-API smoke and fixture isolation
+
+See [integration setup and cleanup](../../test/integration/README.md) for tier
+selection, credentials, and fixture ownership requirements.
