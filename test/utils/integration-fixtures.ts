@@ -102,9 +102,7 @@ export class IntegrationFixtures {
       id,
       name,
       path:
-        kind === 'company'
-          ? `/objects/companies/records/${id}`
-          : `/lists/${id}`,
+        kind === 'company' ? `/objects/companies/records/${id}` : `/lists/${id}`,
     };
     // Register before assertions so partial setup remains eligible for safe cleanup.
     this.owned.push(fixture);
