@@ -49,6 +49,14 @@ function mockAttioModule(overrides: AttioModuleMock) {
 function mockContextModule(apiKey?: string) {
   vi.doMock('../../src/api/client-context.js', () => ({
     getContextApiKey: vi.fn(() => apiKey),
+    // Same precedence as the real resolver outside a request context.
+    resolveAttioCredential: vi.fn(
+      () =>
+        apiKey ||
+        process.env.ATTIO_API_KEY ||
+        process.env.ATTIO_ACCESS_TOKEN ||
+        undefined
+    ),
   }));
 }
 

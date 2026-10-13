@@ -16,10 +16,6 @@ let contextKey: object | null = null;
 let clientContext: Record<string, unknown> | null = null;
 const requestContextStorage = new AsyncLocalStorage<Record<string, unknown>>();
 
-// Cache for failed context getter attempts to avoid repeated exceptions
-const failedContextCache = new Map<string, NodeJS.Timeout>();
-const FAILED_CONTEXT_CACHE_TTL = 10000; // 10 seconds - increased for retry scenarios
-
 /**
  * Stores a shallow copy of the provided context so subsequent lookups can
  * access configuration values without tightly coupling modules.
@@ -40,9 +36,6 @@ export function setClientContext(context: Record<string, unknown>): void {
 
   // Also maintain legacy fallback storage
   clientContext = { ...context };
-
-  // Clear failed context cache when new context is set
-  clearFailedContextCache();
 }
 
 /**
@@ -54,17 +47,6 @@ export function clearClientContext(): void {
     contextKey = null;
   }
   clientContext = null;
-  clearFailedContextCache();
-}
-
-/**
- * Clears all failed context cache timers
- */
-function clearFailedContextCache(): void {
-  for (const [key, timerId] of failedContextCache.entries()) {
-    clearTimeout(timerId);
-    failedContextCache.delete(key);
-  }
 }
 
 /**
@@ -94,6 +76,32 @@ export async function runWithClientContext<T>(
 }
 
 /**
+ * True while a request-local context (runWithClientContext) is active.
+ */
+export function hasRequestContext(): boolean {
+  return requestContextStorage.getStore() !== undefined;
+}
+
+/**
+ * Resolves the Attio credential of the active principal. Client creation,
+ * cursor ownership, and credential-scoped caches all use this one decision.
+ *
+ * A request-local context is authoritative: it supplies its own credential or
+ * none, and never inherits the process environment or another request's
+ * credential. Only the single-principal path, with no request context active,
+ * falls back to ATTIO_API_KEY / ATTIO_ACCESS_TOKEN.
+ */
+export function resolveAttioCredential(): string | undefined {
+  const contextApiKey = getContextApiKey();
+  if (contextApiKey || hasRequestContext()) {
+    return contextApiKey;
+  }
+  return (
+    process.env.ATTIO_API_KEY || process.env.ATTIO_ACCESS_TOKEN || undefined
+  );
+}
+
+/**
  * Gets the current context key for debugging/testing purposes
  */
 export function getContextKey(): object | null {
@@ -102,7 +110,6 @@ export function getContextKey(): object | null {
 
 /**
  * Attempts to resolve an Attio API key or OAuth access token from the stored context.
- * Uses caching to avoid repeated failed context getter calls.
  *
  * Preference order (Issue #928 - OAuth token support):
  * 1. invoke context.getApiKey() if provided
@@ -122,16 +129,13 @@ export function getContextApiKey(): string | undefined {
     ATTIO_ACCESS_TOKEN?: string;
   };
 
-  // Check if we should avoid calling getApiKey due to recent failures
-  const getApiKeyIdentifier = 'getApiKey';
-  const shouldSkipGetter = failedContextCache.has(getApiKeyIdentifier);
-
   logger.debug('Attempting API key/token resolution', {
     hasContext: Boolean(context),
-    shouldSkipGetter,
   });
 
-  if (typeof typedContext.getApiKey === 'function' && !shouldSkipGetter) {
+  // A failed getter only falls through to this same context's properties;
+  // the failure is never remembered across requests or principals.
+  if (typeof typedContext.getApiKey === 'function') {
     logger.debug('Calling context credential getter');
     try {
       const key = typedContext.getApiKey();
@@ -142,20 +146,6 @@ export function getContextApiKey(): string | undefined {
       logger.debug('Context credential getter returned no usable credential');
     } catch (_error) {
       logger.debug('Context credential getter failed');
-      // Cache this failure to avoid repeated exceptions
-      // Clear existing timer if present to prevent duplicates
-      const existingTimer = failedContextCache.get(getApiKeyIdentifier);
-      if (existingTimer) {
-        clearTimeout(existingTimer);
-      }
-
-      const timerId = setTimeout(() => {
-        failedContextCache.delete(getApiKeyIdentifier);
-      }, FAILED_CONTEXT_CACHE_TTL);
-
-      failedContextCache.set(getApiKeyIdentifier, timerId);
-
-      // Ignore context getter errors; fall back to other strategies
     }
   }
 
@@ -205,7 +195,6 @@ export function getContextStats(): {
   hasApiKeyGetter: boolean;
   hasDirectApiKey: boolean;
   hasDirectAccessToken: boolean;
-  failedContextCacheSize: number;
 } {
   const context = getClientContext();
   const typedContext = context as {
@@ -221,6 +210,5 @@ export function getContextStats(): {
     hasApiKeyGetter: typeof typedContext?.getApiKey === 'function',
     hasDirectApiKey: typeof typedContext?.ATTIO_API_KEY === 'string',
     hasDirectAccessToken: typeof typedContext?.ATTIO_ACCESS_TOKEN === 'string',
-    failedContextCacheSize: failedContextCache.size,
   };
 }

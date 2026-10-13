@@ -4,7 +4,12 @@
  */
 import axios, { AxiosInstance } from 'axios';
 import { debug, error, OperationType } from '@/utils/logger.js';
-import { getContextApiKey, validateApiKey } from '@/api/client-context.js';
+import {
+  getContextApiKey,
+  hasRequestContext,
+  resolveAttioCredential,
+  validateApiKey,
+} from '@/api/client-context.js';
 import {
   AttioAttributeSchema,
   AttioSelectOption,
@@ -107,20 +112,14 @@ export function createAttioClient(
   // Handle new config object parameter - this is the main implementation we defined above
   const config = configOrApiKey as ClientConfig;
 
-  // Get API key from config, environment, or context
-  // Supports both API keys and OAuth access tokens (Issue #928)
-  const contextApiKey = getContextApiKey();
-  const apiKey =
-    config.apiKey ??
-    contextApiKey ??
-    process.env.ATTIO_API_KEY ??
-    process.env.ATTIO_ACCESS_TOKEN ??
-    '';
+  // Get API key from config, else the active principal (request context, or
+  // the environment outside one). Supports API keys and OAuth tokens (#928).
+  const apiKey = config.apiKey ?? resolveAttioCredential() ?? '';
 
   // Determine the source for better error messages
   const apiKeySource = config.apiKey
     ? 'config parameter'
-    : contextApiKey
+    : hasRequestContext() || getContextApiKey()
       ? 'context configuration'
       : process.env.ATTIO_API_KEY
         ? 'ATTIO_API_KEY environment variable'
@@ -409,6 +408,11 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     USE_MOCK_DATA: process.env.USE_MOCK_DATA,
   });
 
+  // Request-scoped credentials never enter or leave the process-wide cache.
+  if (hasRequestContext()) {
+    return createAttioClient({});
+  }
+
   // Check if we should bypass cache and create fresh client
   const shouldBypassCache =
     EnvironmentModeHandler.shouldUseRealClient() || opts?.rawE2E;
@@ -435,11 +439,7 @@ export function getAttioClient(opts?: { rawE2E?: boolean }): AxiosInstance {
     return client;
   }
 
-  const currentApiKey =
-    process.env.ATTIO_API_KEY ??
-    process.env.ATTIO_ACCESS_TOKEN ??
-    getContextApiKey() ??
-    null;
+  const currentApiKey = resolveAttioCredential() ?? null;
 
   if (
     (apiInstance || ClientCache.hasInstance()) &&

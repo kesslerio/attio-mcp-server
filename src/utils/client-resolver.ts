@@ -5,7 +5,7 @@
 
 import { AxiosInstance } from 'axios';
 import * as AttioClientModule from '../api/attio-client.js';
-import { getContextApiKey } from '../api/client-context.js';
+import { resolveAttioCredential } from '../api/client-context.js';
 import { ClientConfig } from '../api/client-config.js';
 import { createScopedLogger } from './logger.js';
 
@@ -71,11 +71,7 @@ function assertAxiosInstance(
 }
 
 function resolveApiKey(): string | undefined {
-  return (
-    getContextApiKey() ||
-    process.env.ATTIO_API_KEY ||
-    process.env.ATTIO_ACCESS_TOKEN
-  );
+  return resolveAttioCredential();
 }
 
 /**
