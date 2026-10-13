@@ -119,7 +119,7 @@ export async function executeToolRequest(request: CallToolRequest) {
 
     let result;
 
-    // Handle Universal and General tools first (Issue #352)
+    // Handle universal tools before resource-scoped operation adapters.
     if (resourceType === 'UNIVERSAL') {
       // For universal tools, use the tool's own handler directly
       // Shallow-clone to avoid mutating the caller's object (e.g. shared params in Promise.all)

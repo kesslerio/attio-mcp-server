@@ -59,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Removed the legacy resource-specific tool surface; all deployments now register the v2 catalog. See the [migration guide](docs/MIGRATION-GUIDE.md#migration-2-legacy-tools--universal-tools-1022) for removed names, payload migration, and the obsolete flag (#1022)
-- Unreachable legacy operation branches are gone from the tool dispatcher, which now routes only the registered v2 operations (list containers, workspace members, and universal tools). The retired per-resource `search`, `details`, `notes`, CRUD, `json`/`customFields`, `batch*`, `advancedSearch`, `searchByDomain`, `list`, and `get` branches had no live tool config that could reach them (#1287)
 
 ## [1.7.0] - 2026-08-25
 
