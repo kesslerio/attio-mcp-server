@@ -3,12 +3,18 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { runInNewContext } from 'node:vm';
 
 type Job = {
   if: string;
   needs: string[];
   outputs?: Record<string, string>;
-  steps: { name: string; run?: string; env?: Record<string, string> }[];
+  steps: {
+    name: string;
+    run?: string;
+    env?: Record<string, string>;
+    with?: { script: string };
+  }[];
 };
 const workflow = Bun.YAML.parse(
   readFileSync('.github/workflows/smart-ci.yml', 'utf8')
@@ -124,12 +130,80 @@ describe('integration workflow credential boundary', () => {
     }
   });
 
-  it('includes unavailable integration verification in the CI summary', () => {
+  it.each([
+    ['missing key', 'failure', 'skipped'],
+    ['fork', 'success', 'skipped'],
+    ['unselected', 'skipped', 'skipped'],
+    ['passed run', 'success', 'success'],
+    ['failed run', 'success', 'failure'],
+  ])('reports %s integration verification in emitted comments', async (
+    _scenario,
+    prerequisiteResult,
+    integrationResult
+  ) => {
     const summary = workflow.jobs['smart-summary'];
     expect(summary.needs).toContain('integration-prerequisites');
     expect(summary.needs).toContain('integration-tests');
-    const source = readFileSync('.github/workflows/smart-ci.yml', 'utf8');
-    expect(source).toContain('Real API integration tests were not exercised');
-    expect(source).toContain("'${{ needs.integration-tests.result }}'");
+    const script = summary.steps.find(
+      (step) => step.name === 'Create smart summary'
+    )!.with!.script;
+    const expressions: Record<string, string> = {
+      'needs.change-analysis.outputs.test-strategy': 'full',
+      'needs.change-analysis.outputs.docs-only': 'false',
+      'needs.lint-and-typecheck.result': 'success',
+      'needs.smart-tests.result': 'success',
+      'needs.build-verification-status.result': 'success',
+      'needs.integration-prerequisites.result': prerequisiteResult,
+      'needs.integration-tests.result': integrationResult,
+    };
+    const executable = script.replace(/\$\{\{\s*(.*?)\s*\}\}/g, (_, expression) => {
+      if (!(expression in expressions)) {
+        throw new Error(`Missing synthetic workflow input: ${expression}`);
+      }
+      return expressions[expression];
+    });
+
+    for (const existingComment of [false, true]) {
+      const writes: { method: string; request: Record<string, unknown> }[] = [];
+      const github = {
+        rest: {
+          issues: {
+            listComments: async () => ({
+              data: existingComment
+                ? [{ id: 42, user: { type: 'Bot' }, body: '# 🧠 Smart CI Results' }]
+                : [],
+            }),
+            createComment: async (request: Record<string, unknown>) => {
+              writes.push({ method: 'create', request });
+            },
+            updateComment: async (request: Record<string, unknown>) => {
+              writes.push({ method: 'update', request });
+            },
+          },
+        },
+      };
+      await runInNewContext(`(async () => {\n${executable}\n})()`, {
+        github,
+        context: { repo: { owner: 'test-owner', repo: 'test-repo' }, issue: { number: 7 } },
+      }, { timeout: 1000 });
+      expect(writes).toHaveLength(1);
+      expect(writes[0].method).toBe(existingComment ? 'update' : 'create');
+      expect(writes[0].request).toMatchObject({
+        owner: 'test-owner',
+        repo: 'test-repo',
+        ...(existingComment ? { comment_id: 42 } : { issue_number: 7 }),
+      });
+      const body = writes[0].request.body as string;
+      expect(body).toContain(`**Integration Prerequisites**: ${prerequisiteResult}`);
+      expect(body).toContain(`**Integration Tests**: ${integrationResult}`);
+      const unavailable = 'Real API integration tests were not exercised (not selected or verification unavailable).';
+      if (integrationResult === 'skipped') {
+        expect(body).toContain(unavailable);
+        expect(body).not.toContain('✅ **Integration Tests**');
+      } else {
+        expect(body).not.toContain(unavailable);
+        expect(body).toContain(`${integrationResult === 'success' ? '✅' : '❌'} **Integration Tests**`);
+      }
+    }
   });
 });
