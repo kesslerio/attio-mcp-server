@@ -1,0 +1,25 @@
+# Deployed 2026-10-16 by fm/attio-u3-worker-deployment from attio-mcp-server
+# revision c91217fbf58309f6d0aead159cd92d959b7e.
+# Derived from wrangler.toml.example: KV placeholder replaced with the real
+# TOKEN_STORE namespace ID; [build] command omitted (wrangler 4 bundles the TS
+# entry itself; the example's tsc --noEmit is a typecheck, not a bundle step);
+# env.production / env.staging sections omitted (single default environment
+# deployed). Secrets are set via `wrangler secret put`, never in this file.
+
+name = "attio-mcp-server"
+main = "worker.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+
+[[kv_namespaces]]
+binding = "TOKEN_STORE"
+id = "eab235e49cf842a78e0d12ffdde18f0b"
