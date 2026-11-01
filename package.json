@@ -220,7 +220,7 @@
     "user": "^0.0.0",
     "yargs": "^18.0.0",
     "zod": "^4.3.6",
-    "@modelcontextprotocol/server": "2.3.1",
+    "@modelcontextprotocol/server": "2.4.0",
     "@modelcontextprotocol/core": "2.3.1"
   },
   "engines": {
