@@ -247,7 +247,7 @@
     "eslint-formatter-compact": "^9.0.1",
     "glob": "^13.0.6",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.6",
+    "lint-staged": "^17.6.0",
     "mcp-test-client": "^1.0.1",
     "miniflare": "4.20260730.0",
     "prettier": "^3.6.2",
